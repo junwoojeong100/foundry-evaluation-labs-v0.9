@@ -35,7 +35,20 @@ Azure가 준비되지 않았다면 [DEMO 경로](offline.md)로 바로 시작할
 
 필요한 도구는 **Python 3.10 이상**, 편집기, 브라우저, [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)입니다. Windows에서는 PowerShell로도 실행할 수 있으며 WSL은 필수가 아닙니다.
 
-이 폴더를 VS Code 등 편집기로 열고 그 폴더에서 터미널을 엽니다. 명령 실행 위치에 `lab.py`, `requirements.txt`, `data/`가 보여야 합니다.
+### 코드 폴더 열기
+
+이미 코드가 있다면 **`foundry-evaluation-v1` 폴더**를 그대로 사용합니다. 처음 받는다면 접근 권한이 있는 GitHub 계정으로 [비공개 저장소](https://github.com/junwoojeong100/foundry-evaluation-v1)를 엽니다. **Code → Download ZIP**으로 받아 압축을 풀고 폴더 이름을 `foundry-evaluation-v1`으로 정할 수 있습니다.
+
+Git이 설치되어 있고 GitHub 인증이 준비되어 있다면 다음 방법도 가능합니다. 이미 코드 폴더가 있다면 다시 clone하지 않습니다.
+
+```bash
+git clone https://github.com/junwoojeong100/foundry-evaluation-v1.git
+cd foundry-evaluation-v1
+```
+
+GitHub 저장소 접근 권한과 Azure 프로젝트 접근 권한은 별개입니다. 아래 `az login`이 비공개 GitHub 저장소의 접근 권한을 부여하지는 않습니다.
+
+`foundry-evaluation-v1`을 VS Code 등 편집기로 열고 그 폴더에서 터미널을 엽니다. 명령 실행 위치에 `lab.py`, `requirements.txt`, `data/`가 보여야 합니다.
 
 ### macOS / Linux
 
@@ -56,6 +69,8 @@ python -m pip install -r requirements.txt
 조직 정책 때문에 활성화 스크립트가 막히면 정책을 해제하지 마세요. 활성화 없이 `.\.venv\Scripts\python.exe -m pip install -r requirements.txt`를 실행하고, 이후 명령의 `python`도 `.\.venv\Scripts\python.exe`로 바꿀 수 있습니다.
 
 `requirements.txt`에는 LIVE 경로용 패키지만 있습니다. **DEMO에는 패키지 설치가 필요 없습니다.** 수업 도중 패키지를 임의 업그레이드하지 않습니다.
+
+프로젝트 폴더의 이름이나 위치를 바꾼 뒤 기존 `.venv`가 이전 경로를 참조하면, 가상환경을 새 경로에서 다시 만들고 의존성을 복원해야 합니다. `config.json`과 `results/`는 가상환경과 별개이므로 그대로 보존합니다.
 
 ## 3. 설정은 세 값만 입력
 
@@ -116,7 +131,7 @@ LIVE 조회 OK: judge_deployment=... / ... / ...
 <a id="resume"></a>
 ## 새 터미널에서 이어서 하기
 
-터미널에서 이 폴더로 이동한 뒤 가상환경만 다시 활성화합니다. 패키지 설치나 답변 수집을 처음부터 반복하지 않습니다.
+터미널에서 `foundry-evaluation-v1` 폴더로 이동한 뒤 가상환경만 다시 활성화합니다. 패키지 설치나 답변 수집을 처음부터 반복하지 않습니다.
 
 macOS / Linux:
 
