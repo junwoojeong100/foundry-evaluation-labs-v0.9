@@ -12,10 +12,19 @@ from unittest.mock import patch
 from urllib.parse import unquote, urlsplit
 
 import lab
-from evaluation import ROOT, read_json
+from evaluation import ROOT, read_cases, read_json
 
 DOCUMENTS = sorted([*ROOT.glob("*.md"), *(ROOT / "docs").glob("*.md")])
 SHELL_BLOCKS = re.compile(r"```(?:bash|powershell)\n(.*?)```", re.DOTALL)
+
+
+def lab_commands(document: Path) -> list[list[str]]:
+    return [
+        shlex.split(line)[2:]
+        for block in SHELL_BLOCKS.findall(document.read_text(encoding="utf-8"))
+        for line in block.splitlines()
+        if line.startswith("python lab.py ")
+    ]
 
 
 class DocumentationTests(unittest.TestCase):
@@ -37,35 +46,30 @@ class DocumentationTests(unittest.TestCase):
     def test_every_documented_lab_command_matches_the_cli_parser(self):
         count = 0
         for document in DOCUMENTS:
-            text = document.read_text(encoding="utf-8")
-            for block in SHELL_BLOCKS.findall(text):
-                for line in block.splitlines():
-                    if not line.startswith("python lab.py "):
-                        continue
-                    with self.subTest(document=document.name, command=line):
-                        argv = shlex.split(line)[2:]
-                        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
-                            if "--help" in argv:
-                                with self.assertRaises(SystemExit) as outcome:
-                                    lab.parser().parse_args(argv)
-                                self.assertEqual(outcome.exception.code, 0)
-                            else:
+            for argv in lab_commands(document):
+                with self.subTest(document=document.name, command=argv):
+                    with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                        if "--help" in argv:
+                            with self.assertRaises(SystemExit) as outcome:
                                 lab.parser().parse_args(argv)
-                        count += 1
+                            self.assertEqual(outcome.exception.code, 0)
+                        else:
+                            lab.parser().parse_args(argv)
+                    count += 1
         self.assertGreater(count, 35)
 
-    def test_main_timetable_is_contiguous_and_exactly_180_minutes(self):
+    def test_main_path_is_checkpoint_driven_without_a_time_limit(self):
         text = (ROOT / "README.md").read_text(encoding="utf-8")
-        slots = re.findall(r"\| (\d\d):(\d\d)–(\d\d):(\d\d) · (\d+)분 \|", text)
-        self.assertEqual(len(slots), 8)
-        previous = 0
-        for start_hour, start_minute, end_hour, end_minute, duration in slots:
-            start = int(start_hour) * 60 + int(start_minute)
-            end = int(end_hour) * 60 + int(end_minute)
-            self.assertEqual(start, previous)
-            self.assertEqual(end - start, int(duration))
-            previous = end
-        self.assertEqual(previous, 180)
+        self.assertIn("시간 제한 없이", text)
+        self.assertIn("(docs/setup.md)", text)
+        self.assertIn("(docs/cleanup.md)", text)
+        self.assertEqual(re.findall(r'<a id="lab-(\d+)"></a>', text), [str(i) for i in range(7)])
+        self.assertNotRegex(text, r"\d{2}:\d{2}[–-]\d{2}:\d{2}")
+        for document in DOCUMENTS:
+            with self.subTest(document=document.name):
+                content = document.read_text(encoding="utf-8")
+                self.assertNotIn("3시간", content)
+                self.assertNotIn("180분", content)
 
     def test_documented_json_examples_are_valid_json(self):
         for document in DOCUMENTS:
@@ -73,6 +77,43 @@ class DocumentationTests(unittest.TestCase):
             for block in re.findall(r"```json\n(.*?)```", text, re.DOTALL):
                 with self.subTest(document=document.name, example=block[:60]):
                     json.loads(block)
+
+    def test_setup_smoke_is_one_committed_extra_case_not_dev_or_holdout(self):
+        commands = lab_commands(ROOT / "docs" / "setup.md")
+        runs = [lab.parser().parse_args(argv) for argv in commands if argv[0] == "run"]
+        self.assertEqual(len(runs), 1)
+        run = runs[0]
+        self.assertEqual(run.mode, "live")
+        self.assertIsNotNone(run.data)
+        self.assertNotIn(run.data.name, ("dev.jsonl", "holdout.jsonl"))
+        self.assertEqual(run.out, Path("results/setup-smoke"))
+        cases = read_cases(ROOT / run.data)
+        self.assertEqual(len(cases), 1)
+        for split in ("dev", "holdout"):
+            for experiment_case in read_cases(ROOT / "data" / f"{split}.jsonl"):
+                self.assertNotEqual(cases[0]["id"], experiment_case["id"])
+                self.assertNotEqual(cases[0]["query"], experiment_case["query"])
+        self.assertIn(["judge", "results/setup-smoke"], commands)
+        self.assertIn(["inspect", "results/setup-smoke", cases[0]["id"]], commands)
+
+    def test_setup_uses_one_deployment_for_answers_and_judging(self):
+        text = (ROOT / "docs" / "setup.md").read_text(encoding="utf-8")
+        configs = [json.loads(block) for block in re.findall(r"```json\n(.*?)```", text, re.DOTALL)]
+        self.assertEqual(len(configs), 1)
+        self.assertEqual(configs[0]["model_deployment"], "eval-model")
+        self.assertEqual(configs[0]["judge_deployment"], "eval-model")
+        self.assertEqual(configs[0], read_json(ROOT / "config.example.json"))
+
+    def test_human_judgments_precede_baseline_judge_scores(self):
+        for document, folder in (
+            (ROOT / "README.md", "results/baseline"),
+            (ROOT / "docs" / "offline.md", "results/demo-baseline"),
+        ):
+            commands = lab_commands(document)
+            before_judge = commands[:commands.index(["judge", folder])]
+            for case_id in ("D01", "D04", "D06"):
+                with self.subTest(document=document.name, case_id=case_id):
+                    self.assertIn(["inspect", folder, case_id], before_judge)
 
     def test_offline_guide_commands_execute_as_written_without_network(self):
         text = (ROOT / "docs" / "offline.md").read_text(encoding="utf-8")

@@ -343,12 +343,12 @@ def doctor_command(args) -> int:
             for key in ("model_deployment", "judge_deployment"):
                 snapshot = deployment_snapshot(project, config[key])
                 print(f"LIVE 조회 OK: {key}={snapshot['name']} / {snapshot['model_name']} / {snapshot['model_version']}")
-        print("로그인과 배포 조회만 확인했습니다. 모델 생성/평가 실행은 본 실습에서 확인합니다.")
+        print("로그인과 배포 조회만 확인했습니다. 실제 답변 생성/평가는 run과 judge로 확인하세요.")
     return 0
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(description="3시간 Evaluation 실습. LIVE와 DEMO는 자동 전환되지 않습니다.")
+    root = argparse.ArgumentParser(description="Evaluation 실습. LIVE와 DEMO는 자동 전환되지 않습니다.")
     sub = root.add_subparsers(dest="command", required=True)
     doctor = sub.add_parser("doctor", help="로컬 준비 확인; --live는 로그인/배포 조회")
     doctor.add_argument("--live", action="store_true")

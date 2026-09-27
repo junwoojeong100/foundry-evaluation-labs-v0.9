@@ -1,5 +1,5 @@
 {
   "project_endpoint": "https://YOUR-ACCOUNT.services.ai.azure.com/api/projects/YOUR-PROJECT",
-  "model_deployment": "YOUR-ANSWER-MODEL-DEPLOYMENT",
-  "judge_deployment": "YOUR-JUDGE-MODEL-DEPLOYMENT"
+  "model_deployment": "eval-model",
+  "judge_deployment": "eval-model"
 }

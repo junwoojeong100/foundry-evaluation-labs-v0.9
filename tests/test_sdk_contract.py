@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import io
 import json
+import re
+import shlex
 import tempfile
 import unittest
-from contextlib import contextmanager, nullcontext, redirect_stdout
+from contextlib import contextmanager, nullcontext, redirect_stderr, redirect_stdout
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -14,7 +16,7 @@ from unittest.mock import patch
 
 import lab
 import foundry_client
-from evaluation import METRICS, evidence_hash, load_run, read_json, validate_judge, write_json
+from evaluation import METRICS, ROOT, evidence_hash, load_run, read_cases, read_json, validate_judge, write_json
 
 try:
     import httpx2
@@ -316,6 +318,73 @@ class SDKContractTests(unittest.TestCase):
             self.assertEqual(run["target_deployment"]["model_version"], "version-local")
             self.assertEqual(len(read_json(folder / "judge.json")["rows"]), count)
         self.assertEqual(load_run(holdout)["frozen_from"], load_run(candidate)["evidence_hash"])
+
+    def test_setup_and_main_commands_execute_as_written_with_local_transport(self):
+        config = read_json(ROOT / "config.example.json")
+        config["project_endpoint"] = self.config["project_endpoint"]
+        config_file = self.root / "config.json"
+        write_json(config_file, config)
+        prompt_file = self.root / "my-v2.txt"
+        prompt_file.write_text((ROOT / "prompts" / "v2.txt").read_text(encoding="utf-8"), encoding="utf-8")
+        case = read_cases(ROOT / "data" / "my-case.example.jsonl")[0]
+        case["id"] = "N02"
+        case["query"] = case["query"].replace("2026년 7월 1일", "2026년 9월 20일")
+        case_file = self.root / "my-case.jsonl"
+        case_file.write_text(json.dumps(case, ensure_ascii=False) + "\n", encoding="utf-8")
+        input_paths = {
+            "prompts/my-v2.txt": str(prompt_file),
+            "data/my-case.jsonl": str(case_file),
+        }
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with (
+            self.connection(),
+            patch("builtins.input", side_effect=[
+                "fail", "로컬 모의 응답이 사전 승인 필요 조건을 무시했다",
+                "fail", "로컬 모의 응답이 출장일을 확인하지 않았다",
+            ]),
+            redirect_stdout(stdout),
+            redirect_stderr(stderr),
+        ):
+            for document in (ROOT / "docs" / "setup.md", ROOT / "README.md"):
+                text = document.read_text(encoding="utf-8")
+                for block in re.findall(r"```(?:bash|powershell)\n(.*?)```", text, re.DOTALL):
+                    for line in block.splitlines():
+                        if not line.startswith("python lab.py "):
+                            continue
+                        argv = [
+                            str(self.root / arg) if arg.startswith("results/") else input_paths.get(arg, arg)
+                            for arg in shlex.split(line)[2:]
+                        ]
+                        if argv[0] in ("doctor", "run"):
+                            argv += ["--config", str(config_file)]
+                        if argv[0] == "judge":
+                            argv += ["--wait-seconds", "0"]
+                        with self.subTest(document=document.name, command=line):
+                            self.assertEqual(
+                                lab.main(argv), 2 if argv[0] == "gate" else 0,
+                                stdout.getvalue() + stderr.getvalue(),
+                            )
+        self.assertEqual(self.api.count("POST", "/chat/completions"), 22)
+        self.assertEqual(self.api.count("POST", "/evals"), 2)
+        self.assertEqual(self.api.count("POST", "/runs"), 5)
+        evaluated_rows = sum(len(job["data_source"]["source"]["content"]) for job in self.api.jobs.values())
+        self.assertEqual(evaluated_rows * len(METRICS), 44)
+        self.assertIn(
+            f"응답 {evaluated_rows}개, 평가 항목 {evaluated_rows * len(METRICS)}개",
+            (ROOT / "docs" / "setup.md").read_text(encoding="utf-8"),
+        )
+        for name, count in (("setup-smoke", 1), ("baseline", 8), ("candidate", 8), ("holdout", 4), ("my-case", 1)):
+            folder = self.root / "results" / name
+            with self.subTest(result=name):
+                self.assertEqual(len(load_run(folder)["rows"]), count)
+                self.assertEqual(len(read_json(folder / "judge.json")["rows"]), count)
+                self.assertTrue((folder / "report.md").is_file())
+        candidate = self.root / "results" / "candidate"
+        holdout = self.root / "results" / "holdout"
+        self.assertEqual(load_run(holdout)["frozen_from"], load_run(candidate)["evidence_hash"])
+        self.assertTrue((candidate / "comparison.md").is_file())
+        self.assertEqual(read_json(candidate / "gate.json")["status"], "BLOCK")
+        self.assertEqual(read_json(holdout / "reviews.json")[0]["verdict"], "fail")
 
 
 if __name__ == "__main__":
