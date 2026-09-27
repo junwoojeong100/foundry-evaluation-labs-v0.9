@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="610" viewBox="0 0 1100 610" role="img" aria-labelledby="title description">
+  <title id="title">Foundry permissions: identify the project, assign roles on its parent</title>
+  <desc id="description">An illustration, not a portal screenshot. Match the eval-workshop project's Object principal ID to the managed-identity member on the parent Foundry resource. Both that identity and the user need Foundry User. All names and IDs are fictional.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#1655a3"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="610" rx="16" fill="#f4f7fb"/>
+  <g font-family="system-ui, sans-serif" fill="#172b45">
+    <text x="28" y="40" font-size="24" font-weight="700">Find the project's identity; check roles on the parent resource</text>
+    <text x="28" y="69" font-size="16" fill="#4d6077">Illustration, not a portal screenshot. Do not copy these fictional values.</text>
+    <rect x="28" y="95" width="456" height="348" rx="12" fill="#fff" stroke="#a5b5c9"/>
+    <rect x="28" y="95" width="456" height="55" rx="12" fill="#e6effb"/>
+    <text x="48" y="131" font-size="20" font-weight="700">1. Project: eval-workshop</text>
+    <text x="48" y="181" font-size="16">Open the project's Azure resource</text>
+    <text x="48" y="207" font-size="16" font-weight="600">Identity → System assigned</text>
+    <text x="48" y="241" font-size="15" fill="#4d6077">Object (principal) ID</text>
+    <rect x="48" y="253" width="416" height="48" rx="6" fill="#e6effb" stroke="#1655a3" stroke-width="2"/>
+    <text x="62" y="284" font-size="19" font-weight="700" fill="#1655a3">PROJECT-PRINCIPAL-ID</text>
+    <text x="48" y="327" font-size="16">Record your actual ID in the worksheet</text>
+    <text x="48" y="367" font-size="15" fill="#4d6077">Project resource ID suffix</text>
+    <text x="48" y="393" font-size="14" font-family="monospace">.../accounts/feval-example</text>
+    <text x="48" y="416" font-size="14" font-family="monospace" font-weight="700">   /projects/eval-workshop</text>
+    <rect x="530" y="95" width="542" height="348" rx="12" fill="#fff" stroke="#a5b5c9"/>
+    <rect x="530" y="95" width="542" height="55" rx="12" fill="#e6effb"/>
+    <text x="550" y="131" font-size="20" font-weight="700">2. Parent Foundry resource: feval-example</text>
+    <text x="550" y="181" font-size="16">Open Access control (IAM)</text>
+    <text x="550" y="207" font-size="16" font-weight="600">Check both members under Role assignments</text>
+    <rect x="550" y="223" width="502" height="72" rx="6" fill="#f4f7fb"/>
+    <text x="566" y="249" font-size="16" font-weight="600">Your account: learner@example.com</text>
+    <text x="566" y="277" font-size="16">Role: Foundry User</text>
+    <rect x="550" y="307" width="502" height="116" rx="6" fill="#e6effb" stroke="#1655a3" stroke-width="2"/>
+    <text x="566" y="333" font-size="16" font-weight="600">Project managed identity: eval-workshop</text>
+    <text x="566" y="361" font-size="16">Object ID in member details</text>
+    <text x="566" y="388" font-size="19" font-weight="700" fill="#1655a3">PROJECT-PRINCIPAL-ID</text>
+    <text x="566" y="414" font-size="16">Role: Foundry User</text>
+    <path d="M 464 277 L 507 277 L 507 383 L 550 383" fill="none" stroke="#1655a3" stroke-width="3" marker-end="url(#arrow)"/>
+    <rect x="28" y="463" width="1044" height="120" rx="12" fill="#fff5df" stroke="#b77a10"/>
+    <text x="48" y="493" font-size="18" font-weight="700">Verify the member and the scope separately</text>
+    <text x="48" y="522" font-size="17">Member: match the project's Object ID, not just its display name.</text>
+    <text x="48" y="550" font-size="17">Scope: .../accounts/feval-example, not the subscription or /projects/...</text>
+    <text x="48" y="574" font-size="15" fill="#624b22">Do not duplicate existing assignments. Foundry User may appear as its earlier name, Azure AI User.</text>
+  </g>
+</svg>

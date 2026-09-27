@@ -1,47 +1,49 @@
+[English](en/setup.md) | **한국어**
+
 # 환경 준비 바로가기
 
-[메인 실습](../README.md) · [문제 해결](reference.md#troubleshooting)
+[메인 실습](../README.ko.md) · [문제 해결](reference.md#troubleshooting)
 
-**처음 시작한다면 [README의 실습 0](../README.md#lab-0)에서 설치 없이 오답을 먼저 판단합니다.** 이어지는 [준비](../README.md#prepare)에 설치·로그인·자원 생성·권한·설정·연결 확인 명령이 모두 있습니다. 준비가 끝나면 같은 문서의 실습 1부터 정리까지 이어집니다.
+**처음 시작한다면 [README의 실습 0](../README.ko.md#lab-0)에서 설치 없이 오답을 먼저 판단합니다.** 이어지는 [준비](../README.ko.md#prepare)에 설치·로그인·자원 생성·권한·설정·연결 확인 명령이 모두 있습니다. 준비가 끝나면 같은 문서의 실습 1부터 정리까지 이어집니다.
 
 이 문서는 **필요한 준비 단계만 다시 찾거나, 기존 환경을 사용하거나, 중단한 실습을 재개할 때** 사용합니다. 같은 명령을 여기서 다시 실행할 필요는 없습니다.
 
-**이번 LIVE 설정은 `gpt-6-luna`·`swedencentral`·배포 이름 `eval-model`입니다.** 답변과 Judge에 같은 배포를 사용하고, 생성한 리소스는 실습 후에도 모두 보존합니다. 모델·지역을 임의 대체하지 않으며 마지막에는 [보존 상태와 비용](../README.md#retain-resources)을 확인합니다.
+**이번 LIVE 설정은 `gpt-6-luna`·`swedencentral`·배포 이름 `eval-model`입니다.** 답변과 Judge에 같은 배포를 사용하고, 생성한 리소스는 실습 후에도 모두 보존합니다. 모델·지역을 임의 대체하지 않으며 마지막에는 [보존 상태와 비용](../README.ko.md#retain-resources)을 확인합니다.
 
 <a id="tools"></a>
 ## 준비 1. 코드와 도구 준비
 
-[준비 1: 코드 받기와 도구 설치](../README.md#setup-tools) — 운영체제별 명령, 터미널 위치, 가상환경, 실습지 복사. 완료 신호는 `LOCAL OK`와 `dev 8개, holdout 4개`입니다.
+[준비 1: 코드 받기와 도구 설치](../README.ko.md#setup-tools) — 운영체제별 명령, 터미널 위치, 가상환경, 실습지 복사. 완료 신호는 `LOCAL OK`와 `dev 8개, holdout 4개`입니다.
 
 <a id="sign-in"></a>
 ## 준비 2. 같은 계정·구독으로 로그인
 
-[준비 2: 사용할 구독으로 로그인](../README.md#setup-sign-in) — 포털과 CLI의 계정·테넌트·구독을 맞춥니다. `az account show`의 `account`까지 대조하며, `YOUR-...`에는 본인 실습지에 기록한 값을 넣습니다.
+[준비 2: 사용할 구독으로 로그인](../README.ko.md#setup-sign-in) — 포털과 CLI의 계정·테넌트·구독을 맞춥니다. `az account show`의 `account`까지 대조하며, `YOUR-...`에는 본인 실습지에 기록한 값을 넣습니다.
 
 <a id="create-project"></a>
 ## 준비 3. 전용 그룹과 프로젝트 만들기
 
-[준비 3: 전용 그룹과 Foundry 프로젝트](../README.md#setup-project) — 자원별 역할과 이름, 생성 순서, 기록할 값을 확인합니다. 그룹뿐 아니라 Foundry 리소스·프로젝트도 `swedencentral`인지 확인합니다. 공유 자원을 새 전용 자원으로 오해하지 않습니다.
+[준비 3: 전용 그룹과 Foundry 프로젝트](../README.ko.md#setup-project) — 자원별 역할과 이름, 생성 순서, 기록할 값을 확인합니다. 그룹뿐 아니라 Foundry 리소스·프로젝트도 `swedencentral`인지 확인합니다. 공유 자원을 새 전용 자원으로 오해하지 않습니다.
 
 <a id="permissions"></a>
 ## 준비 4. 데이터 접근 권한 확인
 
-[준비 4: 모델 호출과 평가 권한](../README.md#setup-permissions) — 본인과 프로젝트 관리 ID에 필요한 역할을 확인합니다. 목록에서 프로젝트 ID를 못 찾으면 [관리 ID 선택 도움말](reference.md#managed-identity-access)을 사용합니다.
+[준비 4: 모델 호출과 평가 권한](../README.ko.md#setup-permissions) — 본인과 프로젝트 관리 ID에 필요한 역할을 확인합니다. 목록에서 프로젝트 ID를 못 찾으면 [관리 ID 선택 도움말](reference.md#managed-identity-access)을 사용합니다.
 
 <a id="deploy-model"></a>
 ## 준비 5. 모델 하나 배포
 
-[준비 5: 모델 하나 배포](../README.md#setup-model) — 모델은 `gpt-6-luna`, 배포 이름은 `eval-model`입니다. 두 이름을 혼동하지 않습니다. 지정한 모델이나 용량을 사용할 수 없으면 [모델·지역·쿼터 도움말](reference.md#model-availability)을 봅니다.
+[준비 5: 모델 하나 배포](../README.ko.md#setup-model) — 모델은 `gpt-6-luna`, 배포 이름은 `eval-model`입니다. 두 이름을 혼동하지 않습니다. 지정한 모델이나 용량을 사용할 수 없으면 [모델·지역·쿼터 도움말](reference.md#model-availability)을 봅니다.
 
 <a id="configure"></a>
 ## 준비 6. 프로젝트 주소 하나 넣기
 
-[준비 6: 설정 파일](../README.md#setup-config) — `config.json`에 실제 프로젝트 주소를 넣고, 두 배포 항목은 모두 `eval-model`로 둡니다. 두 항목에 `LIVE 조회 OK`와 모델 이름 `gpt-6-luna`가 나와야 다음으로 갑니다.
+[준비 6: 설정 파일](../README.ko.md#setup-config) — `config.json`에 실제 프로젝트 주소를 넣고, 두 배포 항목은 모두 `eval-model`로 둡니다. 두 항목에 `LIVE 조회 OK`와 모델 이름 `gpt-6-luna`가 나와야 다음으로 갑니다.
 
 <a id="smoke"></a>
 ## 준비 7. 답변 한 개로 연결 확인
 
-[준비 7: 한 건의 생성·평가](../README.md#setup-smoke) — `N01` 한 건으로 유료 연결을 확인합니다. 답변 형식과 두 점수·이유가 모두 있어야 합니다. 대기·낮은 점수·실행 오류의 차이는 [명령 결과 읽기](../README.md#command-status)를 봅니다.
+[준비 7: 한 건의 생성·평가](../README.ko.md#setup-smoke) — `N01` 한 건으로 유료 연결을 확인합니다. 답변 형식과 두 점수·이유가 모두 있어야 합니다. 대기·낮은 점수·실행 오류의 차이는 [명령 결과 읽기](../README.ko.md#command-status)를 봅니다.
 
 ---
 
@@ -120,20 +122,20 @@ az cognitiveservices usage list --location swedencentral --subscription "YOUR-SU
 az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --deployment-name eval-model --model-name gpt-6-luna --model-version "YOUR-MODEL-VERSION" --model-format OpenAI --sku-name GlobalStandard --sku-capacity 60 --subscription "YOUR-SUBSCRIPTION-ID"
 ```
 
-`YOUR-MODEL-VERSION`에는 **조회한 실제 버전**을 넣습니다. 2026-09-27 실습에서는 `2026-09-22`를 사용했으며 이 값을 현재도 제공한다고 가정하지 않습니다. 완료 후 [README 준비 6](../README.md#setup-config)으로 돌아가 설정·조회·한 건 생성·평가를 진행합니다. API 키를 조회하거나 저장할 필요는 없습니다. **마지막에 삭제 명령을 실행하지 않습니다.**
+`YOUR-MODEL-VERSION`에는 **조회한 실제 버전**을 넣습니다. 2026-09-27 실습에서는 `2026-09-22`를 사용했으며 이 값을 현재도 제공한다고 가정하지 않습니다. 완료 후 [README 준비 6](../README.ko.md#setup-config)으로 돌아가 설정·조회·한 건 생성·평가를 진행합니다. API 키를 조회하거나 저장할 필요는 없습니다. **마지막에 삭제 명령을 실행하지 않습니다.**
 
 <a id="existing-environment"></a>
 ## 이미 허가받은 환경이 있다면
 
-새 자원을 만들거나 기존 모델의 이름·설정을 바꾸지 않습니다. 아직 하지 않았다면 [실습 0](../README.md#lab-0)의 A/B 판단만 먼저 한 뒤 이 절로 돌아옵니다.
+새 자원을 만들거나 기존 모델의 이름·설정을 바꾸지 않습니다. 아직 하지 않았다면 [실습 0](../README.ko.md#lab-0)의 A/B 판단만 먼저 한 뒤 이 절로 돌아옵니다.
 
 **사용 가능한 환경:** 새 포털에서 사용하는 **Foundry 프로젝트**와 그 프로젝트에서 접근 가능한 모델 배포입니다. Project endpoint는 `https://리소스이름.services.ai.azure.com/api/projects/프로젝트이름` 형태입니다. 허브 기반 classic 프로젝트의 연결 문자열이나 Azure OpenAI 모델 주소만 있다면 이 실습의 설정으로 대신 사용할 수 없습니다.
 
 1. 환경 소유자에게 아래 정보를 받아 둡니다. 다음 순서에서 실습지를 만든 뒤 준비 표에 기록합니다. API 키나 공유 비밀번호를 받지 않습니다.
-2. [준비 1](../README.md#setup-tools)에서 로컬 도구를 준비하고, [준비 2](../README.md#setup-sign-in)의 **로그인과 구독 확인**을 수행합니다. 자원을 만들지 않으므로 Owner 취득이나 공급자 등록은 요구하지 않습니다.
-3. [준비 4](../README.md#setup-permissions)의 접근 권한을 확인합니다. 부족한 역할은 할당 권한이 있는 소유자에게 요청합니다.
-4. 기존 배포가 **Chat Completions·Structured Outputs·Judge 평가**를 지원하는지 확인합니다. [준비 6](../README.md#setup-config)의 설정에 실제 주소와 배포 이름을 넣고 [준비 7](../README.md#setup-smoke)을 완료합니다.
-5. [실습 1](../README.md#lab-1)로 이어갑니다. 마지막에는 소유자와 합의한 본인 작업만 정리합니다. **공유 프로젝트·모델·리소스 그룹은 일괄 삭제하지 않습니다.**
+2. [준비 1](../README.ko.md#setup-tools)에서 로컬 도구를 준비하고, [준비 2](../README.ko.md#setup-sign-in)의 **로그인과 구독 확인**을 수행합니다. 자원을 만들지 않으므로 Owner 취득이나 공급자 등록은 요구하지 않습니다.
+3. [준비 4](../README.ko.md#setup-permissions)의 접근 권한을 확인합니다. 부족한 역할은 할당 권한이 있는 소유자에게 요청합니다.
+4. 기존 배포가 **Chat Completions·Structured Outputs·Judge 평가**를 지원하는지 확인합니다. [준비 6](../README.ko.md#setup-config)의 설정에 실제 주소와 배포 이름을 넣고 [준비 7](../README.ko.md#setup-smoke)을 완료합니다.
+5. [실습 1](../README.ko.md#lab-1)로 이어갑니다. 마지막에는 소유자와 합의한 본인 작업만 정리합니다. **공유 프로젝트·모델·리소스 그룹은 일괄 삭제하지 않습니다.**
 
 | 소유자에게 확인할 정보 | 사용할 곳 |
 |---|---|
@@ -155,7 +157,7 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 <a id="cost"></a>
 ## 비용 확인
 
-기본 경로의 호출 규모는 [README 준비](../README.md#prepare)에 있습니다. [모델 요금](https://azure.microsoft.com/pricing/details/azure-openai/)과 본인 배포 유형을 확인합니다. 생성 토큰 합계만으로 Judge 비용까지 계산하지 않습니다.
+기본 경로의 호출 규모는 [README 준비](../README.ko.md#prepare)에 있습니다. [모델 요금](https://azure.microsoft.com/pricing/details/azure-openai/)과 본인 배포 유형을 확인합니다. 생성 토큰 합계만으로 Judge 비용까지 계산하지 않습니다.
 
 Azure 포털의 **Cost Management → Cost analysis**에서 해당 전용 그룹으로 범위를 좁혀 봅니다. 비용 반영은 늦을 수 있고, 예산 알림은 자동 지출 차단이 아닙니다. 끝나거나 중도 중단하면 [리소스 보존·정리](cleanup.md)를 확인합니다. 기본은 보존이며, 보존을 과금 중지로 해석하지 않습니다.
 
@@ -164,7 +166,7 @@ Azure 포털의 **Cost Management → Cost analysis**에서 해당 전용 그룹
 
 1. VS Code에서 이전의 **`lab.py`가 있는 폴더**를 열고 새 터미널을 엽니다.
 2. 가상환경만 다시 활성화합니다. macOS/Linux는 `source .venv/bin/activate`, Windows는 `.\.venv\Scripts\Activate.ps1`입니다. 활성화가 막혔던 Windows 환경에서는 계속 `.\.venv\Scripts\python.exe`를 사용합니다. 패키지를 매번 재설치하지 않습니다.
-3. 본인 실습지의 **마지막 완료 단계 / 다음 명령**을 확인합니다. 기본은 `results/my-worksheet.md`, LIVE에서 전환한 DEMO는 `results/my-worksheet-demo.md`입니다. LIVE 로그인이 만료됐으면 [로그인](../README.md#setup-sign-in)만 다시 합니다. DEMO는 로그인하지 않습니다.
+3. 본인 실습지의 **마지막 완료 단계 / 다음 명령**을 확인합니다. 기본은 `results/my-worksheet.md`, LIVE에서 전환한 DEMO는 `results/my-worksheet-demo.md`입니다. LIVE 로그인이 만료됐으면 [로그인](../README.ko.md#setup-sign-in)만 다시 합니다. DEMO는 로그인하지 않습니다.
 
 | 중단 당시 상태 | 재개 방법 |
 |---|---|
@@ -182,11 +184,11 @@ Azure 포털의 **Cost Management → Cost analysis**에서 해당 전용 그룹
 
 | 저장된 상태 / 아직 없는 것 | LIVE에서 이어갈 위치 | DEMO에서 이어갈 위치 |
 |---|---|---|
-| `baseline/run.json`의 `status`가 `complete`, `judge.json`은 없음 | [실습 3](../README.md#lab-3): D04 사람 판단부터, 그 뒤 Judge | [실습 3](offline.md#lab-3): 동일 순서 |
-| `baseline/judge.json`은 있음, candidate는 아직 없음 | [실습 4](../README.md#lab-4): 가설·복사본 수정부터 | [실습 4](offline.md#lab-4): 가설·V2 예제부터 |
-| `candidate/run.json`은 완료, `judge.json` 또는 `comparison.md`가 없음 | [실습 4](../README.md#lab-4): 후보 Judge → 비교 중 빠진 단계 | [실습 4](offline.md#lab-4): 동일 순서 |
-| 후보 비교는 완료, D06의 `reviews.json` 기록이 없음 | [실습 4](../README.md#lab-4)의 `review` | [실습 4](offline.md#lab-4)의 `review` |
-| 후보 검토는 완료, holdout 생성·Judge·H04 검토 또는 Gate가 남음 | [실습 5](../README.md#lab-5)의 첫 미완료 단계 | [실습 5](offline.md#lab-5)의 첫 미완료 단계 |
-| `candidate/gate.md`와 판단 기록까지 있음 | [실습 6](../README.md#lab-6): 추가 질문·보고 | [실습 6](offline.md#lab-6): 질문 검사·보고 |
+| `baseline/run.json`의 `status`가 `complete`, `judge.json`은 없음 | [실습 3](../README.ko.md#lab-3): D04 사람 판단부터, 그 뒤 Judge | [실습 3](offline.md#lab-3): 동일 순서 |
+| `baseline/judge.json`은 있음, candidate는 아직 없음 | [실습 4](../README.ko.md#lab-4): 가설·복사본 수정부터 | [실습 4](offline.md#lab-4): 가설·V2 예제부터 |
+| `candidate/run.json`은 완료, `judge.json` 또는 `comparison.md`가 없음 | [실습 4](../README.ko.md#lab-4): 후보 Judge → 비교 중 빠진 단계 | [실습 4](offline.md#lab-4): 동일 순서 |
+| 후보 비교는 완료, D06의 `reviews.json` 기록이 없음 | [실습 4](../README.ko.md#lab-4)의 `review` | [실습 4](offline.md#lab-4)의 `review` |
+| 후보 검토는 완료, holdout 생성·Judge·H04 검토 또는 Gate가 남음 | [실습 5](../README.ko.md#lab-5)의 첫 미완료 단계 | [실습 5](offline.md#lab-5)의 첫 미완료 단계 |
+| `candidate/gate.md`와 판단 기록까지 있음 | [실습 6](../README.ko.md#lab-6): 추가 질문·보고 | [실습 6](offline.md#lab-6): 질문 검사·보고 |
 
 파일 유무는 위치를 찾는 단서일 뿐입니다. **`status`가 `collecting`이면 같은 `run`, 평가 처리 중이면 같은 `judge`를 먼저 재개**합니다. `judge.json`이 있어도 오류가 났다면 같은 `judge`로 유효성을 확인합니다. `--like`를 생략하거나 결과 파일을 수정하지 않습니다. 이미 적은 사람의 최초 판단은 지우지 않습니다.

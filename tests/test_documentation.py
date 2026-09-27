@@ -17,7 +17,7 @@ from xml.etree import ElementTree
 import lab
 from evaluation import ROOT, read_cases, read_json
 
-DOCUMENTS = sorted([*ROOT.glob("*.md"), *(ROOT / "docs").glob("*.md")])
+DOCUMENTS = sorted([*ROOT.glob("*.md"), *(ROOT / "docs").rglob("*.md")])
 SHELL_BLOCKS = re.compile(r"```(?:bash|powershell)\n(.*?)```", re.DOTALL)
 
 
@@ -62,7 +62,7 @@ class DocumentationTests(unittest.TestCase):
         self.assertGreater(count, 35)
 
     def test_main_path_is_checkpoint_driven_without_a_time_limit(self):
-        text = (ROOT / "README.md").read_text(encoding="utf-8")
+        text = (ROOT / "README.ko.md").read_text(encoding="utf-8")
         self.assertIn("시간 제한 없이", text)
         self.assertIn("(docs/setup.md)", text)
         self.assertIn("(docs/cleanup.md)", text)
@@ -74,6 +74,10 @@ class DocumentationTests(unittest.TestCase):
             self.assertIn(f'<a id="{anchor}"></a>', text)
         self.assertEqual(re.findall(r'<a id="lab-(\d+)"></a>', text), [str(i) for i in range(7)])
         self.assertNotRegex(text, r"\d{2}:\d{2}[–-]\d{2}:\d{2}")
+        english = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("No time limit", english)
+        self.assertIn("(docs/en/setup.md)", english)
+        self.assertIn("(docs/en/cleanup.md)", english)
         for document in DOCUMENTS:
             with self.subTest(document=document.name):
                 content = document.read_text(encoding="utf-8")
@@ -88,7 +92,7 @@ class DocumentationTests(unittest.TestCase):
             for step in range(int(first), int(last or first) + 1)
         ]
         self.assertEqual(steps, [str(i) for i in range(7)])
-        for document in (ROOT / "README.md", ROOT / "docs" / "offline.md"):
+        for document in (ROOT / "README.ko.md", ROOT / "docs" / "offline.md"):
             text = document.read_text(encoding="utf-8")
             with self.subTest(document=document.name):
                 self.assertEqual(re.findall(r"^## (\d+)\.", text, re.MULTILINE), steps)
@@ -103,10 +107,10 @@ class DocumentationTests(unittest.TestCase):
                 self.assertIn("실습 1로 이어갑니다", text[setup_start:criteria_start])
         setup = (ROOT / "docs" / "setup.md").read_text(encoding="utf-8")
         existing = setup.split('<a id="existing-environment"></a>')[1].split('<a id="cost"></a>')[0]
-        self.assertIn("5. [실습 1](../README.md#lab-1)", existing)
+        self.assertIn("5. [실습 1](../README.ko.md#lab-1)", existing)
 
     def test_permission_illustration_is_labeled_and_linked(self):
-        text = (ROOT / "README.md").read_text(encoding="utf-8")
+        text = (ROOT / "README.ko.md").read_text(encoding="utf-8")
         self.assertRegex(text, r"!\[[^\]]+\]\(docs/images/foundry-permissions\.svg\)")
         self.assertIn("실제 포털 캡처가 아닙니다", text)
         svg = ElementTree.parse(ROOT / "docs" / "images" / "foundry-permissions.svg").getroot()
@@ -120,6 +124,48 @@ class DocumentationTests(unittest.TestCase):
         for label in ("Object (principal) ID", "Access control (IAM)", "Foundry User", "/projects/eval-workshop"):
             self.assertIn(label, labels)
         self.assertEqual(labels.count("PROJECT-PRINCIPAL-ID"), 2)
+
+    def test_default_readme_is_english_and_both_languages_run_identical_commands(self):
+        english = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertTrue(english.startswith("**English** | [한국어](README.ko.md)"))
+        self.assertIn("# Can you trust an AI answer?", english)
+        self.assertIn("remain **Korean**", english)
+        for left, right in (
+            ("README.md", "README.ko.md"),
+            ("docs/en/offline.md", "docs/offline.md"),
+        ):
+            with self.subTest(english=left):
+                self.assertEqual(lab_commands(ROOT / left), lab_commands(ROOT / right))
+                before = (ROOT / left).read_text(encoding="utf-8")
+                after = (ROOT / right).read_text(encoding="utf-8")
+                self.assertEqual(
+                    re.findall(r"```jsonl\n(.*?)```", before, re.DOTALL),
+                    re.findall(r"```jsonl\n(.*?)```", after, re.DOTALL),
+                )
+                self.assertEqual(
+                    re.findall(r'<a id="lab-(\d+)"></a>', before),
+                    [str(i) for i in range(7)],
+                )
+
+    def test_supporting_guides_have_matching_anchors_and_language_navigation(self):
+        for name in ("setup", "reference", "offline", "cleanup", "facilitator"):
+            korean = (ROOT / "docs" / f"{name}.md").read_text(encoding="utf-8")
+            english = (ROOT / "docs" / "en" / f"{name}.md").read_text(encoding="utf-8")
+            with self.subTest(guide=name):
+                self.assertIn(f"(en/{name}.md)", korean)
+                self.assertIn(f"(../{name}.md)", english)
+                self.assertEqual(
+                    set(re.findall(r'<a id="([^"]+)"></a>', korean)),
+                    set(re.findall(r'<a id="([^"]+)"></a>', english)),
+                )
+                self.assertNotIn("(../README.md", korean)
+        self.assertTrue((ROOT / "WORKSHEET.en.md").is_file())
+        english = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("(WORKSHEET.en.md)", english)
+        self.assertIn("not an actual portal screenshot", english)
+        svg = ElementTree.parse(ROOT / "docs" / "images" / "foundry-permissions.en.svg").getroot()
+        self.assertEqual(svg.get("role"), "img")
+        self.assertEqual(" ".join(svg.itertext()).count("PROJECT-PRINCIPAL-ID"), 2)
 
     def test_documented_json_examples_are_valid_json(self):
         for document in DOCUMENTS:
@@ -183,7 +229,11 @@ class DocumentationTests(unittest.TestCase):
         self.assertEqual(configs[0], read_json(ROOT / "config.example.json"))
 
     def test_live_guides_keep_requested_model_region_and_deployment_distinct(self):
-        for relative in ("README.md", "WORKSHEET.md", "docs/setup.md", "docs/reference.md", "docs/facilitator.md"):
+        for relative in (
+            "README.md", "README.ko.md", "WORKSHEET.md", "WORKSHEET.en.md",
+            "docs/setup.md", "docs/reference.md", "docs/facilitator.md",
+            "docs/en/setup.md", "docs/en/reference.md", "docs/en/facilitator.md",
+        ):
             text = (ROOT / relative).read_text(encoding="utf-8")
             with self.subTest(document=relative):
                 self.assertIn("gpt-6-luna", text)
@@ -235,11 +285,13 @@ class DocumentationTests(unittest.TestCase):
             main.index('<a id="retain-resources"></a>'),
             main.index('<a id="delete-resources"></a>'),
         )
-        for relative in ("README.md", "WORKSHEET.md", "docs/cleanup.md"):
+        for relative in ("README.ko.md", "WORKSHEET.md", "docs/cleanup.md"):
             text = (ROOT / relative).read_text(encoding="utf-8")
             with self.subTest(document=relative):
                 self.assertIn("별도 요청 전까지 유지", text)
                 self.assertIn("보존", text)
+        for relative in ("README.md", "WORKSHEET.en.md", "docs/en/cleanup.md"):
+            self.assertIn("retain until a separate request", (ROOT / relative).read_text(encoding="utf-8"))
         cleanup = (ROOT / "docs" / "cleanup.md").read_text(encoding="utf-8")
         self.assertIn("3–5단계는 건너뜁니다", cleanup)
         self.assertIn("리소스 보존 요청이 있는 동안 삭제하지 않습니다", cleanup)

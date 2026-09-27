@@ -399,10 +399,7 @@ class SDKContractTests(unittest.TestCase):
         self.assertEqual(self.api.count("POST", "/runs"), 5)
         evaluated_rows = sum(len(job["data_source"]["source"]["content"]) for job in self.api.jobs.values())
         self.assertEqual(evaluated_rows * len(METRICS), 44)
-        self.assertIn(
-            f"응답 {evaluated_rows}개, 평가 항목 {evaluated_rows * len(METRICS)}개",
-            text,
-        )
+        self.assertIn(f"{evaluated_rows} responses and evaluates {evaluated_rows * len(METRICS)} metric items", text)
         for name, count in (("setup-smoke", 1), ("baseline", 8), ("candidate", 8), ("holdout", 4), ("my-case", 1)):
             folder = self.root / "results" / name
             with self.subTest(result=name):

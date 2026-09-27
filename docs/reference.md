@@ -1,8 +1,10 @@
+[English](en/reference.md) | **한국어**
+
 # 명령·평가 계약·문제 해결·출처
 
-[메인 가이드](../README.md) · [환경 준비 바로가기](setup.md) · [리소스 정리](cleanup.md)
+[메인 가이드](../README.ko.md) · [환경 준비 바로가기](setup.md) · [리소스 정리](cleanup.md)
 
-기본 LIVE 경로의 준비·명령·완료 확인·정리는 모두 [README](../README.md)에 있습니다. 이 문서를 처음부터 읽을 필요는 없습니다. 막히거나 결과를 정확히 해석해야 할 때 찾아봅니다.
+기본 LIVE 경로의 준비·명령·완료 확인·정리는 모두 [README](../README.ko.md)에 있습니다. 이 문서를 처음부터 읽을 필요는 없습니다. 막히거나 결과를 정확히 해석해야 할 때 찾아봅니다.
 
 기본 경로에서 **환경 소유자는 참가자 본인**입니다. 본인 전용 자원의 설정·권한은 직접 확인하고, 조직 정책이나 공유 자원에 관한 결정만 해당 관리 담당자와 확인합니다.
 
@@ -30,7 +32,7 @@
 <a id="data-contract"></a>
 ## 데이터 한 줄 읽기
 
-`data/dev.jsonl`과 추가 사례 예제는 **한 줄에 JSON 객체 하나**입니다. 필드 이름을 추가하거나 지우지 않고, 새 질문에 맞는 값을 넣습니다. [실습 6](../README.md#lab-6)의 N02 예제와 로컬 검사 명령으로 시작할 수 있습니다.
+`data/dev.jsonl`과 추가 사례 예제는 **한 줄에 JSON 객체 하나**입니다. 필드 이름을 추가하거나 지우지 않고, 새 질문에 맞는 값을 넣습니다. [실습 6](../README.ko.md#lab-6)의 N02 예제와 로컬 검사 명령으로 시작할 수 있습니다.
 
 ```bash
 python lab.py validate-data data/my-case.jsonl
@@ -212,15 +214,15 @@ AI 보조 검토는 `reviews.json`에 남지만 **사람 검토의 건수나 최
 | 구독이 목록에 없음 | 포털·CLI의 계정과 테넌트 확인. 다른 디렉터리의 게스트 계정이라면 사용할 구독의 테넌트로 로그인 |
 | Owner인데 역할 할당/생성이 안 됨 | 구독 범위의 역할인지, PIM에서 활성인지 확인. 관리 그룹 정책·deny assignment·조건부 액세스는 Owner로 우회하지 않기 |
 | 공급자가 등록되지 않았다고 함 | 해당 구독의 Resource providers에서 `Microsoft.CognitiveServices`를 등록하고 `Registered` 확인 |
-| `python` 또는 `lab.py`를 찾을 수 없음 | VS Code에서 `lab.py`가 있는 폴더를 열고 [준비 1](../README.md#setup-tools)의 가상환경 활성화부터 확인. 새 터미널마다 활성화 필요 |
+| `python` 또는 `lab.py`를 찾을 수 없음 | VS Code에서 `lab.py`가 있는 폴더를 열고 [준비 1](../README.ko.md#setup-tools)의 가상환경 활성화부터 확인. 새 터미널마다 활성화 필요 |
 | 명령 입력 후 `SyntaxError`, 화면에 `>>>`가 보임 | Python 대화창에 셸 명령을 입력한 상태. `exit()`로 나온 뒤 VS Code 터미널에 명령만 입력 |
 | 파일을 수정했는데 실행에 반영되지 않음 | 브라우저가 아니라 VS Code의 로컬 복사본인지, File → Save로 저장했는지, 명령의 파일 경로가 맞는지 확인. 완료된 결과는 덮어쓰지 않기 |
-| Windows에서 `Activate.ps1` 실행이 차단됨 | 조직 정책을 해제하지 않고 설치 명령부터 모든 `python`을 `.\.venv\Scripts\python.exe`로 대체. [준비 1](../README.md#setup-tools) 확인 |
+| Windows에서 `Activate.ps1` 실행이 차단됨 | 조직 정책을 해제하지 않고 설치 명령부터 모든 `python`을 `.\.venv\Scripts\python.exe`로 대체. [준비 1](../README.ko.md#setup-tools) 확인 |
 | LIVE 패키지 없음/버전 불일치 | 가상환경 안에서 `python -m pip install -r requirements.txt`. 임의 최신 업그레이드 금지 |
 | config 예시 값 오류 | endpoint의 `YOUR-...`를 실제 프로젝트 주소로 교체. 두 배포 이름은 본인이 만든 `eval-model` 또는 실제 이름인지 확인 |
 | classic 허브 연결 문자열이나 모델 주소만 있음 | 새 Foundry 프로젝트의 `/api/projects/...` 주소가 필요. [기존 환경 조건](setup.md#existing-environment)을 확인하고 새 환경 사용 또는 [DEMO로 분리 전환](setup.md#switch-to-demo) |
 | 저장했는데 config를 찾을 수 없음 | `lab.py` 옆의 `config.json`인지, `config.json.txt`로 저장되지 않았는지 확인 |
-| `prompts/my-v2.txt`를 찾을 수 없음 | 제공된 V2를 그대로 쓰더라도 **복사본 파일명은 `my-v2.txt`**여야 함. [실습 4](../README.md#lab-4)의 다른 이름 저장 후 재실행 |
+| `prompts/my-v2.txt`를 찾을 수 없음 | 제공된 V2를 그대로 쓰더라도 **복사본 파일명은 `my-v2.txt`**여야 함. [실습 4](../README.ko.md#lab-4)의 다른 이름 저장 후 재실행 |
 | `validate-data`가 `ERROR:`를 출력 | 표시된 줄·필드 수정. JSON 객체 전체를 한 줄로 저장하고 빈 줄 제거. 필수 8개 필드·숫자/null·true/false·공식 출처 확인 후 같은 검사 재실행. 통과 전 유료 `run` 실행하지 않기 |
 | `validate-data`의 건수가 1이 아님 | N01 등 다른 사례를 복사본에 남겼는지 확인. 이번 추가 사례 파일에는 N02 한 줄만 저장. 원본 질문 파일이나 기존 결과는 수정하지 않기 |
 | `review`에서 멈춘 것처럼 보임 | 오류가 아니라 입력 대기. `pass`/`fail` 입력 후 Enter, 규정과 대조한 이유 5자 이상 입력 후 Enter. `검토 저장` 확인 |
@@ -233,6 +235,7 @@ AI 보조 검토는 `reviews.json`에 남지만 **사람 검토의 건수나 최
 | `finish_reason=length` | 결과가 잘렸으므로 형식 실패가 정상. 선택한 모델과 출력 제한의 적합성을 확인하고 변경이 필요하면 별도 실험으로 재시작 |
 | 429 | 여러 팀의 TPM/RPM과 Judge 부하 확인. 잠시 기다린 뒤 미완료 작업만 재개 |
 | 모델 배포가 쿼터/지역 문제로 실패 | [모델 가용성 확인](#model-availability). 본인 권한이 있어도 배포 용량이 자동 확보되지는 않음 |
+| 리소스 그룹의 Deployments에 `PolicyDeployment` 실패가 보이지만 모델은 동작 | 모델 배포 상태와 별개의 조직 정책 작업일 수 있음. 배포 오류를 확인하고, 중앙 Log Analytics 작업 영역 누락 같은 조직 진단 설정 문제는 정책 관리자에게 전달. 기록을 지우거나 정책을 해제해 성공처럼 보이게 하지 않기 |
 | Foundry 평가 미완료/종료 코드 3 | 같은 `judge` 명령 재실행. 저장된 ID로 조회하므로 새 답변·평가를 생성하지 않음 |
 | 원격 `completed`인데 `평가 완료`는 없음 | 로컬 결과 수집·검증·저장을 기다림. 오류가 나면 원본 ID를 보존하고 원인을 해결한 뒤 같은 `judge` 재개 |
 | Judge 결과 ID/점수/이유 누락 | `foundry-output.json`과 `foundry-job.json` 보존. SDK/서비스 계약 확인. 누락을 통과로 바꾸지 않기 |
@@ -249,7 +252,7 @@ AI 보조 검토는 `reviews.json`에 남지만 **사람 검토의 건수나 최
 <a id="managed-identity-access"></a>
 ## 프로젝트 관리 ID를 선택할 수 없을 때
 
-이 절은 [준비 4: 권한 확인](../README.md#setup-permissions)의 포털 선택이 어려울 때만 사용합니다.
+이 절은 [준비 4: 권한 확인](../README.ko.md#setup-permissions)의 포털 선택이 어려울 때만 사용합니다.
 
 1. Foundry의 **Manage → Project details**에서 해당 프로젝트의 Azure 리소스를 엽니다. 프로젝트 리소스 ID는 `/accounts/계정이름/projects/프로젝트이름`으로 끝납니다.
 2. Azure 포털의 프로젝트 **Identity → System assigned**에서 **Object (principal) ID**를 복사합니다. ID 메뉴가 보이지 않으면 리소스의 JSON 보기에서 `identity.principalId`를 확인합니다. 상위 Foundry 계정의 ID가 아닙니다.
@@ -384,7 +387,7 @@ SDK가 설치되어 있으면 SDK 계약 검사도 실행합니다. 없으면 �
 
 실행자는 `results/my-worksheet.md`, 각 실행의 `run.json`·`judge.json`·`foundry-job.json`·`foundry-output.json`, `results/candidate/comparison.md`·`gate.md`, `results/live-verification.json`에 원본·원격 ID·검증 결과를 보관했습니다. 이 로컬 결과와 `config.json`은 Git 추적 대상이 아니며 다른 사용자의 복제본에는 없습니다. 본인 실행의 증거를 새로 남깁니다.
 
-**브라우저 확인:** Playwright headless를 먼저 시도했지만 별도 프로필에 로그인 세션이 없어, 사용자가 인증한 일반 Playwright에서 지정 계정을 선택해 포털을 확인했습니다. 비밀번호·쿠키·토큰을 복사하지 않았습니다.
+**최초 리허설의 브라우저 확인:** Playwright headless를 먼저 시도했지만 별도 프로필에 로그인 세션이 없어, 사용자가 인증한 일반 Playwright에서 지정 계정을 선택해 포털을 확인했습니다. 그 리허설에서는 비밀번호·쿠키·토큰을 복사하지 않았습니다. 이후 요약 영상의 headless 녹화 과정은 [영상 안내](media/README.md)에서 별도로 설명합니다.
 
 **보존·비용:** 리소스 그룹·Foundry 리소스·프로젝트·모델 배포·역할 할당·평가 기록을 삭제하지 않고 남겼습니다. 해당 그룹의 Cost Management 조회는 성공했으나 아직 비용 행이 없었습니다. 집계 지연 가능성이 있어 **무료 또는 최종 비용 0원이라는 뜻이 아닙니다.**
 

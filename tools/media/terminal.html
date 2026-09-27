@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Actual workshop CLI recording</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0a1220; color: #e5eefb; font-family: Menlo, "Apple SD Gothic Neo", monospace; }
+  header { height: 96px; padding: 24px 30px 12px; border-bottom: 1px solid #25364c; }
+  .badge { color: #62bcff; font: 700 14px system-ui; letter-spacing: 2px; }
+  h1 { margin: 7px 0 0; font: 600 23px system-ui; }
+  #label { position: absolute; top: 47px; right: 28px; color: #a7b9d1; font: 15px system-ui; }
+  #terminal { height: 490px; padding: 18px 30px; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 21px; line-height: 1.4; }
+  .command { color: #79c7ff; margin-top: 14px; }
+  .status { color: #edbd61; margin: 9px 0 12px; }
+  footer { height: 42px; border-top: 1px solid #25364c; padding: 11px 30px; color: #95acc8; font: 16px system-ui; }
+</style>
+<header><div class="badge">SCRIPTED SCREEN RECORDING · REAL CLI EXECUTION</div><h1 id="title">Workshop</h1><span id="label"></span></header>
+<div id="terminal" aria-live="polite"></div>
+<footer id="status">Ready</footer>
+<script>
+let previous = "";
+async function update() {
+  const response = await fetch("terminal.json", {cache: "no-store"});
+  if (!response.ok) throw new Error(`Recording state: HTTP ${response.status}`);
+  const state = await response.json();
+  const value = JSON.stringify(state);
+  if (value === previous) return;
+  previous = value;
+  document.getElementById("title").textContent = state.title;
+  document.getElementById("label").textContent = state.label;
+  document.getElementById("status").textContent = state.status;
+  const terminal = document.getElementById("terminal");
+  terminal.replaceChildren(...state.lines.map(line => {
+    const row = document.createElement("div");
+    row.className = line.kind;
+    row.textContent = line.text || " ";
+    return row;
+  }));
+  terminal.scrollTop = terminal.scrollHeight;
+}
+setInterval(() => update().catch(error => {document.getElementById("status").textContent = error.message;}), 160);
+update().catch(error => {document.getElementById("status").textContent = error.message;});
+</script>
+</html>
