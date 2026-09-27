@@ -78,6 +78,27 @@ class DocumentationTests(unittest.TestCase):
                 with self.subTest(document=document.name, example=block[:60]):
                     json.loads(block)
 
+    def test_main_path_uses_live_only_and_one_lab_command_per_block(self):
+        commands = lab_commands(ROOT / "README.md")
+        runs = [lab.parser().parse_args(argv) for argv in commands if argv[0] == "run"]
+        self.assertEqual(len(runs), 4)
+        self.assertTrue(all(run.mode == "live" for run in runs))
+        for document in (ROOT / "README.md", ROOT / "docs" / "setup.md", ROOT / "docs" / "offline.md"):
+            for block in SHELL_BLOCKS.findall(document.read_text(encoding="utf-8")):
+                with self.subTest(document=document.name, block=block):
+                    self.assertLessEqual(sum(line.startswith("python lab.py ") for line in block.splitlines()), 1)
+
+    def test_workshop_repository_links_only_point_to_current_repository(self):
+        for document in DOCUMENTS:
+            text = document.read_text(encoding="utf-8")
+            for link in re.findall(r"\[[^\]]*\]\(([^)]+)\)", text):
+                url = urlsplit(link)
+                parts = url.path.strip("/").split("/")
+                if url.netloc == "github.com" and parts[0] == "junwoojeong100":
+                    with self.subTest(document=document.name, link=link):
+                        self.assertGreaterEqual(len(parts), 2)
+                        self.assertEqual(parts[1], "foundry-evaluation-v1")
+
     def test_setup_smoke_is_one_committed_extra_case_not_dev_or_holdout(self):
         commands = lab_commands(ROOT / "docs" / "setup.md")
         runs = [lab.parser().parse_args(argv) for argv in commands if argv[0] == "run"]
@@ -110,16 +131,13 @@ class DocumentationTests(unittest.TestCase):
             (ROOT / "docs" / "offline.md", "results/demo-baseline"),
         ):
             commands = lab_commands(document)
-            before_judge = commands[:commands.index(["judge", folder])]
-            for case_id in ("D01", "D04", "D06"):
-                with self.subTest(document=document.name, case_id=case_id):
-                    self.assertIn(["inspect", folder, case_id], before_judge)
+            judge_index = commands.index(["judge", folder])
+            with self.subTest(document=document.name):
+                self.assertIn(["inspect", folder, "D04"], commands[:judge_index])
+                self.assertIn(["inspect", folder, "D04"], commands[judge_index + 1:])
 
     def test_offline_guide_commands_execute_as_written_without_network(self):
-        text = (ROOT / "docs" / "offline.md").read_text(encoding="utf-8")
-        main = (ROOT / "README.md").read_text(encoding="utf-8")
-        trap_blocks = [block for block in SHELL_BLOCKS.findall(main) if "--prompt shortcut" in block]
-        blocks = SHELL_BLOCKS.findall(text) + trap_blocks
+        commands = lab_commands(ROOT / "docs" / "offline.md")
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)
             with (
@@ -132,17 +150,13 @@ class DocumentationTests(unittest.TestCase):
                 redirect_stdout(io.StringIO()),
                 redirect_stderr(io.StringIO()),
             ):
-                for block in blocks:
-                    for line in block.splitlines():
-                        if not line.startswith("python lab.py "):
-                            continue
-                        argv = shlex.split(line)[2:]
-                        argv = [
-                            str(output / arg) if arg.startswith("results/") else arg
-                            for arg in argv
-                        ]
-                        with self.subTest(command=line):
-                            self.assertEqual(lab.main(argv), 2 if argv[0] == "gate" else 0)
+                for command in commands:
+                    argv = [
+                        str(output / arg) if arg.startswith("results/") else arg
+                        for arg in command
+                    ]
+                    with self.subTest(command=command):
+                        self.assertEqual(lab.main(argv), 2 if argv[0] == "gate" else 0)
             result = read_json(output / "results" / "demo-candidate" / "gate.json")
             self.assertEqual(result["status"], "BLOCK")
             self.assertEqual(result["business_rates"]["holdout"], 0.75)

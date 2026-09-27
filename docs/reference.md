@@ -24,6 +24,37 @@
 
 `run`이 0으로 끝나도 응답이 업무 검사에서 실패할 수 있습니다. “실험을 수집했다”와 “답이 맞다”를 구분합니다.
 
+<a id="data-contract"></a>
+## 데이터 한 줄 읽기
+
+`data/dev.jsonl`과 추가 사례 예제는 **한 줄에 JSON 객체 하나**입니다. 필드 이름을 추가하거나 지우지 않고, 새 질문에 맞는 값을 넣습니다.
+
+| 필드 | 뜻과 예 |
+|---|---|
+| `id` | 사례 식별자. 새 사례는 `N02`처럼 영문자로 시작 |
+| `category` | 확인하려는 유형. 예: `"사전 승인"` |
+| `critical` | 반드시 지켜야 하는 중요 사례인지 `true`/`false`로 표시 |
+| `query` | 직원이 묻는 질문 |
+| `expected_decision` | 기대 결정. `allowed`, `needs_approval`, `not_allowed`, `unknown`, `needs_info` 중 하나 |
+| `expected_limit_krw` | 기대 숙박 한도. 정수 `200000` 또는 결정할 수 없으면 `null` |
+| `expected_citations` | 필요한 공식 문서 ID의 배열. 예: `["TRAVEL-CURRENT"]` |
+| `ground_truth` | 사람이 정한 기대 행동과 그 이유. 답변 모델이나 이번 두 Judge에는 전달하지 않음 |
+
+숫자에 쉼표나 따옴표를 넣지 않습니다. 공식 문서 ID는 `TRAVEL-CURRENT`, `TRAVEL-PREVIOUS`, `SCOPE`이며, 질문에 필요한 문서만 선택합니다. 정답 설명도 사람이 틀리게 작성할 수 있으므로 실행 전에 규정과 대조합니다.
+
+예를 들어 D02에 기대하는 답변 형태는 다음과 같습니다. 아래는 설명용 예이며 실제 모델 응답이 아닙니다.
+
+```json
+{
+  "decision": "needs_approval",
+  "limit_krw": 200000,
+  "citations": ["TRAVEL-CURRENT"],
+  "answer": "220000원은 한도 200000원을 초과하므로 재무팀 사전 승인이 필요합니다."
+}
+```
+
+질문 파일의 `expected_*`와 모델이 생성한 답변 필드를 혼동하지 않습니다.
+
 ## 무엇을 평가하고 무엇은 평가하지 않는가
 
 | 신호 | 정확한 의미 |
@@ -59,6 +90,28 @@
 **작은 표본:** dev 8개, holdout 4개는 학습을 위한 최소 사례입니다. 운영 품질 보증이나 통계적 유의성의 근거가 아닙니다. LLM 결과는 실행마다 달라질 수 있으며, 이 도구는 좋은 결과가 나올 때까지 자동 반복하지 않습니다.
 
 **Judge 척도:** 공식 RAG 평가기의 기본 합격선은 3일 수 있습니다. 이 실습은 서버 평가기 정의를 임의 변경하지 않고 **원점수 4 이상**을 로컬 합격선으로 사용합니다. 포털 Label/Pass와 로컬 통과율이 다른 경우 먼저 threshold를 확인합니다.
+
+<a id="self-check"></a>
+## 다섯 질문으로 스스로 확인하기
+
+먼저 자신의 말로 답한 뒤 해설과 대조합니다. 실제 결과의 사례 하나를 들어 설명하면 됩니다.
+
+1. 왜 유창한 답변만 보면 안 되나요?
+2. 코드·Judge·사람은 각각 무엇을 보나요?
+3. 전후 비교에서 무엇을 고정하나요?
+4. 평균이 올라도 왜 보류할 수 있나요?
+5. Holdout을 보고 수정했다면 무엇이 필요한가요?
+
+<details>
+<summary>답한 뒤 해설 보기</summary>
+
+1. 자연스러운 문장도 잘못된 한도나 없는 승인을 안내할 수 있습니다.
+2. 코드는 명시적 필드, Judge는 의미, 사람은 규정과 업무 위험을 봅니다. 어느 하나의 통과가 나머지를 보장하지 않습니다.
+3. 질문·정답·규정·모델·생성 설정·Judge·합격선. 이번 실습에서는 프롬프트만 바꿉니다.
+4. 중요한 한 건의 새 실패를 다른 사례의 개선으로 상쇄할 수 없기 때문입니다.
+5. 새로운 독립 holdout입니다. 기존 질문은 이제 개발에 사용된 데이터입니다.
+
+</details>
 
 ## Gate가 요구하는 것
 
@@ -103,7 +156,21 @@ LIVE의 `READY_FOR_HUMAN_REVIEW`는 **사람이 다음 출시 검토를 할 수 
 
 원본 `data/dev.jsonl`은 **질문과 기대 행동**이며, 아직 모델이 작성하지 않은 `response`는 없습니다. 따라서 원본 질문 파일을 포털에 올리는 일을 `judge`와 동일한 평가로 생각하지 않습니다. 이 도구는 `run.json`의 **실제 저장 응답**을 매핑합니다. `expected_*`와 `ground_truth`는 이 두 Judge의 입력에 넣지 않습니다.
 
-포털의 **Evaluation → 실행 → 개별 행**에서 같은 질문·응답·점수 이유를 확인합니다. 같은 `eval_id`의 baseline/candidate 실행을 선택해 **Compare**로 비교할 수 있습니다. 화면 배치가 다르거나 비교 기능이 안 보이면 실행별 상세 결과와 로컬 `comparison.md`를 대조합니다. 포털의 Target·생성 토큰·추정 비용은 평가 방식에 따라 표시되지 않을 수 있습니다.
+<a id="portal-results"></a>
+## 포털 결과를 찾거나 비교할 때
+
+먼저 `judge` 출력의 **Foundry 보고서 URL**을 엽니다. URL이 없거나 다른 화면이 열리면 다음을 확인합니다.
+
+1. 같은 계정·테넌트·프로젝트의 **Evaluation / 평가** 메뉴를 엽니다.
+2. 해당 결과 폴더의 `foundry-job.json`에서 `eval_id`와 `run_id`를 찾아 실행을 대조합니다. `eval_id`는 입력 형식·평가기 정의, `run_id`는 이번 답변 묶음의 평가 실행입니다.
+3. 상태가 **Completed**인지 보고 실행 이름을 엽니다. 질문·응답·Groundedness·Relevance·점수 이유를 확인합니다. 사례 ID가 안 보이면 질문 문장으로 찾습니다. 행 순서가 같다고 가정하지 않습니다.
+4. `inspect`와 `report.md`에서 같은 답변·원점수·이유를 대조합니다. 결과를 찾으려고 새 평가를 제출하지 않습니다.
+
+`--like`로 실행한 baseline/candidate는 **`eval_id`가 같고 `run_id`는 다릅니다.** 두 실행을 선택해 **Compare**로 비교합니다. 기능이 안 보이면 각 실행의 같은 질문과 로컬 `comparison.md`를 나란히 봅니다.
+
+`Inconclusive`는 표본이 작거나 차이를 확정할 근거가 부족하다는 뜻입니다. 색상만으로 채택하지 않습니다. 비교 화면은 저장되지 않을 수 있지만 원격 ID와 점수는 로컬 결과에 남습니다.
+
+이 실습은 이미 생성한 응답을 채점하므로 포털의 Target·생성 지연·비용이 비어 있을 수 있습니다. 생성 기록은 로컬 `run.json`, 실제 청구는 Azure Cost Management를 확인합니다.
 
 <a id="troubleshooting"></a>
 ## 문제 해결
@@ -230,7 +297,7 @@ python lab.py doctor
 | 실제 평가 | 같은 프로젝트 OpenAI client의 `evals.create`, `evals.runs.create`, `retrieve`, `output_items.list` |
 | 평가기 조회 | SDK 2.7의 `project.beta.evaluators.list_versions`. 조회한 버전 하나를 고정해 재사용 |
 
-직접 의존성만 고정한 `requirements.txt`입니다. 전이 의존성과 패키지 파일 해시까지 잠근 전체 lockfile은 아닙니다. 원본 저장소의 Agent Framework/SDK 2.3 조합을 이 가이드에 섞지 않습니다.
+직접 의존성만 고정한 `requirements.txt`입니다. 전이 의존성과 패키지 파일 해시까지 잠근 전체 lockfile은 아닙니다.
 
 **로컬에서 확인하는 것:** 작성된 예제의 전체 실습 경로, 업무 검사·Gate의 조건, 누락/변조/회귀 차단, 문서 명령, 설치된 SDK로 만든 요청·응답의 모양. 준비·메인 문서의 LIVE 명령도 메모리 내 HTTP 응답으로 연결해 실행하며, 실제 Azure 응답이나 Judge 품질을 검증하는 것은 아닙니다.
 
@@ -244,13 +311,10 @@ python -m unittest discover -s tests -v
 
 SDK가 설치되어 있으면 SDK 계약 검사도 실행합니다. 없으면 해당 검사만 건너뛰며 DEMO 검사는 계속 수행됩니다.
 
-## 원본과 공식 출처
-
-원본은 핵심 설계의 참고 자료입니다. 원본의 긴 절차·코드·데이터를 그대로 복제하지 않고, 한 모델의 고정-context 응답 평가를 중심으로 새로 구성했습니다.
+## 공식 출처
 
 | 출처 | 확인한 내용 |
 |---|---|
-| [참고 원본 — 검토 revision](https://github.com/junwoojeong100/foundry-evaluation/tree/e1bd7e442af4878133b28da35d5f7fb3b3e4c65f) | 업무 검사 + Foundry Judge, dev/holdout 분리, 사람 검토, 회귀와 출시 판단 |
 | [Foundry 프로젝트 만들기](https://learn.microsoft.com/azure/foundry/how-to/create-projects) | New Foundry 포털의 프로젝트 생성과 고급 옵션 |
 | [Foundry 역할과 범위](https://learn.microsoft.com/azure/foundry/concepts/rbac-foundry) | Owner와 데이터 작업의 차이, 본인·프로젝트 관리 ID의 Foundry User |
 | [Foundry 모델 배포](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/deploy-foundry-models) | Discover → Models, 배포 이름, Global Standard와 쿼터 |

@@ -6,6 +6,8 @@
 
 이 문서는 단체 진행을 위한 보조 자료입니다. **참가자는 강사 없이도 환경 만들기 → 실습 → 리소스 정리를 완료할 수 있어야 합니다.** 시간표 대신 완료 조건으로 진도를 확인합니다.
 
+**진행 원칙:** 기본 실습은 LIVE 한 경로로 진행합니다. 회귀 함정 DEMO는 선택 연습이며 중간에 끼워 넣지 않습니다. 점수·실행 ID를 반복 전사시키지 말고, 자동 생성된 보고서를 보며 사례와 판단 이유만 기록하게 합니다.
+
 ## 수업 전 체크리스트
 
 - [ ] 참가자가 비공개 저장소를 받을 수 있는지 확인. GitHub 권한이 없다면 승인된 경로로 ZIP 제공.
@@ -28,21 +30,7 @@
 
 저장소의 로컬 검사와 SDK 요청 모양 검사는 **실제 Azure 실행 완료와 다릅니다.** 아래는 강사가 전체 흐름을 미리 확인하는 선택적 리허설입니다. 참가자의 필수 준비는 [한 건의 생성·평가](setup.md#smoke)까지이며, 강사의 리허설 완료를 기다릴 필요는 없습니다. 모델 호출과 평가 비용이 발생합니다.
 
-편집기에서 `prompts/v2.txt`를 `prompts/my-v2.txt`로 다른 이름 저장한 뒤 진행합니다.
-
-```bash
-python lab.py doctor --live
-python lab.py run --mode live --prompt v1 --out results/rehearsal-baseline
-python lab.py judge results/rehearsal-baseline
-python lab.py run --mode live --prompt prompts/my-v2.txt --out results/rehearsal-candidate
-python lab.py judge results/rehearsal-candidate --like results/rehearsal-baseline
-python lab.py compare results/rehearsal-baseline results/rehearsal-candidate
-python lab.py review results/rehearsal-candidate D06
-python lab.py run --mode live --frozen results/rehearsal-candidate --split holdout --out results/rehearsal-holdout
-python lab.py judge results/rehearsal-holdout --like results/rehearsal-baseline
-python lab.py review results/rehearsal-holdout H04
-python lab.py gate results/rehearsal-baseline results/rehearsal-candidate results/rehearsal-holdout
-```
+별도 명령 목록 대신 **[참가자 가이드](../README.md)의 순서 그대로** 실행합니다. 기존 결과가 없는 새 작업 폴더에서 코드와 본인 설정으로 진행하면 참가자 결과를 덮어쓰거나 완료된 캐시를 새 실행으로 착각하지 않습니다. 기존 `results/`를 지우지 않습니다.
 
 **리허설 완료 기준**
 
@@ -66,15 +54,17 @@ python lab.py gate results/rehearsal-baseline results/rehearsal-candidate result
 |---|---|---|
 | 준비 | 구독 확인 → 자원 생성 → 두 대상의 권한 → 모델 → 설정 → 한 건 평가 | 각자 실제 한 건의 생성·평가 완료 |
 | 0 | 규정을 보여 주기 전에 A/B 선호 이유를 묻기 | 유창함과 업무 정확성을 구분 |
-| 1 | 8개 사례가 각각 왜 필요한지 설명 | 평가 계약과 P0 의미 설명 |
-| 2 | 수집 후 터미널 숫자보다 `report.md`의 실패 원문 보기 | 위험한 사례 하나와 문서 근거 제시 |
-| 3 | Judge 실행 전에 D01·D04·D06 사람 판정, 이후 포털과 로컬의 같은 행 대조 | 코드/Judge/사람의 역할 차이 설명 |
+| 1 | dev 8개를 읽고 D02의 기대 행동·위험을 설명 | 평가 계약과 P0 의미 설명 |
+| 2 | 답변 수집과 코드 검사를 확인 | baseline 8개와 보고서 확인 |
+| 3 | Judge 실행 전에 D04 사람 판정, 이후 포털과 로컬의 같은 행 대조 | 코드/Judge/사람의 역할 차이 설명 |
 | 4 | 프롬프트를 고치기 전에 한 문장 가설 작성, 같은 두 실행을 Foundry에서도 비교 | 사례별 전후 비교와 사람 검토 저장 |
-| 5 | 회귀 DEMO → 고정한 후보의 holdout → Gate | 평균 상승과 중요한 회귀를 동시에 설명 |
+| 5 | 고정한 후보의 holdout → 사람 검토 → Gate | 새 질문의 관찰과 채택/보류 근거 설명 |
 | 6 | 새로운 질문 하나를 설계하고 실제 결과를 네 문장으로 정리 | 내 업무용 평가 질문과 채택/보류 근거 |
 | 정리 | 결과 보관 → 삭제 범위 확인 → 삭제 → 완료 확인 | 본인 리소스 삭제 또는 유지 결정 기록 |
 
 시간 제한이 없다고 기능을 계속 늘리지 않습니다. **한 프로젝트·한 모델·두 품질 지표·한 개선 루프**를 유지합니다. 클라우드 대기 중에는 워크시트를 작성하고, 추가 지표와 인프라는 기본 실습이 끝난 뒤 필요할 때만 검토합니다.
+
+핵심 판정은 D04 하나로 먼저 익힙니다. 더 연습하고 싶은 참가자에게만 D01·D06의 독립적인 사람 판정이나 [회귀 함정](offline.md#regression-trap)을 추가합니다. 한 사례의 일치만으로 Judge가 정확하다고 설명하지 않습니다.
 
 ## 사례별 해설 — 참가자는 먼저 직접 판단
 
@@ -97,7 +87,7 @@ python lab.py gate results/rehearsal-baseline results/rehearsal-candidate result
 
 | 참가자의 말 | 짧은 답 |
 |---|---|
-| “V1이 전부 맞는데 실습이 실패했나요?” | 아니요. 현재 8개 질문에서는 오류를 못 찾은 겁니다. 결과를 유지하고 회귀 DEMO와 holdout을 진행하세요. |
+| “V1이 전부 맞는데 실습이 실패했나요?” | 아니요. 현재 8개 질문에서는 오류를 못 찾은 겁니다. 결과를 유지하고 변경 후 비교와 holdout을 진행하세요. |
 | “V2 점수가 낮으니 한 번 더 돌릴까요?” | 실패 원인을 먼저 보세요. 좋은 결과가 나올 때까지 돌리면 비교가 왜곡됩니다. 반복 실험은 횟수와 집계 방법을 미리 정합니다. |
 | “점수 4는 정확도 80%인가요?” | 아니요. 1–5 척도의 판정입니다. 4 이상인 사례가 전체의 몇 개인지가 별도의 통과율입니다. |
 | “모른다고 하니 Relevance가 낮아야 하나요?” | 규정에 없는 내용을 추측하지 않고 확인 경로를 안내하는 것이 질문에 적절한 답일 수 있습니다. |
@@ -118,4 +108,4 @@ python lab.py gate results/rehearsal-baseline results/rehearsal-candidate result
 
 실제 업무 적용은 **도메인 전문가가 검토한 대표 데이터 확대 → 고위험 유형 강화 → 여러 번의 고정 반복과 변동성 관찰 → Judge 교정 → CI의 회귀 검사 → 운영 실패를 평가 데이터로 환류** 순서로 확장합니다.
 
-검색 품질은 검색 결과와 정답 관련도 라벨로, 에이전트 도구 사용은 실제 호출 기록으로 평가해야 합니다. 이 가이드의 “고정 문서 + 답변” 결과를 그 증거로 대신하지 않습니다. 연속 평가·tracing·Hosted Agent 배포가 필요해졌을 때 [참고 원본](https://github.com/junwoojeong100/foundry-evaluation)의 확장 경로를 검토합니다.
+검색 품질은 검색 결과와 정답 관련도 라벨로, 에이전트 도구 사용은 실제 호출 기록으로 평가해야 합니다. 이 가이드의 “고정 문서 + 답변” 결과를 그 증거로 대신하지 않습니다.
