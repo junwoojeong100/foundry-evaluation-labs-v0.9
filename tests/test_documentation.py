@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import io
 import json
-import os
 import re
 import shlex
 import subprocess
@@ -13,6 +12,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 from urllib.parse import unquote, urlsplit
+from xml.etree import ElementTree
 
 import lab
 from evaluation import ROOT, read_cases, read_json
@@ -79,6 +79,47 @@ class DocumentationTests(unittest.TestCase):
                 content = document.read_text(encoding="utf-8")
                 self.assertNotIn("3시간", content)
                 self.assertNotIn("180분", content)
+
+    def test_live_demo_and_worksheet_share_steps_with_judgment_before_setup(self):
+        worksheet = (ROOT / "WORKSHEET.md").read_text(encoding="utf-8")
+        steps = [
+            str(step)
+            for first, last in re.findall(r"^## (\d+)(?:–(\d+))?\.", worksheet, re.MULTILINE)
+            for step in range(int(first), int(last or first) + 1)
+        ]
+        self.assertEqual(steps, [str(i) for i in range(7)])
+        for document in (ROOT / "README.md", ROOT / "docs" / "offline.md"):
+            text = document.read_text(encoding="utf-8")
+            with self.subTest(document=document.name):
+                self.assertEqual(re.findall(r"^## (\d+)\.", text, re.MULTILINE), steps)
+                self.assertEqual(re.findall(r'<a id="lab-(\d+)"></a>', text), steps)
+                warmup_start = text.index('<a id="lab-0"></a>')
+                setup_start = text.index('<a id="prepare"></a>')
+                criteria_start = text.index('<a id="lab-1"></a>')
+                self.assertLess(warmup_start, setup_start)
+                self.assertLess(setup_start, criteria_start)
+                self.assertFalse(SHELL_BLOCKS.search(text[warmup_start:setup_start]))
+                self.assertIn("A/B", text[setup_start:criteria_start])
+                self.assertIn("실습 1로 이어갑니다", text[setup_start:criteria_start])
+        setup = (ROOT / "docs" / "setup.md").read_text(encoding="utf-8")
+        existing = setup.split('<a id="existing-environment"></a>')[1].split('<a id="cost"></a>')[0]
+        self.assertIn("5. [실습 1](../README.md#lab-1)", existing)
+
+    def test_permission_illustration_is_labeled_and_linked(self):
+        text = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertRegex(text, r"!\[[^\]]+\]\(docs/images/foundry-permissions\.svg\)")
+        self.assertIn("실제 포털 캡처가 아닙니다", text)
+        svg = ElementTree.parse(ROOT / "docs" / "images" / "foundry-permissions.svg").getroot()
+        namespace = "{http://www.w3.org/2000/svg}"
+        self.assertEqual(svg.tag, f"{namespace}svg")
+        self.assertEqual(svg.get("role"), "img")
+        self.assertEqual(svg.get("aria-labelledby"), "title description")
+        self.assertIsNotNone(svg.find(f"{namespace}title[@id='title']"))
+        self.assertIsNotNone(svg.find(f"{namespace}desc[@id='description']"))
+        labels = " ".join(svg.itertext())
+        for label in ("Object (principal) ID", "Access control (IAM)", "Foundry User", "/projects/eval-workshop"):
+            self.assertIn(label, labels)
+        self.assertEqual(labels.count("PROJECT-PRINCIPAL-ID"), 2)
 
     def test_documented_json_examples_are_valid_json(self):
         for document in DOCUMENTS:
@@ -148,47 +189,49 @@ class DocumentationTests(unittest.TestCase):
         for document in (ROOT / "README.md", ROOT / "docs" / "offline.md"):
             text = document.read_text(encoding="utf-8")
             examples = re.findall(r"```jsonl\n(.*?)```", text, re.DOTALL)
-            commands = [
-                shlex.split(line)
-                for block in SHELL_BLOCKS.findall(text)
-                for line in block.splitlines()
-                if line.startswith("python -c ")
-            ]
+            commands = [argv for argv in lab_commands(document) if argv[0] == "validate-data"]
             with self.subTest(document=document.name), tempfile.TemporaryDirectory() as directory:
                 self.assertEqual(len(examples), 1)
                 self.assertEqual(len(examples[0].splitlines()), 1)
-                self.assertEqual(len(commands), 1)
+                self.assertEqual(commands, [["validate-data", "data/my-case.jsonl"]])
+                self.assertNotIn("python -c ", text)
+                self.assertIn("`170000` → `180000`", text)
                 workspace = Path(directory)
                 data_file = workspace / "data" / "my-case.jsonl"
                 data_file.parent.mkdir()
-                data_file.write_text(examples[0], encoding="utf-8")
-                cases = read_cases(data_file)
-                self.assertEqual(len(cases), 1)
-                self.assertEqual(cases[0]["id"], "N02")
-                self.assertEqual(cases[0]["expected_decision"], "needs_approval")
-                self.assertEqual(cases[0]["expected_limit_krw"], 160000)
-                self.assertEqual(cases[0]["expected_citations"], ["TRAVEL-PREVIOUS"])
-                for split in ("dev", "holdout"):
-                    for existing in read_cases(ROOT / "data" / f"{split}.jsonl"):
-                        self.assertNotEqual(cases[0]["id"], existing["id"])
-                        self.assertNotEqual(cases[0]["query"], existing["query"])
-                for valid in (True, False):
-                    if not valid:
-                        cases[0]["critical"] = "true"
-                        data_file.write_text(json.dumps(cases[0]) + "\n", encoding="utf-8")
-                    outcome = subprocess.run(
-                        [sys.executable, *commands[0][1:]],
-                        cwd=workspace,
-                        env={**os.environ, "PYTHONPATH": str(ROOT)},
-                        capture_output=True, text=True, timeout=15,
-                    )
-                    if valid:
-                        self.assertEqual(outcome.returncode, 0, outcome.stderr)
-                        self.assertEqual(outcome.stdout.strip(), "DATA OK: 1 case(s)")
-                    else:
-                        self.assertNotEqual(outcome.returncode, 0)
-                        self.assertNotIn("DATA OK", outcome.stdout)
-                        self.assertIn("critical은 true 또는 false", outcome.stderr)
+                for amount in ("170000", "180000"):
+                    with self.subTest(amount=amount):
+                        data_file.write_text(examples[0].replace("170000", amount), encoding="utf-8")
+                        cases = read_cases(data_file)
+                        self.assertEqual(len(cases), 1)
+                        self.assertEqual(cases[0]["id"], "N02")
+                        self.assertEqual(cases[0]["expected_decision"], "needs_approval")
+                        self.assertEqual(cases[0]["expected_limit_krw"], 160000)
+                        self.assertEqual(cases[0]["expected_citations"], ["TRAVEL-PREVIOUS"])
+                        self.assertIn(f"1박 {amount}원", cases[0]["query"])
+                        self.assertIn(f"{amount}원은 한도 초과", cases[0]["ground_truth"])
+                        for split in ("dev", "holdout"):
+                            for existing in read_cases(ROOT / "data" / f"{split}.jsonl"):
+                                self.assertNotEqual(cases[0]["id"], existing["id"])
+                                self.assertNotEqual(cases[0]["query"], existing["query"])
+                        for valid in (True, False):
+                            if not valid:
+                                cases[0]["critical"] = "true"
+                                data_file.write_text(json.dumps(cases[0]) + "\n", encoding="utf-8")
+                            outcome = subprocess.run(
+                                [sys.executable, str(ROOT / "lab.py"), *commands[0]],
+                                cwd=workspace,
+                                capture_output=True, text=True, timeout=15,
+                            )
+                            if valid:
+                                self.assertEqual(outcome.returncode, 0, outcome.stderr)
+                                self.assertEqual(outcome.stdout.strip(), "DATA OK: 1 case(s)")
+                            else:
+                                self.assertEqual(outcome.returncode, 1)
+                                self.assertNotIn("DATA OK", outcome.stdout)
+                                self.assertTrue(outcome.stderr.startswith("ERROR:"))
+                                self.assertIn("critical은 true 또는 false", outcome.stderr)
+                                self.assertNotIn("Traceback", outcome.stderr)
 
     def test_human_judgments_precede_baseline_judge_scores(self):
         for document, folder in (
@@ -202,9 +245,15 @@ class DocumentationTests(unittest.TestCase):
                 self.assertIn(["inspect", folder, "D04"], commands[judge_index + 1:])
 
     def test_offline_guide_commands_execute_as_written_without_network(self):
-        commands = lab_commands(ROOT / "docs" / "offline.md")
+        document = ROOT / "docs" / "offline.md"
+        commands = lab_commands(document)
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)
+            case_file = output / "data" / "my-case.jsonl"
+            case_file.parent.mkdir()
+            example = re.findall(r"```jsonl\n(.*?)```", document.read_text(encoding="utf-8"), re.DOTALL)[0]
+            case_file.write_text(example.replace("170000", "180000"), encoding="utf-8")
+            input_paths = {"data/my-case.jsonl": str(case_file)}
             with (
                 patch("socket.create_connection", side_effect=AssertionError("Network forbidden")),
                 patch("foundry_client.clients", side_effect=AssertionError("Azure forbidden")),
@@ -217,7 +266,7 @@ class DocumentationTests(unittest.TestCase):
             ):
                 for command in commands:
                     argv = [
-                        str(output / arg) if arg.startswith("results/") else arg
+                        str(output / arg) if arg.startswith("results/") else input_paths.get(arg, arg)
                         for arg in command
                     ]
                     with self.subTest(command=command):

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="610" viewBox="0 0 1100 610" role="img" aria-labelledby="title description">
+  <title id="title">Foundry 권한 설정: 프로젝트에서 ID 확인, 상위 리소스에서 역할 확인</title>
+  <desc id="description">실제 포털 캡처가 아닌 설명용 그림입니다. 프로젝트 eval-workshop의 Identity 화면에서 Object principal ID를 확인하고, 상위 Foundry 리소스 feval-example의 IAM에서 같은 ID를 가진 프로젝트 관리 ID와 본인 계정에 각각 Foundry User가 있는지 대조합니다. 모든 이름과 ID는 가상 값입니다.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#1655a3"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="610" rx="16" fill="#f4f7fb"/>
+  <g font-family="system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" fill="#172b45">
+    <text x="28" y="40" font-size="24" font-weight="700">프로젝트에서 ID를 찾고, 상위 리소스에서 권한을 확인합니다</text>
+    <text x="28" y="69" font-size="16" fill="#4d6077">설명용 그림 · 실제 포털 캡처 아님 · 아래 가상 값은 복사하지 않습니다</text>
+
+    <rect x="28" y="95" width="456" height="348" rx="12" fill="#ffffff" stroke="#a5b5c9"/>
+    <rect x="28" y="95" width="456" height="55" rx="12" fill="#e6effb"/>
+    <text x="48" y="131" font-size="20" font-weight="700">1. 프로젝트: eval-workshop</text>
+    <text x="48" y="181" font-size="16">열 곳: 프로젝트의 Azure 리소스</text>
+    <text x="48" y="207" font-size="16" font-weight="600">Identity → System assigned</text>
+    <text x="48" y="241" font-size="15" fill="#4d6077">Object (principal) ID</text>
+    <rect x="48" y="253" width="416" height="48" rx="6" fill="#e6effb" stroke="#1655a3" stroke-width="2"/>
+    <text x="62" y="284" font-size="19" font-weight="700" fill="#1655a3">PROJECT-PRINCIPAL-ID</text>
+    <text x="48" y="327" font-size="16">본인 화면의 실제 ID를 실습지에 기록</text>
+    <text x="48" y="367" font-size="15" fill="#4d6077">프로젝트 리소스 ID의 끝부분</text>
+    <text x="48" y="393" font-size="14" font-family="monospace">.../accounts/feval-example</text>
+    <text x="48" y="416" font-size="14" font-family="monospace" font-weight="700">   /projects/eval-workshop</text>
+
+    <rect x="530" y="95" width="542" height="348" rx="12" fill="#ffffff" stroke="#a5b5c9"/>
+    <rect x="530" y="95" width="542" height="55" rx="12" fill="#e6effb"/>
+    <text x="550" y="131" font-size="20" font-weight="700">2. 상위 Foundry 리소스: feval-example</text>
+    <text x="550" y="181" font-size="16">열 곳: Access control (IAM)</text>
+    <text x="550" y="207" font-size="16" font-weight="600">Role assignments에서 두 대상을 각각 확인</text>
+    <rect x="550" y="223" width="502" height="72" rx="6" fill="#f4f7fb"/>
+    <text x="566" y="249" font-size="16" font-weight="600">본인 계정: learner@example.com</text>
+    <text x="566" y="277" font-size="16">역할: Foundry User</text>
+    <rect x="550" y="307" width="502" height="116" rx="6" fill="#e6effb" stroke="#1655a3" stroke-width="2"/>
+    <text x="566" y="333" font-size="16" font-weight="600">프로젝트 관리 ID: eval-workshop</text>
+    <text x="566" y="361" font-size="16">대상 상세의 Object ID</text>
+    <text x="566" y="388" font-size="19" font-weight="700" fill="#1655a3">PROJECT-PRINCIPAL-ID</text>
+    <text x="566" y="414" font-size="16">역할: Foundry User</text>
+
+    <path d="M 464 277 L 507 277 L 507 383 L 550 383" fill="none" stroke="#1655a3" stroke-width="3" marker-end="url(#arrow)"/>
+
+    <rect x="28" y="463" width="1044" height="120" rx="12" fill="#fff5df" stroke="#b77a10"/>
+    <text x="48" y="493" font-size="18" font-weight="700">완료 전, 대상과 범위를 따로 대조합니다</text>
+    <text x="48" y="522" font-size="17">대상: 이름만 보지 말고 프로젝트의 Object ID가 일치하는지 확인</text>
+    <text x="48" y="550" font-size="17">범위: 두 역할 모두 .../accounts/feval-example · 구독 전체나 /projects/...가 아님</text>
+    <text x="48" y="574" font-size="15" fill="#624b22">이미 할당된 역할은 추가하지 않습니다. Foundry User는 이전 이름 Azure AI User로 보일 수도 있습니다.</text>
+  </g>
+</svg>

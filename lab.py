@@ -319,6 +319,12 @@ def gate_command(args) -> int:
     return 2 if result["status"] == "BLOCK" else 0
 
 
+def validate_data_command(args) -> int:
+    cases = read_cases(args.data)
+    print(f"DATA OK: {len(cases)} case(s)")
+    return 0
+
+
 def doctor_command(args) -> int:
     if sys.version_info < (3, 10):
         raise ValueError("Python 3.10 이상이 필요합니다.")
@@ -354,6 +360,12 @@ def parser() -> argparse.ArgumentParser:
     doctor.add_argument("--live", action="store_true")
     doctor.add_argument("--config", type=Path, default=Path("config.json"))
     doctor.set_defaults(handler=doctor_command)
+    validate_data = sub.add_parser(
+        "validate-data", help="질문 JSONL의 문법/필드/형식 검사; 모델 호출이나 파일 변경 없음",
+        description="질문 JSONL의 문법/필드/형식만 검사합니다. 정답이 규정과 맞는지는 직접 확인하세요.",
+    )
+    validate_data.add_argument("data", type=Path, help="검사할 질문 JSONL 파일")
+    validate_data.set_defaults(handler=validate_data_command)
     run = sub.add_parser("run", help="답변 수집 + 무료 업무 규칙 검사")
     run.add_argument("--mode", choices=("demo", "live"), required=True)
     source = run.add_mutually_exclusive_group(required=True)

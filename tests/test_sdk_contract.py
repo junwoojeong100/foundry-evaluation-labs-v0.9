@@ -330,7 +330,7 @@ class SDKContractTests(unittest.TestCase):
         case_file = self.root / "my-case.jsonl"
         examples = re.findall(r"```jsonl\n(.*?)```", text, re.DOTALL)
         self.assertEqual(len(examples), 1)
-        case_file.write_text(examples[0], encoding="utf-8")
+        case_file.write_text(examples[0].replace("170000", "180000"), encoding="utf-8")
         self.assertEqual(read_cases(case_file)[0]["id"], "N02")
         input_paths = {
             "prompts/my-v2.txt": str(prompt_file),

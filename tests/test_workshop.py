@@ -229,6 +229,48 @@ class WorkshopTests(unittest.TestCase):
             with self.subTest(cases=cases[:1]), self.assertRaises(ValueError):
                 validate_cases(cases)
 
+    def test_validate_data_is_offline_read_only_and_reports_case_count(self):
+        path = self.root / "new cases.jsonl"
+        with (
+            patch("socket.create_connection", side_effect=AssertionError("Network forbidden")),
+            patch("foundry_client.clients", side_effect=AssertionError("Azure forbidden")),
+        ):
+            for name, count in (("my-case.example.jsonl", 1), ("dev.jsonl", 8)):
+                with self.subTest(name=name):
+                    original = (ROOT / "data" / name).read_bytes()
+                    path.write_bytes(original)
+                    self.assertEqual(self.command("validate-data", path), f"DATA OK: {count} case(s)\n")
+                    self.assertEqual(path.read_bytes(), original)
+                    self.assertEqual(list(self.root.iterdir()), [path])
+
+    def test_validate_data_reports_invalid_or_missing_input_without_success(self):
+        path = self.root / "invalid.jsonl"
+        original = (ROOT / "data" / "my-case.example.jsonl").read_text(encoding="utf-8").strip() + "\n"
+        invalid_case = json.loads(original)
+        invalid_case["critical"] = "true"
+        for text, diagnostic in (
+            ("", "비어 있지 않은 JSONL"),
+            ("{\n", f"{path}:1: JSON 문법 오류"),
+            (original + "\n", f"{path}:2: JSONL에 빈 줄"),
+            (original + original, "중복 사례 ID 또는 질문"),
+            (json.dumps(invalid_case) + "\n", "critical은 true 또는 false"),
+        ):
+            with self.subTest(diagnostic=diagnostic):
+                path.write_text(text, encoding="utf-8")
+                output = self.command("validate-data", path, expected=1)
+                self.assertTrue(output.startswith("ERROR:"))
+                self.assertIn(diagnostic, output)
+                self.assertNotIn("DATA OK", output)
+                self.assertNotIn("Traceback", output)
+                self.assertEqual(path.read_text(encoding="utf-8"), text)
+        missing = self.root / "missing.jsonl"
+        output = self.command("validate-data", missing, expected=1)
+        self.assertTrue(output.startswith("ERROR:"))
+        self.assertIn(str(missing), output)
+        self.assertNotIn("DATA OK", output)
+        self.assertFalse(missing.exists())
+        self.assertEqual(list(self.root.iterdir()), [path])
+
     def test_response_schema_is_strict_and_citations_are_exact(self):
         case = read_cases(ROOT / "data" / "dev.jsonl")[0]
         correct = {
