@@ -1,0 +1,7 @@
+{
+  "search_endpoint": "https://YOUR-SEARCH.search.windows.net",
+  "index_name": "travel-rag-index",
+  "knowledge_source": "travel-policy-ks",
+  "knowledge_base": "travel-policy-kb",
+  "top_k": 3
+}

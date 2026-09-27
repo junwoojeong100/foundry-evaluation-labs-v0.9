@@ -16,6 +16,8 @@
 
 **요약 영상:** [국문·영문 녹화와 자막 안내](docs/media/README.md). 실제 포털과 CLI 화면을 편집한 영상이며, 전체 실습의 완료 기준을 대신하지 않습니다.
 
+**Optional RAG 실습:** [Azure AI Search + Foundry IQ와 Evaluation](docs/optional-rag.md)에서는 실제 검색 인덱스·Knowledge Base를 만들고 검색과 답변을 따로 평가합니다. 아래 고정 규정 기반 기본 실습과 분리된 선택 경로입니다.
+
 ### 시작할 경로 고르기
 
 | 내 상황 | 시작 위치 |

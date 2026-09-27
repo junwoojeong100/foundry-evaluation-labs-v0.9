@@ -2,6 +2,8 @@
 
 [English guide](../../README.md) · [국문 가이드](../../README.ko.md)
 
+**Optional extension:** [Azure AI Search + Foundry IQ RAG recordings](optional-rag/README.md) are additional videos; the core recordings below remain unchanged.
+
 **Two localized edits of the same ten real screen recordings.** Each summary is **3 minutes 50 seconds**, H.264 MP4 at **1920 × 1080 / 24 fps**. Both are **silent, with burned-in chapter titles and captions**; separate SRT subtitle files are included. There is no narration or music.
 
 | Language | Video | Subtitles |

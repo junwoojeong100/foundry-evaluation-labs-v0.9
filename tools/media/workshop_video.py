@@ -10,6 +10,8 @@ import os
 import re
 import subprocess
 import time
+from datetime import datetime
+from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -108,8 +110,8 @@ def save(path: Path, value) -> None:
     temporary.replace(path)
 
 
-def scene_for(name: str) -> dict:
-    return next(scene for scene in SCENES if scene["id"] == name)
+def scene_for(name: str, scenes=SCENES) -> dict:
+    return next(scene for scene in scenes if scene["id"] == name)
 
 
 def project_context() -> dict:
@@ -155,43 +157,47 @@ def redact(text: str, values: list[str]) -> str:
     return re.sub(r"\b[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}\b", "[ID redacted]", text)
 
 
-def prepare(name: str) -> None:
-    scene = scene_for(name)
-    context = project_context()
-    server = load(WORK / "server.json")
+def prepare(name: str, *, scenes=SCENES, private=PRIVATE, context=None) -> None:
+    scene = scene_for(name, scenes)
+    context = project_context() if context is None else context
+    work, raw = private / "work", private / "raw"
+    server = load(work / "server.json")
     config = {
         "id": name, "kind": scene["kind"], "title": scene["en"][0],
-        "directory": str(RAW / name), "redact": context["redact"],
+        "directory": str(raw / name), "redact": context["redact"],
         "url": context["urls"].get(name, server["url"] + "/terminal.html"),
     }
-    if (RAW / name).exists() and list((RAW / name).glob("*.webm")):
+    if (raw / name).exists() and list((raw / name).glob("*.webm")):
         raise RuntimeError(f"Capture already exists for {name}; do not overwrite it.")
-    save(WORK / "capture-config.json", config)
-    save(WORK / "terminal.json", {
-        "title": scene["en"][0], "label": "One fresh smoke call" if name == "04-smoke" else "Retained LIVE evidence · no regeneration",
+    save(work / "capture-config.json", config)
+    save(work / "terminal.json", {
+        "title": scene["en"][0], "label": scene.get("label", "One fresh smoke call" if name == "04-smoke" else "Retained LIVE evidence · no regeneration"),
         "lines": [], "status": "Ready to record actual commands",
     })
-    save(PRIVATE / "context.json", context)
+    save(private / "context.json", context)
     print(f"Prepared {name} ({scene['kind']})")
 
 
-def run_scene(name: str) -> None:
-    scene = scene_for(name)
+def run_scene(name: str, *, scenes=SCENES, private=PRIVATE) -> None:
+    scene = scene_for(name, scenes)
     if scene["kind"] != "terminal":
         raise ValueError("Only terminal scenes have CLI commands.")
-    context = load(PRIVATE / "context.json")
-    state = load(WORK / "terminal.json")
+    work = private / "work"
+    context = load(private / "context.json")
+    state = load(work / "terminal.json")
     env = dict(os.environ)
     env.update({
         "PATH": str(ROOT / ".venv" / "bin") + os.pathsep + env["PATH"],
         "PYTHONUNBUFFERED": "1", "LAB_RG": context["group"], "LAB_SUB": context["subscription"],
         "COLUMNS": "104", "TERM": "xterm-256color", "NO_COLOR": "1",
     })
+    if "search" in context:
+        env["LAB_SEARCH"] = context["search"]
     events = []
     for command in scene["commands"]:
         state["lines"].append({"kind": "command", "text": "$ " + command})
         state["status"] = "Executing a real CLI command"
-        save(WORK / "terminal.json", state)
+        save(work / "terminal.json", state)
         started = time.time()
         events.append({"command": command, "started_at_ms": round(started * 1000)})
         time.sleep(2)
@@ -205,7 +211,7 @@ def run_scene(name: str) -> None:
             output.append(line)
             visible = redact(line.rstrip(), context["redact"])
             state["lines"].append({"kind": "output", "text": visible})
-            save(WORK / "terminal.json", state)
+            save(work / "terminal.json", state)
         code = process.wait()
         expected = 2 if command.startswith("python lab.py gate ") else 0
         events[-1].update({
@@ -213,21 +219,23 @@ def run_scene(name: str) -> None:
             "expected_exit_code": expected,
             "stdout_sha256": hashlib.sha256("".join(output).encode()).hexdigest(),
         })
-        save(PRIVATE / f"{name}.commands.json", events)
+        save(private / f"{name}.commands.json", events)
         if code != expected:
             state["status"] = f"Execution error: exit {code}; expected {expected}"
-            save(WORK / "terminal.json", state)
+            save(work / "terminal.json", state)
             raise RuntimeError(f"{command}: exit {code}; original output is preserved in the local recording.")
         state["lines"].append({"kind": "status", "text": f"Exit {code}" + (" · intentional quality BLOCK" if code == 2 else " · command completed")})
         state["status"] = "BLOCK is a quality decision, not an execution error" if code == 2 else "Evidence saved; no scores were altered"
-        save(WORK / "terminal.json", state)
+        save(work / "terminal.json", state)
         time.sleep(7)
     print(f"Recorded {len(events)} real commands for {name}")
 
 
 class Handler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=str(WORK), **kwargs)
+    def __init__(self, *args, private=PRIVATE, scenes=SCENES, **kwargs):
+        self.private = private
+        self.scenes = scenes
+        super().__init__(*args, directory=str(private / "work"), **kwargs)
 
     def log_message(self, *_args):
         pass
@@ -241,22 +249,23 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_error(400)
             return
         data = json.loads(self.rfile.read(size))
-        scene_for(data["id"])
-        if not Path(data["path"]).resolve().is_relative_to(RAW.resolve()):
+        scene_for(data["id"], self.scenes)
+        if not Path(data["path"]).resolve().is_relative_to((self.private / "raw").resolve()):
             self.send_error(400)
             return
-        save(PRIVATE / f"{data['id']}.recording.json", data)
+        save(self.private / f"{data['id']}.recording.json", data)
         self.send_response(204)
         self.end_headers()
 
 
-def serve() -> None:
-    WORK.mkdir(parents=True, exist_ok=True)
+def serve(*, scenes=SCENES, private=PRIVATE) -> None:
+    work = private / "work"
+    work.mkdir(parents=True, exist_ok=True)
     template = Path(__file__).with_name("terminal.html")
-    (WORK / "terminal.html").write_bytes(template.read_bytes())
-    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    (work / "terminal.html").write_bytes(template.read_bytes())
+    server = ThreadingHTTPServer(("127.0.0.1", 0), partial(Handler, private=private, scenes=scenes))
     url = f"http://127.0.0.1:{server.server_port}"
-    save(WORK / "server.json", {"url": url})
+    save(work / "server.json", {"url": url})
     print(f"Recording server: {url}", flush=True)
     server.serve_forever()
 
@@ -285,7 +294,7 @@ def wrapped(draw, text: str, font, width: int) -> list[str]:
     return lines
 
 
-def overlay(path: Path, language: str, scene: dict, index: int) -> None:
+def overlay(path: Path, language: str, scene: dict, index: int, *, total_scenes=len(SCENES)) -> None:
     from PIL import Image, ImageDraw, ImageFont
     image = Image.new("RGBA", (1920, 1080))
     draw = ImageDraw.Draw(image)
@@ -304,11 +313,11 @@ def overlay(path: Path, language: str, scene: dict, index: int) -> None:
         draw.text((64, 908 + row * 47), line, font=caption_font, fill=(243, 247, 255))
     note = "Actual screen recording · identifiers redacted" if language == "en" else "실제 화면 녹화 · 식별 정보 가림"
     draw.text((64, 1045), note, font=small, fill=(146, 171, 199))
-    draw.rectangle((0, 1074, int(1920 * index / len(SCENES)), 1079), fill=(59, 159, 255))
+    draw.rectangle((0, 1074, int(1920 * index / total_scenes), 1079), fill=(59, 159, 255))
     image.save(path)
 
 
-def card(path: Path, language: str, closing: bool = False) -> None:
+def card(path: Path, language: str, closing: bool = False, *, topic="core") -> None:
     from PIL import Image, ImageDraw, ImageFont
     image = Image.new("RGB", (1920, 1080), (9, 17, 32))
     draw = ImageDraw.Draw(image)
@@ -316,7 +325,14 @@ def card(path: Path, language: str, closing: bool = False) -> None:
     body = ImageFont.truetype(str(FONT), 42)
     small = ImageFont.truetype(str(FONT), 30)
     draw.rectangle((104, 145, 114, 820), fill=(58, 154, 249))
-    if closing:
+    if topic == "rag":
+        if closing:
+            heading = "Retrieval is not\nanswer quality." if language == "en" else "검색 품질과\n답변 품질은 다릅니다."
+            sub = "REVIEW_REQUIRED · keep the original evidence." if language == "en" else "REVIEW_REQUIRED · 원본 근거를 보존합니다."
+        else:
+            heading = "Retrieve first.\nThen evaluate." if language == "en" else "실제로 검색하고\n답변을 평가합니다."
+            sub = "Optional RAG · Azure AI Search + Foundry IQ" if language == "en" else "선택형 RAG · Azure AI Search + Foundry IQ"
+    elif closing:
         heading = "Keep the evidence.\nRespect the gate." if language == "en" else "증거를 보존하고\n판정을 존중합니다."
         sub = "BLOCK is a valid outcome. Human approval is still required." if language == "en" else "BLOCK도 유효한 결과입니다. 실제 사람 검토는 별도로 필요합니다."
     else:
@@ -326,7 +342,10 @@ def card(path: Path, language: str, closing: bool = False) -> None:
     for row, line in enumerate(wrapped(draw, sub, body, 1590)):
         draw.text((160, 525 + row * 60), line, font=body, fill=(181, 211, 243))
     draw.text((160, 715), "gpt-6-luna  /  swedencentral  /  eval-model", font=body, fill=(93, 185, 255))
-    note = "One fresh smoke check + retained LIVE evidence. Captions only; no narration." if language == "en" else "새 연결 확인 1건 + 보존된 LIVE 증거. 자막 영상이며 음성 해설은 없습니다."
+    if topic == "rag":
+        note = "Live retrieval + retained RAG evaluations. GA extractive retrieval, not LLM query planning." if language == "en" else "실제 검색 + 보존된 RAG 평가. 정식 추출형 검색이며 LLM 쿼리 계획은 사용하지 않습니다."
+    else:
+        note = "One fresh smoke check + retained LIVE evidence. Captions only; no narration." if language == "en" else "새 연결 확인 1건 + 보존된 LIVE 증거. 자막 영상이며 음성 해설은 없습니다."
     for row, line in enumerate(wrapped(draw, note, small, 1570)):
         draw.text((160, 830 + row * 43), line, font=small, fill=(165, 185, 209))
     image.save(path)
@@ -344,30 +363,33 @@ def ffmpeg(arguments: list[str]) -> None:
     subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", *arguments], check=True)
 
 
-def render() -> None:
-    OUTPUT.mkdir(parents=True, exist_ok=True)
-    edited = PRIVATE / "edited"
+def render(*, scenes=SCENES, private=PRIVATE, output=OUTPUT, prefix="workshop-summary", topic="core", recorded_on="2026-09-27") -> None:
+    output.mkdir(parents=True, exist_ok=True)
+    edited = private / "edited"
     edited.mkdir(parents=True, exist_ok=True)
     encoding = ["-an", "-map_metadata", "-1", "-c:v", "libx264", "-threads", "2", "-preset", "medium", "-crf", "22", "-pix_fmt", "yuv420p", "-r", "24"]
-    manifest = {"recorded_on": "2026-09-27", "source": "Actual headless Playwright screen recordings and real CLI execution", "videos": {}}
+    if recorded_on is None:
+        started = min(load(private / f"{scene['id']}.recording.json")["started_at_ms"] for scene in scenes)
+        recorded_on = datetime.fromtimestamp(started / 1000).astimezone().date().isoformat()
+    manifest = {"recorded_on": recorded_on, "source": "Actual headless Playwright screen recordings and real CLI execution", "videos": {}}
     for language in ("en", "ko"):
         parts, subtitles, chapters = [], [], []
         elapsed = 0.0
         png = edited / f"intro-{language}.png"
         segment = edited / f"intro-{language}.mp4"
-        card(png, language)
+        card(png, language, topic=topic)
         ffmpeg(["-loop", "1", "-i", str(png), "-t", "7", *encoding, str(segment)])
         parts.append(segment)
         elapsed += 7
-        for index, scene in enumerate(SCENES, 1):
-            record = load(PRIVATE / f"{scene['id']}.recording.json")
+        for index, scene in enumerate(scenes, 1):
+            record = load(private / f"{scene['id']}.recording.json")
             raw = Path(record["path"])
             duration = float(probe(raw)["format"]["duration"])
             start = max(0, record["ready_offset_ms"] / 1000 - 0.3)
             end = duration - 0.2
             if "action_end_offset_ms" in record:
                 end = min(end, record["action_end_offset_ms"] / 1000 + 0.4)
-            command_log = PRIVATE / f"{scene['id']}.commands.json"
+            command_log = private / f"{scene['id']}.commands.json"
             if command_log.exists():
                 commands = load(command_log)
                 start = max(start, (commands[0]["started_at_ms"] - record["started_at_ms"]) / 1000 - 1)
@@ -379,7 +401,7 @@ def render() -> None:
             factor = target / usable
             png = edited / f"{scene['id']}.{language}.png"
             segment = edited / f"{scene['id']}.{language}.mp4"
-            overlay(png, language, scene, index)
+            overlay(png, language, scene, index, total_scenes=len(scenes))
             ffmpeg([
                 "-ss", f"{start:.3f}", "-t", f"{usable:.3f}", "-i", str(raw),
                 "-loop", "1", "-i", str(png),
@@ -392,16 +414,16 @@ def render() -> None:
             elapsed += target
         png = edited / f"outro-{language}.png"
         segment = edited / f"outro-{language}.mp4"
-        card(png, language, True)
+        card(png, language, True, topic=topic)
         ffmpeg(["-loop", "1", "-i", str(png), "-t", "7", *encoding, str(segment)])
         parts.append(segment)
         elapsed += 7
         listing = edited / f"concat-{language}.txt"
         listing.write_text("".join(f"file '{part.as_posix()}'\n" for part in parts), encoding="utf-8")
-        destination = OUTPUT / f"workshop-summary.{language}.mp4"
+        destination = output / f"{prefix}.{language}.mp4"
         ffmpeg(["-f", "concat", "-safe", "0", "-i", str(listing), "-map_metadata", "-1", "-c", "copy", "-movflags", "+faststart", str(destination)])
-        (OUTPUT / f"workshop-summary.{language}.srt").write_text("\n".join(subtitles), encoding="utf-8")
-        card(OUTPUT / f"workshop-summary.{language}.png", language)
+        (output / f"{prefix}.{language}.srt").write_text("\n".join(subtitles), encoding="utf-8")
+        card(output / f"{prefix}.{language}.png", language, topic=topic)
         manifest["videos"][language] = {
             "file": destination.name, "duration_seconds": elapsed, "chapters": chapters,
             "bytes": destination.stat().st_size,
@@ -409,13 +431,13 @@ def render() -> None:
             "audio": "none; localized burned-in captions and separate SRT",
         }
         print(f"Rendered {destination.name}: {elapsed:.0f}s", flush=True)
-    save(OUTPUT / "manifest.json", manifest)
+    save(output / "manifest.json", manifest)
 
 
-def verify() -> None:
-    manifest = load(OUTPUT / "manifest.json")
+def verify(*, output=OUTPUT, scene_count=len(SCENES), prefix="workshop-summary", expected_marker="BLOCK") -> None:
+    manifest = load(output / "manifest.json")
     for language, item in manifest["videos"].items():
-        path = OUTPUT / item["file"]
+        path = output / item["file"]
         media = probe(path)
         stream = next(stream for stream in media["streams"] if stream["codec_type"] == "video")
         assert stream["codec_name"] == "h264"
@@ -424,10 +446,10 @@ def verify() -> None:
         assert abs(float(media["format"]["duration"]) - item["duration_seconds"]) < 1
         assert path.stat().st_size < 50 * 1024 * 1024
         assert hashlib.sha256(path.read_bytes()).hexdigest() == item["sha256"]
-        assert len(item["chapters"]) == len(SCENES)
-        subtitle = (OUTPUT / f"workshop-summary.{language}.srt").read_text(encoding="utf-8")
-        assert subtitle.count(" --> ") == len(SCENES)
-        assert "BLOCK" in subtitle
+        assert len(item["chapters"]) == scene_count
+        subtitle = (output / f"{prefix}.{language}.srt").read_text(encoding="utf-8")
+        assert subtitle.count(" --> ") == scene_count
+        assert expected_marker in subtitle
         ffmpeg(["-i", str(path), "-f", "null", "-"])
         print(f"Verified {language}: H.264 1080p, {float(media['format']['duration']):.1f}s, full decode OK")
 

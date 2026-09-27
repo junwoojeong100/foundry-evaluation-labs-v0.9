@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import urlparse
 
-from evaluation import ANSWER_SCHEMA, METRICS, SCORE_THRESHOLD, read_json, write_json
+from evaluation import ANSWER_SCHEMA, METRICS, SCORE_THRESHOLD, read_json, response_context, write_json
 
 OUTPUT_INSTRUCTIONS = """
 JSON 객체만 반환합니다.
@@ -169,7 +169,7 @@ def evaluation_items(run: dict) -> list[dict]:
     rows = {row["case_id"]: row for row in run["rows"]}
     return [
         {
-            "id": case["id"], "query": case["query"], "context": run["context"],
+            "id": case["id"], "query": case["query"], "context": response_context(run, rows[case["id"]]),
             "response": rows[case["id"]]["raw_response"],
         }
         for case in run["cases"]

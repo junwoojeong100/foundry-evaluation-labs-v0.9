@@ -1,0 +1,96 @@
+{
+  "recorded_on": "2026-09-28",
+  "source": "Actual headless Playwright screen recordings and real CLI execution",
+  "videos": {
+    "en": {
+      "file": "rag-summary.en.mp4",
+      "duration_seconds": 150.0,
+      "chapters": [
+        {
+          "start": 7.0,
+          "duration": 18,
+          "title": "Real Search, real knowledge",
+          "scene": "rag-01-service"
+        },
+        {
+          "start": 25.0,
+          "duration": 22,
+          "title": "Retrieve before generating",
+          "scene": "rag-02-search"
+        },
+        {
+          "start": 47.0,
+          "duration": 20,
+          "title": "Foundry IQ is an actual knowledge base",
+          "scene": "rag-03-knowledge"
+        },
+        {
+          "start": 67.0,
+          "duration": 26,
+          "title": "Query IQ and inspect the saved answer",
+          "scene": "rag-04-iq"
+        },
+        {
+          "start": 93.0,
+          "duration": 22,
+          "title": "Judge the context the model actually saw",
+          "scene": "rag-05-evaluation"
+        },
+        {
+          "start": 115.0,
+          "duration": 28,
+          "title": "Compare evidence, not marketing",
+          "scene": "rag-06-compare"
+        }
+      ],
+      "bytes": 4248028,
+      "sha256": "488bf3b9f0023d16d804f58f1c720fa1dce58f6fc54f2a63c787e8174af824ab",
+      "audio": "none; localized burned-in captions and separate SRT"
+    },
+    "ko": {
+      "file": "rag-summary.ko.mp4",
+      "duration_seconds": 150.0,
+      "chapters": [
+        {
+          "start": 7.0,
+          "duration": 18,
+          "title": "실제 Search와 지식 리소스",
+          "scene": "rag-01-service"
+        },
+        {
+          "start": 25.0,
+          "duration": 22,
+          "title": "답변 전에 실제 검색",
+          "scene": "rag-02-search"
+        },
+        {
+          "start": 47.0,
+          "duration": 20,
+          "title": "Foundry IQ의 실제 Knowledge Base",
+          "scene": "rag-03-knowledge"
+        },
+        {
+          "start": 67.0,
+          "duration": 26,
+          "title": "IQ 조회와 저장된 답변 확인",
+          "scene": "rag-04-iq"
+        },
+        {
+          "start": 93.0,
+          "duration": 22,
+          "title": "모델이 실제로 본 문맥으로 평가",
+          "scene": "rag-05-evaluation"
+        },
+        {
+          "start": 115.0,
+          "duration": 28,
+          "title": "주장이 아니라 증거를 비교",
+          "scene": "rag-06-compare"
+        }
+      ],
+      "bytes": 4117769,
+      "sha256": "87f34b44538ab5c1f44afbf494e04905e7d3addbf19583343f69c658a08e793d",
+      "audio": "none; localized burned-in captions and separate SRT"
+    }
+  }
+}

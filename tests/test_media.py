@@ -8,12 +8,34 @@ import unittest
 from pathlib import Path
 
 from tools.media.workshop_video import SCENES, redact, stamp
+from tools.media.rag_video import SCENES as RAG_SCENES
 
 ROOT = Path(__file__).resolve().parents[1]
 MEDIA = ROOT / "docs" / "media"
 
 
 class MediaTests(unittest.TestCase):
+    def test_optional_rag_videos_are_additional_bilingual_artifacts(self):
+        folder = MEDIA / "optional-rag"
+        manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(set(manifest["videos"]), {"en", "ko"})
+        self.assertEqual(len(RAG_SCENES), 6)
+        self.assertEqual(sum(scene["seconds"] for scene in RAG_SCENES) + 14, 150)
+        for language, entry in manifest["videos"].items():
+            data = (folder / entry["file"]).read_bytes()
+            self.assertEqual(data[4:8], b"ftyp")
+            self.assertEqual(hashlib.sha256(data).hexdigest(), entry["sha256"])
+            self.assertEqual(len(data), entry["bytes"])
+            self.assertLess(len(data), 50 * 1024 * 1024)
+            self.assertEqual(entry["duration_seconds"], 150)
+            self.assertEqual(len(entry["chapters"]), 6)
+            subtitle = (folder / f"rag-summary.{language}.srt").read_text(encoding="utf-8")
+            self.assertEqual(subtitle.count(" --> "), 6)
+            self.assertIn("REVIEW_REQUIRED", subtitle)
+            self.assertNotRegex(subtitle, r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}")
+            poster = (folder / f"rag-summary.{language}.png").read_bytes()
+            self.assertEqual(struct.unpack(">II", poster[16:24]), (1920, 1080))
+
     def test_redaction_covers_case_variants_emails_ids_and_report_urls(self):
         text = (
             "EXAMPLE USER learner@example.com "

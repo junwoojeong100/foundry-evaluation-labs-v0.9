@@ -159,6 +159,22 @@ def evidence_hash(run: dict) -> str:
     return digest({k: v for k, v in run.items() if k != "evidence_hash"})
 
 
+def response_context(run: dict, row: dict) -> str:
+    mode = run.get("context_mode", "fixed")
+    if mode == "fixed":
+        if "retrieved_context" in row:
+            raise ValueError("검색 문맥을 고정 문맥 실행에 섞을 수 없습니다.")
+        return run["context"]
+    if mode != "retrieved":
+        raise ValueError("지원하지 않는 문맥 모드입니다.")
+    context = row.get("retrieved_context")
+    if not isinstance(context, str) or not context.strip():
+        raise ValueError("RAG 응답에 실제 검색 문맥이 없습니다. 전체 규정으로 대체하지 않습니다.")
+    if row.get("retrieved_context_hash") != digest(context):
+        raise ValueError("저장된 검색 문맥이 변경되었습니다.")
+    return context
+
+
 def load_run(folder: Path, *, complete: bool = True) -> dict:
     run = read_json(folder / "run.json")
     if not isinstance(run, dict) or run.get("schema_version") != 1:
@@ -173,6 +189,8 @@ def load_run(folder: Path, *, complete: bool = True) -> dict:
     expected = {case["id"] for case in run["cases"]}
     if len(ids) != len(set(ids)) or not set(ids) <= expected:
         raise ValueError(f"{folder}: 중복되거나 알 수 없는 응답 ID입니다.")
+    for row in run["rows"]:
+        response_context(run, row)
     if complete:
         if run["status"] != "complete" or set(ids) != expected:
             raise ValueError(f"{folder}: 응답 수집이 미완료입니다. 같은 run 명령으로 재개하세요.")
@@ -227,6 +245,8 @@ def judge_rate(judge: dict, metric: str) -> float:
 
 
 def comparable(before: dict, after: dict) -> None:
+    if any(run.get("context_mode", "fixed") != "fixed" for run in (before, after)):
+        raise ValueError("RAG 실행은 rag_lab.py compare로 검색 조건까지 비교하세요.")
     for field in ("mode", "split", "cases_hash", "context_hash", "business_version", "config", "generation_contract", "target_deployment"):
         if before[field] != after[field]:
             raise ValueError(f"통제 비교 불가: {field}가 다릅니다. 같은 데이터/근거/모델/모드를 사용하세요.")

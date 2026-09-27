@@ -16,6 +16,8 @@ Find out whether the fictional **Gaon Lab travel-expense assistant** follows pol
 
 [Recorded summaries and subtitles](docs/media/README.md) show actual portal and CLI interactions. They are an overview, not a substitute for the completion checkpoints. The [recorded LIVE findings](docs/en/reference.md#live-verification) are a single-run example, not scores you should try to reproduce.
 
+**Optional RAG extension:** [Azure AI Search + Foundry IQ and evaluation](docs/en/optional-rag.md) adds a real search index and knowledge base, evaluates retrieval separately from answers, and uses only retrieved context. It is separate from the core fixed-policy workshop below.
+
 ### Choose your path
 
 | Your situation | Start here |

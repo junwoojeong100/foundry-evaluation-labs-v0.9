@@ -2,5 +2,6 @@
 __pycache__/
 *.py[cod]
 config.json
+config.rag.json
 results/
 .DS_Store

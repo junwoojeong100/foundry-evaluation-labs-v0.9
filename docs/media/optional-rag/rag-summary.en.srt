@@ -1,0 +1,29 @@
+1
+00:00:07,000 --> 00:00:25,000
+Real Search, real knowledge
+The dedicated Search service is in Sweden Central. Its Free plans and keyless access are retained; the base workshop resources are unchanged.
+
+2
+00:00:25,000 --> 00:00:47,000
+Retrieve before generating
+Seven chunks are indexed. The unapproved draft is filtered out. Search returns actual ranked chunks, not the complete policy pasted into a prompt.
+
+3
+00:00:47,000 --> 00:01:07,000
+Foundry IQ is an actual knowledge base
+The knowledge base references a real search-index knowledge source. This GA path is minimal and extractive: no vector embeddings or LLM query planning.
+
+4
+00:01:07,000 --> 00:01:33,000
+Query IQ and inspect the saved answer
+IQ returns references and activity. D02 used the correct limit but added an extra source ID. Successful retrieval does not guarantee every answer check.
+
+5
+00:01:33,000 --> 00:01:55,000
+Judge the context the model actually saw
+Groundedness uses each answer's retrieved context, not the full corpus. Read the same case, answer and reason in the completed Foundry evaluation.
+
+6
+00:01:55,000 --> 00:02:23,000
+Compare evidence, not marketing
+Both routes retrieved identical context with 100% required-chunk recall. One run's answer differences do not prove a superior retriever. REVIEW_REQUIRED; retain the evidence.
