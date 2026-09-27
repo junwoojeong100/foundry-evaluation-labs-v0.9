@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import re
 import shlex
+import subprocess
+import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -63,6 +66,12 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn("시간 제한 없이", text)
         self.assertIn("(docs/setup.md)", text)
         self.assertIn("(docs/cleanup.md)", text)
+        for anchor in (
+            "prepare", "setup-tools", "setup-sign-in", "setup-project",
+            "setup-permissions", "setup-model", "setup-config", "setup-smoke",
+            "command-status", "finish",
+        ):
+            self.assertIn(f'<a id="{anchor}"></a>', text)
         self.assertEqual(re.findall(r'<a id="lab-(\d+)"></a>', text), [str(i) for i in range(7)])
         self.assertNotRegex(text, r"\d{2}:\d{2}[–-]\d{2}:\d{2}")
         for document in DOCUMENTS:
@@ -81,7 +90,10 @@ class DocumentationTests(unittest.TestCase):
     def test_main_path_uses_live_only_and_one_lab_command_per_block(self):
         commands = lab_commands(ROOT / "README.md")
         runs = [lab.parser().parse_args(argv) for argv in commands if argv[0] == "run"]
-        self.assertEqual(len(runs), 4)
+        self.assertEqual(
+            [run.out for run in runs],
+            [Path("results") / name for name in ("setup-smoke", "baseline", "candidate", "holdout", "my-case")],
+        )
         self.assertTrue(all(run.mode == "live" for run in runs))
         for document in (ROOT / "README.md", ROOT / "docs" / "setup.md", ROOT / "docs" / "offline.md"):
             for block in SHELL_BLOCKS.findall(document.read_text(encoding="utf-8")):
@@ -99,10 +111,9 @@ class DocumentationTests(unittest.TestCase):
                         self.assertGreaterEqual(len(parts), 2)
                         self.assertEqual(parts[1], "foundry-evaluation-v1")
 
-    def test_setup_smoke_is_one_committed_extra_case_not_dev_or_holdout(self):
-        commands = lab_commands(ROOT / "docs" / "setup.md")
+    def test_main_preparation_smoke_is_one_committed_extra_case_not_dev_or_holdout(self):
+        commands = lab_commands(ROOT / "README.md")
         runs = [lab.parser().parse_args(argv) for argv in commands if argv[0] == "run"]
-        self.assertEqual(len(runs), 1)
         run = runs[0]
         self.assertEqual(run.mode, "live")
         self.assertIsNotNone(run.data)
@@ -116,14 +127,68 @@ class DocumentationTests(unittest.TestCase):
                 self.assertNotEqual(cases[0]["query"], experiment_case["query"])
         self.assertIn(["judge", "results/setup-smoke"], commands)
         self.assertIn(["inspect", "results/setup-smoke", cases[0]["id"]], commands)
+        self.assertLess(
+            commands.index(["doctor", "--live"]),
+            next(i for i, argv in enumerate(commands) if argv[0] == "run"),
+        )
 
-    def test_setup_uses_one_deployment_for_answers_and_judging(self):
-        text = (ROOT / "docs" / "setup.md").read_text(encoding="utf-8")
+    def test_main_preparation_uses_one_deployment_for_answers_and_judging(self):
+        text = (ROOT / "README.md").read_text(encoding="utf-8")
         configs = [json.loads(block) for block in re.findall(r"```json\n(.*?)```", text, re.DOTALL)]
+        configs = [config for config in configs if "project_endpoint" in config]
         self.assertEqual(len(configs), 1)
         self.assertEqual(configs[0]["model_deployment"], "eval-model")
         self.assertEqual(configs[0]["judge_deployment"], "eval-model")
         self.assertEqual(configs[0], read_json(ROOT / "config.example.json"))
+
+    def test_setup_shortcuts_do_not_duplicate_the_main_command_sequence(self):
+        self.assertEqual(lab_commands(ROOT / "docs" / "setup.md"), [])
+
+    def test_documented_extra_cases_and_validation_commands_work_locally(self):
+        for document in (ROOT / "README.md", ROOT / "docs" / "offline.md"):
+            text = document.read_text(encoding="utf-8")
+            examples = re.findall(r"```jsonl\n(.*?)```", text, re.DOTALL)
+            commands = [
+                shlex.split(line)
+                for block in SHELL_BLOCKS.findall(text)
+                for line in block.splitlines()
+                if line.startswith("python -c ")
+            ]
+            with self.subTest(document=document.name), tempfile.TemporaryDirectory() as directory:
+                self.assertEqual(len(examples), 1)
+                self.assertEqual(len(examples[0].splitlines()), 1)
+                self.assertEqual(len(commands), 1)
+                workspace = Path(directory)
+                data_file = workspace / "data" / "my-case.jsonl"
+                data_file.parent.mkdir()
+                data_file.write_text(examples[0], encoding="utf-8")
+                cases = read_cases(data_file)
+                self.assertEqual(len(cases), 1)
+                self.assertEqual(cases[0]["id"], "N02")
+                self.assertEqual(cases[0]["expected_decision"], "needs_approval")
+                self.assertEqual(cases[0]["expected_limit_krw"], 160000)
+                self.assertEqual(cases[0]["expected_citations"], ["TRAVEL-PREVIOUS"])
+                for split in ("dev", "holdout"):
+                    for existing in read_cases(ROOT / "data" / f"{split}.jsonl"):
+                        self.assertNotEqual(cases[0]["id"], existing["id"])
+                        self.assertNotEqual(cases[0]["query"], existing["query"])
+                for valid in (True, False):
+                    if not valid:
+                        cases[0]["critical"] = "true"
+                        data_file.write_text(json.dumps(cases[0]) + "\n", encoding="utf-8")
+                    outcome = subprocess.run(
+                        [sys.executable, *commands[0][1:]],
+                        cwd=workspace,
+                        env={**os.environ, "PYTHONPATH": str(ROOT)},
+                        capture_output=True, text=True, timeout=15,
+                    )
+                    if valid:
+                        self.assertEqual(outcome.returncode, 0, outcome.stderr)
+                        self.assertEqual(outcome.stdout.strip(), "DATA OK: 1 case(s)")
+                    else:
+                        self.assertNotEqual(outcome.returncode, 0)
+                        self.assertNotIn("DATA OK", outcome.stdout)
+                        self.assertIn("critical은 true 또는 false", outcome.stderr)
 
     def test_human_judgments_precede_baseline_judge_scores(self):
         for document, folder in (
@@ -159,8 +224,12 @@ class DocumentationTests(unittest.TestCase):
                         self.assertEqual(lab.main(argv), 2 if argv[0] == "gate" else 0)
             result = read_json(output / "results" / "demo-candidate" / "gate.json")
             self.assertEqual(result["status"], "BLOCK")
-            self.assertEqual(result["business_rates"]["holdout"], 0.75)
+            self.assertEqual(result["business_rates"], {"baseline": 0.625, "candidate": 1.0, "holdout": 0.75})
             self.assertTrue(any("사람이 반려" in problem for problem in result["problems"]))
+            comparison = read_json(output / "results" / "demo-candidate" / "comparison.json")
+            self.assertEqual(comparison["improvements"], ["D03", "D04", "D08"])
+            self.assertEqual(comparison["regressions"], [])
+            self.assertEqual(comparison["judge_regressions"], [])
             trap = read_json(output / "results" / "trap-candidate" / "comparison.json")
             self.assertEqual([entry["id"] for entry in trap["regressions"]], ["D06"])
 

@@ -319,18 +319,19 @@ class SDKContractTests(unittest.TestCase):
             self.assertEqual(len(read_json(folder / "judge.json")["rows"]), count)
         self.assertEqual(load_run(holdout)["frozen_from"], load_run(candidate)["evidence_hash"])
 
-    def test_setup_and_main_commands_execute_as_written_with_local_transport(self):
+    def test_main_guide_alone_executes_end_to_end_with_local_transport(self):
+        text = (ROOT / "README.md").read_text(encoding="utf-8")
         config = read_json(ROOT / "config.example.json")
         config["project_endpoint"] = self.config["project_endpoint"]
         config_file = self.root / "config.json"
         write_json(config_file, config)
         prompt_file = self.root / "my-v2.txt"
         prompt_file.write_text((ROOT / "prompts" / "v2.txt").read_text(encoding="utf-8"), encoding="utf-8")
-        case = read_cases(ROOT / "data" / "my-case.example.jsonl")[0]
-        case["id"] = "N02"
-        case["query"] = case["query"].replace("2026년 7월 1일", "2026년 9월 20일")
         case_file = self.root / "my-case.jsonl"
-        case_file.write_text(json.dumps(case, ensure_ascii=False) + "\n", encoding="utf-8")
+        examples = re.findall(r"```jsonl\n(.*?)```", text, re.DOTALL)
+        self.assertEqual(len(examples), 1)
+        case_file.write_text(examples[0], encoding="utf-8")
+        self.assertEqual(read_cases(case_file)[0]["id"], "N02")
         input_paths = {
             "prompts/my-v2.txt": str(prompt_file),
             "data/my-case.jsonl": str(case_file),
@@ -345,25 +346,23 @@ class SDKContractTests(unittest.TestCase):
             redirect_stdout(stdout),
             redirect_stderr(stderr),
         ):
-            for document in (ROOT / "docs" / "setup.md", ROOT / "README.md"):
-                text = document.read_text(encoding="utf-8")
-                for block in re.findall(r"```(?:bash|powershell)\n(.*?)```", text, re.DOTALL):
-                    for line in block.splitlines():
-                        if not line.startswith("python lab.py "):
-                            continue
-                        argv = [
-                            str(self.root / arg) if arg.startswith("results/") else input_paths.get(arg, arg)
-                            for arg in shlex.split(line)[2:]
-                        ]
-                        if argv[0] in ("doctor", "run"):
-                            argv += ["--config", str(config_file)]
-                        if argv[0] == "judge":
-                            argv += ["--wait-seconds", "0"]
-                        with self.subTest(document=document.name, command=line):
-                            self.assertEqual(
-                                lab.main(argv), 2 if argv[0] == "gate" else 0,
-                                stdout.getvalue() + stderr.getvalue(),
-                            )
+            for block in re.findall(r"```(?:bash|powershell)\n(.*?)```", text, re.DOTALL):
+                for line in block.splitlines():
+                    if not line.startswith("python lab.py "):
+                        continue
+                    argv = [
+                        str(self.root / arg) if arg.startswith("results/") else input_paths.get(arg, arg)
+                        for arg in shlex.split(line)[2:]
+                    ]
+                    if argv[0] in ("doctor", "run"):
+                        argv += ["--config", str(config_file)]
+                    if argv[0] == "judge":
+                        argv += ["--wait-seconds", "0"]
+                    with self.subTest(command=line):
+                        self.assertEqual(
+                            lab.main(argv), 2 if argv[0] == "gate" else 0,
+                            stdout.getvalue() + stderr.getvalue(),
+                        )
         self.assertEqual(self.api.count("POST", "/chat/completions"), 22)
         self.assertEqual(self.api.count("POST", "/evals"), 2)
         self.assertEqual(self.api.count("POST", "/runs"), 5)
@@ -371,7 +370,7 @@ class SDKContractTests(unittest.TestCase):
         self.assertEqual(evaluated_rows * len(METRICS), 44)
         self.assertIn(
             f"응답 {evaluated_rows}개, 평가 항목 {evaluated_rows * len(METRICS)}개",
-            (ROOT / "docs" / "setup.md").read_text(encoding="utf-8"),
+            text,
         )
         for name, count in (("setup-smoke", 1), ("baseline", 8), ("candidate", 8), ("holdout", 4), ("my-case", 1)):
             folder = self.root / "results" / name

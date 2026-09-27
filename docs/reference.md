@@ -1,8 +1,8 @@
 # 명령·평가 계약·문제 해결·출처
 
-[메인 가이드](../README.md) · [환경 만들기](setup.md) · [리소스 정리](cleanup.md)
+[메인 가이드](../README.md) · [환경 준비 바로가기](setup.md) · [리소스 정리](cleanup.md)
 
-메인 실습을 진행하는 데 이 문서를 처음부터 읽을 필요는 없습니다. 막히거나 결과를 정확히 해석해야 할 때 찾아봅니다.
+기본 LIVE 경로의 준비·명령·완료 확인·정리는 모두 [README](../README.md)에 있습니다. 이 문서를 처음부터 읽을 필요는 없습니다. 막히거나 결과를 정확히 해석해야 할 때 찾아봅니다.
 
 기본 경로에서 **환경 소유자는 참가자 본인**입니다. 본인 전용 자원의 설정·권한은 직접 확인하고, 조직 정책이나 공유 자원에 관한 결정만 해당 관리 담당자와 확인합니다.
 
@@ -27,7 +27,7 @@
 <a id="data-contract"></a>
 ## 데이터 한 줄 읽기
 
-`data/dev.jsonl`과 추가 사례 예제는 **한 줄에 JSON 객체 하나**입니다. 필드 이름을 추가하거나 지우지 않고, 새 질문에 맞는 값을 넣습니다.
+`data/dev.jsonl`과 추가 사례 예제는 **한 줄에 JSON 객체 하나**입니다. 필드 이름을 추가하거나 지우지 않고, 새 질문에 맞는 값을 넣습니다. [실습 6](../README.md#lab-6)의 N02 예제와 로컬 검사 명령으로 시작할 수 있습니다.
 
 | 필드 | 뜻과 예 |
 |---|---|
@@ -182,9 +182,14 @@ LIVE의 `READY_FOR_HUMAN_REVIEW`는 **사람이 다음 출시 검토를 할 수 
 | Owner인데 역할 할당/생성이 안 됨 | 구독 범위의 역할인지, PIM에서 활성인지 확인. 관리 그룹 정책·deny assignment·조건부 액세스는 Owner로 우회하지 않기 |
 | 공급자가 등록되지 않았다고 함 | 해당 구독의 Resource providers에서 `Microsoft.CognitiveServices`를 등록하고 `Registered` 확인 |
 | `python` 또는 `lab.py`를 찾을 수 없음 | Python 설치, 현재 폴더, 가상환경 활성화 확인. macOS/Linux에서는 `python3` 가능 |
+| Windows에서 `Activate.ps1` 실행이 차단됨 | 조직 정책을 해제하지 않고 설치 명령부터 모든 `python`을 `.\.venv\Scripts\python.exe`로 대체. [준비 1](../README.md#setup-tools) 확인 |
 | LIVE 패키지 없음/버전 불일치 | 가상환경 안에서 `python -m pip install -r requirements.txt`. 임의 최신 업그레이드 금지 |
 | config 예시 값 오류 | endpoint의 `YOUR-...`를 실제 프로젝트 주소로 교체. 두 배포 이름은 본인이 만든 `eval-model` 또는 실제 이름인지 확인 |
 | 저장했는데 config를 찾을 수 없음 | `lab.py` 옆의 `config.json`인지, `config.json.txt`로 저장되지 않았는지 확인 |
+| `prompts/my-v2.txt`를 찾을 수 없음 | 제공된 V2를 그대로 쓰더라도 **복사본 파일명은 `my-v2.txt`**여야 함. [실습 4](../README.md#lab-4)의 다른 이름 저장 후 재실행 |
+| 새 질문 데이터 검사에서 오류 | JSON 객체 전체를 한 줄로 저장하고 빈 줄 제거. 필수 8개 필드·숫자/null·true/false·공식 출처 확인. 로컬 검사가 통과하기 전 유료 `run` 실행하지 않기 |
+| `review`에서 멈춘 것처럼 보임 | 오류가 아니라 입력 대기. `pass`/`fail` 입력 후 Enter, 규정과 대조한 이유 5자 이상 입력 후 Enter. `검토 저장` 확인 |
+| 실습지에 판정했는데 Gate가 사람 검토 누락이라고 함 | 실습지는 메모이며 Gate 입력이 아님. candidate D06·holdout H04의 `review` 명령을 실행해 각 `reviews.json`에 저장 |
 | 로그인/401 | 본인 계정으로 `az login`. 올바른 테넌트인지 확인. 키를 코드에 붙이지 않기 |
 | Owner인데 모델 호출/평가가 403 | [Foundry User 확인](setup.md#permissions): **본인과 프로젝트 관리 ID**의 역할 및 상위 Foundry 리소스 범위를 확인. 전파를 기다린 뒤 같은 테넌트로 다시 로그인 |
 | Private Link/공용 접근 차단 | 승인된 VNet/VPN/실행 환경에서 접속. 수업을 위해 방화벽을 임의로 해제하지 않기 |
@@ -207,7 +212,7 @@ LIVE의 `READY_FOR_HUMAN_REVIEW`는 **사람이 다음 출시 검토를 할 수 
 <a id="managed-identity-access"></a>
 ## 프로젝트 관리 ID를 선택할 수 없을 때
 
-이 절은 [환경 만들기 4단계](setup.md#permissions)의 포털 선택이 어려울 때만 사용합니다.
+이 절은 [준비 4: 권한 확인](../README.md#setup-permissions)의 포털 선택이 어려울 때만 사용합니다.
 
 1. Foundry의 **Manage → Project details**에서 해당 프로젝트의 Azure 리소스를 엽니다. 프로젝트 리소스 ID는 `/accounts/계정이름/projects/프로젝트이름`으로 끝납니다.
 2. Azure 포털의 프로젝트 **Identity → System assigned**에서 **Object (principal) ID**를 복사합니다. ID 메뉴가 보이지 않으면 리소스의 JSON 보기에서 `identity.principalId`를 확인합니다. 상위 Foundry 계정의 ID가 아닙니다.
@@ -299,7 +304,7 @@ python lab.py doctor
 
 직접 의존성만 고정한 `requirements.txt`입니다. 전이 의존성과 패키지 파일 해시까지 잠근 전체 lockfile은 아닙니다.
 
-**로컬에서 확인하는 것:** 작성된 예제의 전체 실습 경로, 업무 검사·Gate의 조건, 누락/변조/회귀 차단, 문서 명령, 설치된 SDK로 만든 요청·응답의 모양. 준비·메인 문서의 LIVE 명령도 메모리 내 HTTP 응답으로 연결해 실행하며, 실제 Azure 응답이나 Judge 품질을 검증하는 것은 아닙니다.
+**로컬에서 확인하는 것:** 작성된 예제의 전체 실습 경로, 업무 검사·Gate의 조건, 누락/변조/회귀 차단, 문서 명령과 N02 데이터 검사, 설치된 SDK로 만든 요청·응답의 모양. README의 준비부터 추가 사례까지 LIVE 명령도 메모리 내 HTTP 응답으로 연결해 실행하며, 실제 Azure 응답이나 Judge 품질을 검증하는 것은 아닙니다.
 
 **이것만으로 확인되지 않는 것:** 사용자의 실제 Azure 권한, 지역 가용성, 모델 배포 기능, 클라우드 채점 완료, 현재 포털의 화면 배치. 문서 작성이나 로컬 검사만으로 이를 완료했다고 주장하지 않습니다. 참가자는 자기 환경에서 [한 건의 생성·평가](setup.md#smoke)로 준비를 확인합니다. 단체 진행 전에는 필요에 따라 [전체 리허설](facilitator.md#rehearsal)을 수행합니다.
 
