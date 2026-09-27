@@ -286,15 +286,16 @@ def review_command(args) -> int:
     run = load_run(args.folder)
     if args.case_id not in {case["id"] for case in run["cases"]}:
         raise ValueError(f"이 실행에 {args.case_id}가 없습니다.")
+    reviewer_label = "사람" if args.reviewer == "human" else "AI 보조 검토"
     if args.verdict is None or args.note is None:
         inspect_command(args)
         try:
-            args.verdict = args.verdict or input("사람의 판정 (pass/fail): ").strip()
+            args.verdict = args.verdict or input(f"{reviewer_label}의 판정 (pass/fail): ").strip()
             args.note = args.note or input("근거 문서와 답변을 비교한 이유: ").strip()
         except EOFError as exc:
             raise ValueError("검토 입력이 없습니다. 대화형 터미널을 쓰거나 --verdict와 --note를 지정하세요.") from exc
     if args.verdict not in ("pass", "fail"):
-        raise ValueError("사람의 판정은 pass 또는 fail입니다.")
+        raise ValueError("검토 판정은 pass 또는 fail입니다.")
     if len(args.note.strip()) < 5:
         raise ValueError("검토 이유를 5자 이상으로 기록하세요. 결론뿐 아니라 근거가 필요합니다.")
     path = args.folder / "reviews.json"
@@ -303,10 +304,13 @@ def review_command(args) -> int:
         raise ValueError("기존 reviews.json이 배열이 아닙니다. 덮어쓰지 않습니다.")
     reviews.append({
         "case_id": args.case_id, "verdict": args.verdict, "note": args.note.strip(),
+        "reviewer": args.reviewer,
         "evidence_hash": run["evidence_hash"], "created_at": now(),
     })
     write_json(path, reviews)
-    print(f"검토 저장: {path} ({args.case_id}: {args.verdict}). 모델을 학습하거나 점수를 변경하지 않습니다.")
+    print(f"검토 저장: {path} ({args.case_id}: {args.verdict}, {reviewer_label}). 모델을 학습하거나 점수를 변경하지 않습니다.")
+    if args.reviewer == "assistant":
+        print("AI 보조 검토는 Gate의 사람 검토 조건을 충족하지 않습니다.")
     return 0
 
 
@@ -391,11 +395,15 @@ def parser() -> argparse.ArgumentParser:
     compare.add_argument("baseline", type=Path)
     compare.add_argument("candidate", type=Path)
     compare.set_defaults(handler=compare_command)
-    review = sub.add_parser("review", help="사람의 판정과 근거 저장")
+    review = sub.add_parser("review", help="사람 또는 AI 보조 검토의 판정과 근거 저장")
     review.add_argument("folder", type=Path)
     review.add_argument("case_id")
     review.add_argument("--verdict", choices=("pass", "fail"))
     review.add_argument("--note")
+    review.add_argument(
+        "--reviewer", choices=("human", "assistant"), default="human",
+        help="기본 human. 자동 실행은 assistant로 기록하며 사람 검토 조건을 충족하지 않음",
+    )
     review.set_defaults(handler=review_command)
     release = sub.add_parser("gate", help="회귀/holdout/P0/Judge/사람 검토에 기반한 교육용 판단")
     release.add_argument("baseline", type=Path)

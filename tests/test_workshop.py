@@ -12,7 +12,7 @@ from unittest.mock import patch
 import lab
 from evaluation import (
     METRICS, ROOT, business_rate, comparison, digest, evidence_hash,
-    gate, load_judge, load_run, read_cases, read_json, response_checks,
+    gate, load_judge, load_run, read_cases, read_json, response_checks, review_problems,
     validate_cases, validate_judge, write_json,
 )
 from foundry_client import clients, evaluation_items, messages_for, parse_output_items, read_config
@@ -236,6 +236,46 @@ class WorkshopTests(unittest.TestCase):
             self.command("review", folder, "D04")
         review = read_json(folder / "reviews.json")[-1]
         self.assertEqual(review["verdict"], "fail")
+        self.assertEqual(review["reviewer"], "human")
+
+    def test_assistant_reviews_cannot_satisfy_the_human_gate_requirement(self):
+        baseline = self.collect("baseline")
+        candidate = self.collect("candidate", "v2")
+        holdout = self.collect("holdout", frozen=candidate)
+        for folder, case_id in ((candidate, "D06"), (holdout, "H04")):
+            output = self.command(
+                "review", folder, case_id, "--reviewer", "assistant",
+                "--verdict", "pass", "--note", "AI 보조 검토이며 실제 사람 승인이 아니다",
+            )
+            self.assertIn("사람 검토 조건을 충족하지 않습니다", output)
+            self.assertEqual(read_json(folder / "reviews.json")[-1]["reviewer"], "assistant")
+        result = gate(baseline, candidate, holdout)
+        self.assertEqual(result["status"], "BLOCK")
+        self.assertEqual(sum("AI 보조 검토만 있습니다" in p for p in result["problems"]), 2)
+
+    def test_assistant_review_does_not_overwrite_latest_human_verdict(self):
+        folder = self.collect("candidate", "v2")
+        run = load_run(folder)
+        self.review(folder, "D06", "fail")
+        self.command(
+            "review", folder, "D06", "--reviewer", "assistant",
+            "--verdict", "pass", "--note", "AI의 통과 의견이 사람의 반려를 덮어쓰면 안 된다",
+        )
+        self.assertEqual(review_problems(folder, run), ["candidate: 사람이 반려한 사례 D06"])
+        self.review(folder, "D06", "pass")
+        self.assertEqual(review_problems(folder, run), [])
+        self.assertEqual(len(read_json(folder / "reviews.json")), 3)
+
+    def test_legacy_human_reviews_work_but_unknown_reviewers_are_rejected(self):
+        folder = self.collect("candidate", "v2")
+        self.review(folder, "D06")
+        reviews = read_json(folder / "reviews.json")
+        del reviews[0]["reviewer"]
+        write_json(folder / "reviews.json", reviews)
+        self.assertEqual(review_problems(folder, load_run(folder)), [])
+        reviews[0]["reviewer"] = "unrecognized"
+        write_json(folder / "reviews.json", reviews)
+        self.assertIn("유효하지 않거나", review_problems(folder, load_run(folder))[0])
 
     def test_dataset_validation_rejects_duplicate_empty_and_invalid_values(self):
         original = read_cases(ROOT / "data" / "dev.jsonl")

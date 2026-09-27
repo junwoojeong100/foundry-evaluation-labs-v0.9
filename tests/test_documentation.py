@@ -182,6 +182,69 @@ class DocumentationTests(unittest.TestCase):
         self.assertEqual(configs[0]["judge_deployment"], "eval-model")
         self.assertEqual(configs[0], read_json(ROOT / "config.example.json"))
 
+    def test_live_guides_keep_requested_model_region_and_deployment_distinct(self):
+        for relative in ("README.md", "WORKSHEET.md", "docs/setup.md", "docs/reference.md", "docs/facilitator.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(document=relative):
+                self.assertIn("gpt-6-luna", text)
+                self.assertIn("swedencentral", text)
+                self.assertIn("eval-model", text)
+                for obsolete in ("gpt-4.1-mini", "gpt-sol-luna", "East US 2"):
+                    self.assertNotIn(obsolete, text)
+        text = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("account:user.name", text)
+        reference = (ROOT / "docs" / "reference.md").read_text(encoding="utf-8")
+        self.assertIn('id="live-verification"', reference)
+        self.assertNotIn("전체 LIVE 실습은 아직 검증하지 않았습니다", reference)
+
+    def test_cli_setup_preserves_project_identity_and_least_privilege(self):
+        text = (ROOT / "docs" / "setup.md").read_text(encoding="utf-8")
+        section = text.split('<a id="cli-provision"></a>')[1].split('<a id="existing-environment"></a>')[0]
+        for required in (
+            "--allow-project-management true", "--assign-identity",
+            "--assignee-principal-type User", "--assignee-principal-type ServicePrincipal",
+            '--scope "YOUR-FOUNDRY-RESOURCE-ID"', "--location swedencentral",
+            "--model-name gpt-6-luna", "--deployment-name eval-model",
+        ):
+            self.assertIn(required, section)
+        self.assertIn("생략하지 않습니다", section)
+        self.assertIn("없는 대상에게만", section)
+        self.assertIn("삭제 명령을 실행하지 않습니다", section)
+
+    def test_portal_comparison_selects_matching_dev_runs_and_v1_baseline(self):
+        for relative in ("README.md", "docs/reference.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(document=relative):
+                for required in ("Evaluation runs", "Compare runs", "Baseline", "v1-dev-", "my-v2-dev-", "Too few samples"):
+                    self.assertIn(required, text)
+
+    def test_live_rehearsal_record_distinguishes_execution_from_human_approval(self):
+        text = (ROOT / "docs" / "reference.md").read_text(encoding="utf-8")
+        section = text.split('<a id="live-verification"></a>')[1].split("## 공식 출처")[0]
+        for required in (
+            "22개 응답", "44개 지표", "5개 평가 실행", "한 번의 실제 실행",
+            "실제 사람 검토는 미완료", "--reviewer assistant", "최종 Gate는 `BLOCK`",
+        ):
+            self.assertIn(required, section)
+        self.assertIn("| Candidate dev | 8 | 8/8 | 8/8 | 6/8 |", section)
+        self.assertIn("| 고정 Holdout | 4 | 4/4 | 4/4 | 2/4 |", section)
+
+    def test_retention_is_the_default_and_deletion_is_explicitly_optional(self):
+        main = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertLess(
+            main.index('<a id="retain-resources"></a>'),
+            main.index('<a id="delete-resources"></a>'),
+        )
+        for relative in ("README.md", "WORKSHEET.md", "docs/cleanup.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(document=relative):
+                self.assertIn("별도 요청 전까지 유지", text)
+                self.assertIn("보존", text)
+        cleanup = (ROOT / "docs" / "cleanup.md").read_text(encoding="utf-8")
+        self.assertIn("3–5단계는 건너뜁니다", cleanup)
+        self.assertIn("리소스 보존 요청이 있는 동안 삭제하지 않습니다", cleanup)
+        self.assertIn("과금 중지가 아닙니다", cleanup)
+
     def test_setup_shortcuts_do_not_duplicate_the_main_command_sequence(self):
         self.assertEqual(lab_commands(ROOT / "docs" / "setup.md"), [])
 

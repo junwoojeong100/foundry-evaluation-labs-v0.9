@@ -8,6 +8,10 @@
 
 > **실습 완료와 AI 답변 합격은 다릅니다.** 점수가 낮거나 최종 결과가 `BLOCK`이어도, 원인을 설명하고 보류 판단을 남겼다면 실습을 완료한 것입니다.
 
+**이번 LIVE 실습 설정:** 모델은 **`gpt-6-luna`**, 지역은 **Sweden Central (`swedencentral`)**, 모델 배포 이름은 **`eval-model`**입니다. 답변 생성과 Judge에 같은 배포를 사용합니다. **생성한 Azure 리소스는 실습 후에도 모두 보존합니다.** 마지막에는 [보존 상태와 비용](#retain-resources)을 확인하며, 삭제는 별도로 결정한 경우에만 수행합니다.
+
+[실제 실행 기록과 확인 범위](docs/reference.md#live-verification)는 참고용입니다. 그 점수를 본인 실행의 예상 정답으로 사용하거나 같은 점수가 나올 때까지 반복하지 않습니다.
+
 ### 시작할 경로 고르기
 
 | 내 상황 | 시작 위치 |
@@ -30,7 +34,7 @@
 | [4. 개선과 비교](#lab-4) | 지침만 바꿔 같은 질문으로 다시 측정 | `results/candidate/comparison.md` |
 | [5. 새 질문과 판단](#lab-5) | 처음 보는 질문 4개로 최종 확인 | `results/candidate/gate.md` |
 | [6. 직접 적용](#lab-6) | 새 질문 하나를 만들고 결과 정리 | 추가 사례 결과와 네 문장 보고 |
-| [마무리](#finish) | 결과 보관·본인 리소스 정리 | 완료 체크리스트와 정리 기록 |
+| [마무리](#finish) | 결과 보관·본인 리소스 보존 확인 | 완료 체크리스트와 보존 기록 |
 
 ### 진행할 때 지킬 세 가지
 
@@ -166,10 +170,12 @@ az account set --subscription "YOUR-SUBSCRIPTION-ID"
 ```
 
 ```bash
-az account show --query "{subscription:name,subscriptionId:id,tenantId:tenantId,state:state}" --output json
+az account show --query "{account:user.name,subscription:name,subscriptionId:id,tenantId:tenantId,state:state}" --output json
 ```
 
-**완료 확인:** 포털과 터미널의 구독 ID·테넌트 ID가 같고 `state`가 `Enabled`입니다. 구독이 안 보이면 사용할 구독의 테넌트로 로그인했는지 먼저 확인합니다.
+**완료 확인:** `account`가 이번 실습에 사용할 본인 계정이고, 포털과 터미널의 구독 ID·테넌트 ID가 같으며 `state`가 `Enabled`입니다. 계정도 실습지에 기록합니다. **구독 이름만 보고 진행하지 않습니다.** 여러 계정으로 로그인했다면 기본 구독이 다른 계정을 가리킬 수 있습니다. 구독이 안 보이면 사용할 구독의 테넌트로 로그인했는지 먼저 확인합니다.
+
+**브라우저와 Azure CLI는 로그인 세션이 별개입니다.** Foundry나 보고서 URL에서 **Pick an account / 계정 선택**이 다시 나오면 위 `account`와 같은 계정을 선택합니다. New Foundry로 전환할 때 다시 선택할 수도 있습니다. CLI에서 로그인했다고 다른 브라우저나 headless 브라우저까지 인증된 것은 아닙니다.
 
 <a id="setup-project"></a>
 ### 준비 3. 본인 전용 그룹과 Foundry 프로젝트 만들기
@@ -188,7 +194,7 @@ az account show --query "{subscription:name,subscriptionId:id,tenantId:tenantId,
 **Azure 포털에서:**
 
 1. **Resource groups → Create**에서 준비 2의 구독을 선택합니다.
-2. 위 표처럼 **새 전용 그룹** 이름을 입력합니다. 조직이 허용하면 지역은 **East US 2**로 시작합니다.
+2. 위 표처럼 **새 전용 그룹** 이름을 입력하고 지역은 **Sweden Central (`swedencentral`)**을 선택합니다.
 3. **Review + create → Create**를 선택하고 완료를 기다립니다.
 
 **[Microsoft Foundry](https://ai.azure.com)에서:**
@@ -196,14 +202,16 @@ az account show --query "{subscription:name,subscriptionId:id,tenantId:tenantId,
 1. 같은 계정으로 로그인합니다. **New Foundry** 전환이 보이면 켭니다.
 2. **Create project**, 또는 왼쪽 위 프로젝트 이름 → **Create new project**를 선택합니다.
 3. 프로젝트 이름에 **`eval-workshop`**을 넣고 **Advanced options**를 엽니다.
-4. **같은 구독·방금 만든 전용 그룹·허용된 지역**을 선택합니다. 공유 자원이 아니라 **새 Foundry 리소스**를 사용하고, 이름 입력란이 있으면 위 표처럼 지정합니다.
+4. **같은 구독·방금 만든 전용 그룹·Sweden Central (`swedencentral`)**을 선택합니다. 공유 자원이 아니라 **새 Foundry 리소스**를 사용하고, 이름 입력란이 있으면 위 표처럼 지정합니다.
 5. **Create**를 선택하고 프로젝트가 열릴 때까지 기다립니다.
 
 **Hub / 허브를 먼저 만들라는 화면이면 진행하지 않습니다.** 이 실습은 Foundry 리소스 아래의 새 **Foundry 프로젝트**를 사용하며, classic의 허브 기반 프로젝트와는 설정·SDK가 다릅니다. New Foundry 화면과 선택한 프로젝트 유형을 다시 확인합니다.
 
 **완료 확인:** **Manage → Project details / Resource details**에서 프로젝트와 상위 Foundry 리소스를 확인할 수 있고, Azure 포털의 전용 그룹에서도 배포 상태가 `Succeeded`입니다. 그룹·리소스·프로젝트 이름과 실제 지역을 실습지에 기록합니다.
 
-East US 2는 시작 예시이지 모델 용량 보장이 아닙니다. 조직 정책·지역·쿼터로 막히면 [모델 가용성 도움말](docs/reference.md#model-availability)을 확인합니다. 기존 환경의 방화벽·네트워크 제한을 해제하지 않습니다.
+**리소스 그룹의 지역만 맞추면 끝나는 것이 아닙니다.** 상위 Foundry 리소스와 프로젝트도 `swedencentral`인지 각각 확인합니다. 지정 지역이 모델 용량을 보장하지는 않습니다. 조직 정책·지역·쿼터로 막히면 [모델 가용성 도움말](docs/reference.md#model-availability)을 확인하고, 다른 지역으로 임의 변경하거나 기존 환경의 방화벽·네트워크 제한을 해제하지 않습니다.
+
+포털 대신 명령으로 준비하려면 [Azure CLI 신규 환경 경로](docs/setup.md#cli-provision)를 사용합니다. **준비 3–5의 대체 경로**이며 두 경로로 자원을 중복 생성하지 않습니다.
 
 <a id="setup-permissions"></a>
 ### 준비 4. 모델 호출과 평가 권한 확인
@@ -239,22 +247,23 @@ East US 2는 시작 예시이지 모델 용량 보장이 아닙니다. 조직 �
 
 **실행 위치: Foundry → Discover → Models**
 
-1. **`gpt-4.1-mini`**를 검색해 엽니다. 답변과 JSON 형식 출력을 지원하는 시작 모델입니다.
+1. **`gpt-6-luna`**를 검색해 엽니다. 정확한 모델명과 제공되는 버전을 확인합니다. 비슷한 이름의 다른 모델을 대신 선택하지 않습니다.
 2. **Deploy → Custom settings**에서 방금 만든 프로젝트·리소스를 선택합니다.
 3. 아래 값을 확인한 뒤 **Deploy**를 선택합니다.
 
 | 설정 | 입력·선택할 값 |
 |---|---|
 | Deployment name | **`eval-model`** |
-| Model / version | `gpt-4.1-mini`의 제공되는 버전 |
-| Deployment type | 조직이 허용하면 **Global Standard** |
-| Tokens per minute (TPM, 분당 토큰 한도) | 남은 쿼터 안에서, 예를 들어 **30K–60K TPM** |
+| Model / version | **`gpt-6-luna`** / 해당 지역에서 제공되는 버전. 실제 선택한 버전을 기록 |
+| Resource location | **Sweden Central (`swedencentral`)** |
+| Deployment type | 모델이 지원하고 남은 쿼터가 있으며 조직이 허용하면 **Global Standard** |
+| Tokens per minute (TPM, 분당 토큰 한도) | 해당 모델·배포 유형의 남은 쿼터 안에서, 선택 가능하면 **30K–60K TPM**으로 시작 |
 
-**Provisioned/PTU·GPU 배포는 선택하지 않습니다.** Global Standard는 사용량 기반이며, 선택한 지역에만 추론 처리가 머무는 방식은 아닙니다. 모델이 없거나 쿼터가 부족하면 [모델·지역 선택 도움말](docs/reference.md#model-availability)을 따릅니다. 다른 사람의 쿼터를 줄이지 않습니다.
+**Provisioned/PTU·GPU 배포는 선택하지 않습니다.** Global Standard는 사용량 기반이며, 리소스를 `swedencentral`에 만들어도 추론 처리가 그 지역에만 머무는 방식은 아닙니다. 모델이 없거나 쿼터가 부족하면 [모델·지역 선택 도움말](docs/reference.md#model-availability)을 따릅니다. 다른 모델·지역으로 임의 대체하거나 다른 사람의 쿼터를 줄이지 않습니다.
 
-**완료 확인:** **Build → Models**에서 **`eval-model`**이 `Succeeded`입니다. 모델 이름·버전·배포 유형을 기록합니다. **모델 이름 `gpt-4.1-mini`와 배포 이름 `eval-model`을 혼동하지 않습니다.**
+**완료 확인:** **Build → Models**에서 **`eval-model`**이 `Succeeded`이고 연결된 모델이 **`gpt-6-luna`**입니다. 모델 이름·버전·배포 유형을 기록합니다. **모델 이름 `gpt-6-luna`와 배포 이름 `eval-model`을 혼동하지 않습니다.**
 
-이 배포 하나를 답변 생성과 AI 채점에 함께 사용합니다. 호출은 별개이고 같은 모델도 잘못 채점할 수 있으므로 뒤에서 사람 판단과 대조합니다.
+이 배포 하나를 답변 생성과 AI 채점에 함께 사용합니다. **카탈로그 조회나 배포 성공만으로 Chat Completions·Structured Outputs(JSON Schema)·클라우드 Judge가 모두 동작한다고 판단하지 않습니다.** [준비 7의 한 건 생성·평가](#setup-smoke)로 실제 호환성을 확인합니다. 호출은 별개이고 같은 모델도 잘못 채점할 수 있으므로 뒤에서 사람 판단과 대조합니다.
 
 <a id="setup-config"></a>
 ### 준비 6. 설정 파일에 프로젝트 주소 넣기
@@ -273,13 +282,13 @@ East US 2는 시작 예시이지 모델 용량 보장이 아닙니다. 조직 �
 }
 ```
 
-기본 경로에서는 **주소 하나만 수정**합니다. 주소에는 **`.services.ai.azure.com/api/projects/실제프로젝트이름`**이 포함되어야 합니다. Azure 포털의 브라우저 주소, `/api/projects/...`가 없는 리소스 주소, `.openai.azure.com` 모델 주소는 넣지 않습니다. 배포를 다른 이름으로 만들었다면 아래 두 값도 실제 **배포 이름**으로 바꿉니다. 파일명이 `config.json.txt`가 아닌지 확인합니다. `.env`는 필요 없습니다.
+기본 경로에서는 **주소 하나만 수정**합니다. `model_deployment`와 `judge_deployment`는 모두 **`eval-model`**로 두며, 모델을 바꿨다고 이 값을 `gpt-6-luna`로 바꾸지 않습니다. 주소에는 **`.services.ai.azure.com/api/projects/실제프로젝트이름`**이 포함되어야 합니다. Azure 포털의 브라우저 주소, `/api/projects/...`가 없는 리소스 주소, `.openai.azure.com` 모델 주소는 넣지 않습니다. 배포를 다른 이름으로 만들었다면 두 값도 실제 **배포 이름**으로 바꿉니다. 파일명이 `config.json.txt`가 아닌지 확인합니다. `.env`는 필요 없습니다.
 
 ```bash
 python lab.py doctor --live
 ```
 
-**완료 확인:** `model_deployment`와 `judge_deployment`에 각각 **`LIVE 조회 OK`**가 나옵니다. 같은 `eval-model`이 두 번 나오는 것이 정상입니다. 이는 조회 확인이며, 실제 생성·평가는 다음 단계에서 확인합니다.
+**완료 확인:** `model_deployment`와 `judge_deployment`에 각각 **`LIVE 조회 OK`**가 나오고 모델 이름이 **`gpt-6-luna`**인지 확인합니다. 같은 `eval-model`이 두 번 나오는 것이 정상입니다. 이는 조회 확인이며, 실제 생성·평가는 다음 단계에서 확인합니다.
 
 <a id="command-status"></a>
 ### 명령 결과를 보고 다음 행동 고르기
@@ -324,6 +333,8 @@ python lab.py inspect results/setup-smoke N01
 **완료 확인:** 답변의 업무 검사에 `"schema": true`, `groundedness`와 `relevance`에 각각 **1–5점과 이유**가 있습니다. 출력된 **Foundry 보고서 URL**을 열어 포털에서도 같은 질문·답변·점수를 확인합니다. URL이 없으면 프로젝트의 **Evaluation / 평가**에서 `results/setup-smoke/foundry-job.json`의 `eval_id`·`run_id`와 대조해 찾습니다.
 
 점수가 낮아도 연결이 확인됐으면 진행합니다. 인증 오류·잘린 답변·누락된 점수는 먼저 해결합니다. 이 `N01`은 연결 확인용이며 본 실습의 질문에는 포함되지 않습니다.
+
+**Judge가 5점인데 `citations`만 FAIL일 수도 있습니다.** 예를 들어 초안은 적용할 수 없다고 올바르게 설명했더라도 출처 배열에 `FAQ-DRAFT`를 함께 넣으면 엄격한 출처 집합 검사에는 실패합니다. 답변 JSON 형식과 두 점수·이유가 유효하면 연결 확인은 완료하고, 이 차이는 평가 관찰로 기록합니다.
 
 **준비 끝. 이제 아래 실습 1로 이어갑니다.**
 
@@ -436,6 +447,8 @@ python lab.py inspect results/baseline D04
 
 **완료 확인:** 실습지 2–3에 **처음 내 판정 → 두 Judge 점수 → 동의/불일치 이유**가 있습니다. LIVE 점수는 정해져 있지 않습니다. 예를 들어 결정 필드는 맞아도 설명에 “승인 완료”를 지어내면 코드만으로 놓칠 수 있습니다. 한 사례를 대조했다고 Judge 정확성이 검증된 것은 아닙니다.
 
+반대로 **규정에 없는 금액을 추측하지 않은 올바른 답을 Relevance가 낮게 채점할 수도 있습니다.** 이유에 “구체적인 금액을 제시하지 못했다”가 보이면 기대 행동과 대조해 불일치를 기록합니다. 점수를 올리려고 금액을 지어내거나 Judge·합격선을 바꾸지 않습니다.
+
 ---
 
 <a id="lab-4"></a>
@@ -469,7 +482,9 @@ python lab.py compare results/baseline results/candidate
 
 `results/candidate/comparison.md`에서 **업무 통과율 → 새로 통과한 사례 → 업무 검사 회귀 → Judge 회귀** 순서로 읽습니다. 회귀는 이전에 통과하던 검사가 새로 실패하는 변화입니다. **전체 통과율이 올라도 중요한 한 건이 나빠지면 보류**합니다. 사례별 실제 답변과 점수 이유는 두 폴더의 `report.md`에서 같은 ID로 대조합니다.
 
-Foundry 보고서의 **Evaluation / 평가**에서도 두 실행을 선택해 **Compare**로 답변·점수 이유를 비교합니다. 비교 버튼이 없으면 각 실행의 같은 질문을 나란히 봅니다. 점수 변화가 없다면 D06이 안전하게 유지됐는지 확인합니다.
+Foundry의 **Build → Evaluations**에서 baseline의 **`straightforward-…` 평가 그룹 이름**을 엽니다. **Evaluation runs** 안에서 **`v1-dev-…`와 `my-v2-dev-…` 두 실행만** 선택하고 **Compare runs**를 누릅니다. 비교 화면의 **Baseline**도 반드시 `v1-dev-…`로 지정합니다. 처음 선택한 후보가 기준으로 잡힐 수 있습니다. Holdout·연결 확인·추가 사례는 전후 비교에 섞지 않습니다.
+
+포털 비교는 평균·통계 요약이며, **개별 답변·점수 이유와 합격선 4점 기준의 회귀**는 각 실행의 같은 질문과 로컬 `comparison.md`에서 대조합니다. **Too few samples / Inconclusive**가 나오면 작은 표본에서 개선을 확정할 수 없다는 뜻입니다. 비교 버튼이 없어도 두 실행의 같은 질문을 나란히 볼 수 있습니다. 점수 변화가 없다면 D06이 안전하게 유지됐는지 확인합니다.
 
 **할 일 3 — 실제 답변 검토:**
 
@@ -489,6 +504,8 @@ python lab.py review results/candidate D06
 ```
 
 위험한 문장이 있으면 고득점이어도 `fail`입니다. 이 기록을 저장해도 모델이 학습되거나 Judge 점수가 바뀌지는 않습니다.
+
+**Copilot 등으로 실습 실행을 자동화한다면** [AI 보조 검토 기록](docs/reference.md#assisted-review)을 사용합니다. AI의 판정을 사람의 승인으로 저장하지 않으며, 보조 검토만 있는 Gate는 사람 검토가 필요하므로 `BLOCK`입니다.
 
 **완료 확인:** `검토 저장: results/candidate/reviews.json`이 보입니다. 실습지 4에 바꾼 지침과 좋아진/나빠진 사례를 남깁니다. 변화가 없으면 “변화 없음”으로 기록합니다.
 
@@ -618,7 +635,7 @@ python lab.py inspect results/my-case N02
 ---
 
 <a id="finish"></a>
-## 마무리. 결과 보관과 리소스 정리
+## 마무리. 결과 보관과 리소스 보존
 
 ### 실습 완료 체크리스트
 
@@ -631,9 +648,28 @@ VS Code에서 다음 파일과 본인 기록을 확인합니다. **점수가 아
 - [ ] `results/my-case/report.md`·`judge.json`에 N02의 답변과 두 점수가 있고, 예제 수정/직접 작성/예제 그대로 사용 여부를 기록했다.
 - [ ] `results/my-worksheet.md`에 D04의 최초 판정, 전후 관찰, 마지막 네 문장 보고가 있다.
 
-### Azure 자원 정리
+**자동 리허설에서는** 실행·AI 보조 검토·Gate 결과를 기록하되, 실제 사람이 하지 않은 검토 항목을 완료로 체크하지 않습니다. AI 보조 검토만 있는 경우의 사람 검토 미완료와 `BLOCK`을 그대로 보고합니다.
+
+### Azure 자원 보존 또는 삭제 선택
 
 **터미널을 닫아도 Azure 자원은 남습니다.** 실습을 중간에 그만두는 경우에도 확인합니다.
+
+<a id="retain-resources"></a>
+#### 기본 경로: 생성한 리소스 모두 보존
+
+**이번 실습에서는 삭제하지 않습니다.** 전용 그룹뿐 아니라 Foundry 리소스·프로젝트·모델 배포·평가 기록과 필요한 역할 할당도 그대로 둡니다. 그룹 삭제, 개별 모델 삭제, `azd down` 같은 정리 명령을 실행하지 않습니다.
+
+1. **`results/`를 로컬에 보관**하고 진행 중인 원격 평가의 상태를 기록합니다. 터미널을 닫았다고 평가가 취소되거나 완료된 것은 아닙니다.
+2. Azure 포털에서 실습지의 **구독 → 전용 그룹**을 엽니다. 그룹·Foundry 리소스·프로젝트의 지역이 `swedencentral`인지, Foundry의 **Build → Models**에 `eval-model` 배포가 남아 있는지 확인합니다.
+3. **Cost Management → Cost analysis**에서 해당 그룹으로 범위를 좁혀 비용을 확인합니다. 반영이 늦을 수 있으므로 즉시 0원으로 보여도 무료였다고 판단하지 않습니다. 리소스 보존은 무료 사용이나 과금 중지를 뜻하지 않으며 예산 알림도 자동 차단이 아닙니다.
+4. 실습지에 **미삭제·보존 이유·다음 확인 시점 또는 조건·비용 확인 결과**를 기록합니다. 삭제일을 정하지 않았다면 “별도 요청 전까지 유지”라고 적습니다.
+
+**보존 완료 확인:** 실제 생성한 리소스가 남아 있고 보존 결정과 비용 확인 상태를 기록했습니다. 아직 만들지 않은 프로젝트·배포나 실행하지 않은 평가를 완료로 표시하지 않습니다. 이 경로를 선택했다면 아래 삭제 절차는 건너뜁니다.
+
+<a id="delete-resources"></a>
+#### 선택 경로: 나중에 삭제하기로 결정한 경우에만
+
+**리소스 보존 요청이 있는 동안은 이 절을 실행하지 않습니다.** 나중에 환경 소유자가 삭제하기로 결정한 경우에만 다음 순서로 진행합니다.
 
 1. **먼저 `results/`를 로컬에 보관**합니다. 포털 원본 평가 기록이 필요하면 삭제 전에 내려받습니다. 진행 중인 원격 평가가 있으면 완료를 확인하거나 본인 작업만 취소합니다.
 2. Azure 포털에서 실습지에 적은 **구독 → 본인 전용 리소스 그룹**을 엽니다. 이번 실습 자원만 있는지 확인합니다. **공유 자원이 있거나 삭제 범위가 불확실하면 그룹을 삭제하지 않습니다.**
@@ -646,9 +682,9 @@ az group exists --name "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTI
 
 **정리 완료 확인:** 올바른 구독·그룹의 조회 결과가 `false`이고 포털에서도 삭제 완료가 확인됩니다. 인증 오류·403은 삭제 완료가 아닙니다. 잠금이나 조직 정책으로 막히면 무단 해제하지 말고 미완료로 기록합니다.
 
-Azure 포털의 **Cost Management → Cost analysis**에서 삭제 전 발생한 비용을 확인합니다. 반영이 늦을 수 있으며 삭제가 이미 발생한 비용을 취소하지는 않습니다. **실습지에 삭제 여부·시각·비용 확인 결과**를 적습니다. 자원을 유지한다면 이유와 정리 예정일을 적습니다. 공유 환경은 소유자와 합의한 범위만 정리합니다. 자세한 확인이 필요하면 [리소스 정리 도움말](docs/cleanup.md)을 봅니다.
+Azure 포털의 **Cost Management → Cost analysis**에서 삭제 전 발생한 비용을 확인합니다. 반영이 늦을 수 있으며 삭제가 이미 발생한 비용을 취소하지는 않습니다. **실습지에 삭제 여부·시각·비용 확인 결과**를 적습니다. 공유 환경은 소유자와 합의한 범위만 정리합니다. 자세한 확인이 필요하면 [리소스 보존·정리 도움말](docs/cleanup.md)을 봅니다.
 
-**위 체크리스트와 정리 기록까지 남겼으면 LIVE 실습 완료입니다.** 이 작은 질문 묶음의 한 번 실행은 운영 품질 보증이나 실제 배포 승인이 아닙니다.
+**위 체크리스트와 보존 또는 삭제 기록까지 남겼으면 LIVE 실습 완료입니다. 리소스를 삭제해야만 완료되는 것은 아닙니다.** 이 작은 질문 묶음의 한 번 실행은 운영 품질 보증이나 실제 배포 승인이 아닙니다.
 
 ---
 

@@ -6,6 +6,8 @@
 
 이 문서는 **필요한 준비 단계만 다시 찾거나, 기존 환경을 사용하거나, 중단한 실습을 재개할 때** 사용합니다. 같은 명령을 여기서 다시 실행할 필요는 없습니다.
 
+**이번 LIVE 설정은 `gpt-6-luna`·`swedencentral`·배포 이름 `eval-model`입니다.** 답변과 Judge에 같은 배포를 사용하고, 생성한 리소스는 실습 후에도 모두 보존합니다. 모델·지역을 임의 대체하지 않으며 마지막에는 [보존 상태와 비용](../README.md#retain-resources)을 확인합니다.
+
 <a id="tools"></a>
 ## 준비 1. 코드와 도구 준비
 
@@ -14,12 +16,12 @@
 <a id="sign-in"></a>
 ## 준비 2. 같은 계정·구독으로 로그인
 
-[준비 2: 사용할 구독으로 로그인](../README.md#setup-sign-in) — 포털과 CLI의 계정·테넌트·구독을 맞춥니다. `YOUR-...`에는 본인 실습지에 기록한 값을 넣습니다.
+[준비 2: 사용할 구독으로 로그인](../README.md#setup-sign-in) — 포털과 CLI의 계정·테넌트·구독을 맞춥니다. `az account show`의 `account`까지 대조하며, `YOUR-...`에는 본인 실습지에 기록한 값을 넣습니다.
 
 <a id="create-project"></a>
 ## 준비 3. 전용 그룹과 프로젝트 만들기
 
-[준비 3: 전용 그룹과 Foundry 프로젝트](../README.md#setup-project) — 자원별 역할과 이름, 생성 순서, 기록할 값을 확인합니다. 공유 자원을 새 전용 자원으로 오해하지 않습니다.
+[준비 3: 전용 그룹과 Foundry 프로젝트](../README.md#setup-project) — 자원별 역할과 이름, 생성 순서, 기록할 값을 확인합니다. 그룹뿐 아니라 Foundry 리소스·프로젝트도 `swedencentral`인지 확인합니다. 공유 자원을 새 전용 자원으로 오해하지 않습니다.
 
 <a id="permissions"></a>
 ## 준비 4. 데이터 접근 권한 확인
@@ -29,12 +31,12 @@
 <a id="deploy-model"></a>
 ## 준비 5. 모델 하나 배포
 
-[준비 5: 모델 하나 배포](../README.md#setup-model) — 기본 배포 이름은 `eval-model`입니다. 모델이나 용량을 사용할 수 없으면 [모델·지역·쿼터 도움말](reference.md#model-availability)을 봅니다.
+[준비 5: 모델 하나 배포](../README.md#setup-model) — 모델은 `gpt-6-luna`, 배포 이름은 `eval-model`입니다. 두 이름을 혼동하지 않습니다. 지정한 모델이나 용량을 사용할 수 없으면 [모델·지역·쿼터 도움말](reference.md#model-availability)을 봅니다.
 
 <a id="configure"></a>
 ## 준비 6. 프로젝트 주소 하나 넣기
 
-[준비 6: 설정 파일](../README.md#setup-config) — `config.json`에 실제 프로젝트 주소와 배포 이름을 넣습니다. 두 배포 항목에 `LIVE 조회 OK`가 나와야 다음으로 갑니다.
+[준비 6: 설정 파일](../README.md#setup-config) — `config.json`에 실제 프로젝트 주소를 넣고, 두 배포 항목은 모두 `eval-model`로 둡니다. 두 항목에 `LIVE 조회 OK`와 모델 이름 `gpt-6-luna`가 나와야 다음으로 갑니다.
 
 <a id="smoke"></a>
 ## 준비 7. 답변 한 개로 연결 확인
@@ -42,6 +44,83 @@
 [준비 7: 한 건의 생성·평가](../README.md#setup-smoke) — `N01` 한 건으로 유료 연결을 확인합니다. 답변 형식과 두 점수·이유가 모두 있어야 합니다. 대기·낮은 점수·실행 오류의 차이는 [명령 결과 읽기](../README.md#command-status)를 봅니다.
 
 ---
+
+<a id="cli-provision"></a>
+## 선택: Azure CLI로 신규 환경 준비
+
+**README 준비 1–2를 완료한 뒤, 준비 3–5의 포털 조작 대신 사용하는 경로**입니다. Azure CLI **2.80.0 이상**과 생성·역할 할당 권한이 필요합니다. [공식 프로젝트 생성 문서](https://learn.microsoft.com/azure/foundry/how-to/create-projects)를 따르며 `azd`, 검색 서비스, 에이전트 서버는 추가하지 않습니다. 이미 프로젝트·모델을 만들었다면 다시 실행하지 않습니다.
+
+`YOUR-...`를 실습지의 실제 값으로 바꿉니다. 그룹·Foundry 리소스 이름은 본인 고유 이름, 프로젝트는 `eval-workshop`, 배포는 `eval-model`을 사용합니다. 아래 명령은 macOS/Linux와 PowerShell에서 동일합니다.
+
+### 1. 새 그룹과 Foundry 리소스
+
+그룹이 존재하지 않는지 먼저 조회합니다. **`false`일 때만** 신규 이름으로 진행합니다. `true`라면 기존 그룹을 재사용하거나 지우지 말고 새 고유 이름을 선택합니다.
+
+```bash
+az group exists --name "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID"
+```
+
+```bash
+az group create --name "YOUR-LAB-RESOURCE-GROUP" --location swedencentral --subscription "YOUR-SUBSCRIPTION-ID" --tags purpose=foundry-evaluation-workshop retain=true
+```
+
+```bash
+az cognitiveservices account create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --kind AIServices --sku S0 --location swedencentral --custom-domain "YOUR-FOUNDRY-ACCOUNT" --assign-identity --allow-project-management true --subscription "YOUR-SUBSCRIPTION-ID" --yes
+```
+
+**`--assign-identity`와 `--allow-project-management true`를 생략하지 않습니다.** 상위 리소스의 관리 ID와 프로젝트 관리 기능이 필요합니다. Custom domain은 전역에서 고유해야 합니다. `retain=true` 태그는 보존 의도를 기록할 뿐 삭제를 차단하는 잠금이나 과금 중지 장치가 아닙니다.
+
+### 2. 프로젝트와 실제 주소·ID 확인
+
+```bash
+az cognitiveservices account project create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --project-name eval-workshop --location swedencentral --assign-identity --subscription "YOUR-SUBSCRIPTION-ID"
+```
+
+```bash
+az cognitiveservices account show --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --query "{id:id,location:location,state:properties.provisioningState}" --output json
+```
+
+```bash
+az cognitiveservices account project show --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --project-name eval-workshop --subscription "YOUR-SUBSCRIPTION-ID" --query "{id:id,location:location,state:properties.provisioningState,principalId:identity.principalId,endpoints:properties.endpoints}" --output json
+```
+
+두 자원의 지역 `swedencentral`과 상태 `Succeeded`를 확인합니다. 첫 조회의 `id`는 아래 **`YOUR-FOUNDRY-RESOURCE-ID`**, 프로젝트 조회의 `principalId`는 **`YOUR-PROJECT-PRINCIPAL-ID`**입니다. `endpoints`의 **AI Foundry API** 주소를 준비 6의 `config.json`에 사용합니다. 주소를 이름으로 조립하지 않습니다.
+
+### 3. 본인과 프로젝트 관리 ID의 권한
+
+```bash
+az ad signed-in-user show --query "{account:userPrincipalName,objectId:id}" --output json
+```
+
+계정을 다시 대조하고 `objectId`를 **`YOUR-USER-OBJECT-ID`**로 사용합니다. 상위 Foundry 리소스의 IAM에서 기존 역할을 먼저 확인하고, **없는 대상에게만** 다음 역할을 할당합니다. CLI 생성은 포털과 달리 필요한 데이터 역할이 자동 부여되었다고 가정하지 않습니다.
+
+```bash
+az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "53ca6127-db72-4b80-b1b0-d745d6d5456d" --scope "YOUR-FOUNDRY-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
+```
+
+```bash
+az role assignment create --assignee-object-id "YOUR-PROJECT-PRINCIPAL-ID" --assignee-principal-type ServicePrincipal --role "53ca6127-db72-4b80-b1b0-d745d6d5456d" --scope "YOUR-FOUNDRY-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
+```
+
+두 역할 모두 **Foundry User**이고 범위는 `/accounts/실제리소스이름`까지입니다. 구독 전체나 다른 프로젝트에 할당하지 않습니다. 본인은 `User`, 프로젝트 관리 ID는 `ServicePrincipal`입니다.
+
+### 4. 모델·쿼터 확인 후 한 개 배포
+
+```bash
+az cognitiveservices model list --location swedencentral --subscription "YOUR-SUBSCRIPTION-ID" --query "[?model.name=='gpt-6-luna'].model" --output json
+```
+
+```bash
+az cognitiveservices usage list --location swedencentral --subscription "YOUR-SUBSCRIPTION-ID" --query "[?name.value=='OpenAI.GlobalStandard.gpt-6-luna'].{name:name.value,current:currentValue,limit:limit}" --output json
+```
+
+카탈로그에 모델·선택 버전·`GlobalStandard`가 있고, 해당 쿼터의 **`limit - current`가 60 이상**일 때 아래 60K TPM 예시를 사용합니다. 이 모델의 해당 SKU에서 CLI capacity 1은 1000 TPM입니다. 다른 모델의 용량 단위나 쿼터 이름을 이 예시로 추정하지 않습니다. 조회가 비거나 용량이 부족하면 [모델 가용성 도움말](reference.md#model-availability)을 따릅니다. 남은 쿼터가 있어도 지역의 실제 배포 용량까지 보장하지는 않습니다.
+
+```bash
+az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --deployment-name eval-model --model-name gpt-6-luna --model-version "YOUR-MODEL-VERSION" --model-format OpenAI --sku-name GlobalStandard --sku-capacity 60 --subscription "YOUR-SUBSCRIPTION-ID"
+```
+
+`YOUR-MODEL-VERSION`에는 **조회한 실제 버전**을 넣습니다. 2026-09-27 실습에서는 `2026-09-22`를 사용했으며 이 값을 현재도 제공한다고 가정하지 않습니다. 완료 후 [README 준비 6](../README.md#setup-config)으로 돌아가 설정·조회·한 건 생성·평가를 진행합니다. API 키를 조회하거나 저장할 필요는 없습니다. **마지막에 삭제 명령을 실행하지 않습니다.**
 
 <a id="existing-environment"></a>
 ## 이미 허가받은 환경이 있다면
@@ -71,14 +150,14 @@
 1. 새 LIVE 호출을 멈추고, 실습지 준비 표에 **중단한 단계·오류·이미 만든 Azure 자원**을 기록합니다. 기존 결과·설정·작성한 질문을 지우지 않습니다.
 2. [DEMO 가이드의 준비](offline.md#prepare)로 이동합니다. 설치한 Python·VS Code·가상환경은 재사용합니다. LIVE 실습지는 보존하고, 안내대로 **`results/my-worksheet-demo.md`**를 만들어 DEMO 기록을 분리합니다.
 3. DEMO 가이드의 `results/demo-*` 폴더만 사용해 실습 1–6을 진행합니다. LIVE 명령의 모드만 바꾸거나 LIVE 점수와 DEMO 점수를 비교하지 않습니다.
-4. LIVE에서 만든 자원이 있다면 DEMO가 끝나도 [정리 절차](cleanup.md)를 수행합니다. 이미 제출한 원격 평가는 터미널을 닫거나 DEMO로 전환해도 자동 취소되지 않습니다.
+4. LIVE에서 만든 자원이 있다면 DEMO가 끝나도 [보존 상태와 비용](cleanup.md#retain-resources)을 확인합니다. DEMO 전환을 이유로 리소스를 자동 삭제하지 않습니다. 이미 제출한 원격 평가는 터미널을 닫거나 DEMO로 전환해도 자동 취소되지 않습니다.
 
 <a id="cost"></a>
 ## 비용 확인
 
 기본 경로의 호출 규모는 [README 준비](../README.md#prepare)에 있습니다. [모델 요금](https://azure.microsoft.com/pricing/details/azure-openai/)과 본인 배포 유형을 확인합니다. 생성 토큰 합계만으로 Judge 비용까지 계산하지 않습니다.
 
-Azure 포털의 **Cost Management → Cost analysis**에서 해당 전용 그룹으로 범위를 좁혀 봅니다. 비용 반영은 늦을 수 있고, 예산 알림은 자동 지출 차단이 아닙니다. 끝나거나 중도 중단하면 [리소스 정리](cleanup.md)를 확인합니다.
+Azure 포털의 **Cost Management → Cost analysis**에서 해당 전용 그룹으로 범위를 좁혀 봅니다. 비용 반영은 늦을 수 있고, 예산 알림은 자동 지출 차단이 아닙니다. 끝나거나 중도 중단하면 [리소스 보존·정리](cleanup.md)를 확인합니다. 기본은 보존이며, 보존을 과금 중지로 해석하지 않습니다.
 
 <a id="resume"></a>
 ## 나중에 이어서 하기

@@ -354,11 +354,15 @@ def review_problems(folder: Path, run: dict) -> list[str]:
             or review.get("evidence_hash") != run["evidence_hash"]
             or review.get("case_id") not in ids
             or review.get("verdict") not in ("pass", "fail")
+            or review.get("reviewer", "human") not in ("human", "assistant")
             or not isinstance(review.get("note"), str)
             or len(review["note"].strip()) < 5
         ):
             return [f"{folder.name}: 유효하지 않거나 다른 응답의 검토 기록입니다."]
-        latest[review["case_id"]] = review
+        if review.get("reviewer", "human") == "human":
+            latest[review["case_id"]] = review
+    if not latest:
+        return [f"{folder.name}: AI 보조 검토만 있습니다. 사람의 검토 기록이 필요합니다."]
     rejected = [case_id for case_id, review in latest.items() if review["verdict"] == "fail"]
     return [f"{folder.name}: 사람이 반려한 사례 {', '.join(rejected)}"] if rejected else []
 
