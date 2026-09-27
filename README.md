@@ -253,6 +253,6 @@ python lab.py inspect results/my-case N02
 | 중단했다가 다시 시작 | [재개 방법](docs/setup.md#resume). 완료한 결과는 보존합니다. |
 | 평균이 올라도 보류하는 사례를 더 보고 싶음 | [회귀 함정 — 선택 연습](docs/offline.md#regression-trap). 별도 DEMO이며 LIVE 결과와 섞지 않습니다. |
 | 개념을 스스로 확인하고 싶음 | [다섯 질문과 해설](docs/reference.md#self-check) |
-| 단체 수업 진행 | [강사 가이드](docs/facilitator.md) |
+| 단체 수업 진행 | [단체 진행 가이드](docs/facilitator.md) |
 
 작은 질문 묶음의 한 번 실행은 운영 품질 보증이 아닙니다. [상세 기준·한계·공식 출처](docs/reference.md)는 참고용입니다. 기본 실습을 위해 먼저 읽을 필요는 없습니다.

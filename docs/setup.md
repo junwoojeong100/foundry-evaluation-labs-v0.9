@@ -2,7 +2,7 @@
 
 [메인 실습](../README.md) · [문제 해결](reference.md#troubleshooting)
 
-**시작 조건:** Microsoft Entra ID 계정, 활성 Azure 구독, 그 구독의 **활성 Owner 역할**. 강사가 만든 환경이나 API 키는 필요 없습니다.
+**시작 조건:** Microsoft Entra ID 계정, 활성 Azure 구독, 그 구독의 **활성 Owner 역할**. 환경은 아래 단계에서 직접 만듭니다. API 키는 사용하지 않습니다.
 
 **만들 것:** 본인 전용 리소스 그룹 → Foundry 리소스와 프로젝트 → 모델 배포 하나. 아래 1–7을 순서대로 진행하고 **완료 확인이 맞으면 다음으로** 갑니다. 이미 허가받은 환경이 있다면 [기존 환경](#existing-environment) 항목만 확인합니다.
 
