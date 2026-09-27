@@ -277,6 +277,25 @@ class SDKContractTests(unittest.TestCase):
         self.assertEqual(state["run_id"], "run-local-1")
         self.assertEqual(state["phase"], "failed")
 
+    def test_live_judge_does_not_announce_completion_for_pending_or_invalid_results(self):
+        for scenario in ("queued", "failed", "missing_row", "missing_reason"):
+            with self.subTest(scenario=scenario):
+                self.api = LocalAPI()
+                if scenario in ("queued", "failed"):
+                    self.api.status = scenario
+                else:
+                    setattr(self.api, scenario, True)
+                run, folder = self.saved_test_run(scenario)
+                write_json(folder / "run.json", run)
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with self.connection(), redirect_stdout(stdout), redirect_stderr(stderr):
+                    code = lab.main(["judge", str(folder), "--wait-seconds", "0"])
+                self.assertEqual(code, 3 if scenario == "queued" else 1)
+                self.assertNotIn("평가 완료:", stdout.getvalue())
+                self.assertNotIn("Judge 결과:", stdout.getvalue())
+                self.assertFalse((folder / "judge.json").exists())
+                self.assertTrue((folder / "foundry-job.json").is_file())
+
     def test_unknown_submission_outcome_is_not_silently_retried(self):
         run, folder = self.saved_test_run()
         self.api.creation_timeout = True
@@ -346,8 +365,8 @@ class SDKContractTests(unittest.TestCase):
             redirect_stdout(stdout),
             redirect_stderr(stderr),
         ):
-            for block in re.findall(r"```(?:bash|powershell)\n(.*?)```", text, re.DOTALL):
-                for line in block.splitlines():
+            for block in re.finditer(r"```(?:bash|powershell)\n(.*?)```", text, re.DOTALL):
+                for line in block.group(1).splitlines():
                     if not line.startswith("python lab.py "):
                         continue
                     argv = [
@@ -359,10 +378,22 @@ class SDKContractTests(unittest.TestCase):
                     if argv[0] == "judge":
                         argv += ["--wait-seconds", "0"]
                     with self.subTest(command=line):
+                        output_start = stdout.tell()
                         self.assertEqual(
                             lab.main(argv), 2 if argv[0] == "gate" else 0,
                             stdout.getvalue() + stderr.getvalue(),
                         )
+                        if argv[0] == "judge":
+                            folder = Path(argv[1])
+                            count = len(read_json(folder / "judge.json")["rows"])
+                            checkpoint = f"평가 완료: {count}개 답변 × 2개 지표"
+                            self.assertIn(checkpoint, text[block.end():].split("```", 1)[0])
+                            self.assertIn(checkpoint, stdout.getvalue()[output_start:])
+                            self.assertIn(
+                                f"Judge 결과: {folder / 'judge.json'}",
+                                stdout.getvalue()[output_start:],
+                            )
+                            self.assertIn("사례별 근거", (folder / "report.md").read_text(encoding="utf-8"))
         self.assertEqual(self.api.count("POST", "/chat/completions"), 22)
         self.assertEqual(self.api.count("POST", "/evals"), 2)
         self.assertEqual(self.api.count("POST", "/runs"), 5)

@@ -94,6 +94,28 @@ class WorkshopTests(unittest.TestCase):
         self.assertEqual(before, (folder / "run.json").read_bytes())
         self.assertEqual(grade, (folder / "judge.json").read_bytes())
 
+    def test_judge_completion_confirms_saved_evidence_not_quality_success(self):
+        folder = self.collect("baseline")
+        for attempt in ("first", "cached"):
+            with self.subTest(attempt=attempt):
+                output = self.command("judge", folder)
+                self.assertIn("평가 완료: 8개 답변 × 2개 지표 (점수·이유 저장)", output)
+                self.assertIn(f"Judge 결과: {folder / 'judge.json'}", output)
+                self.assertIn("D04 FAIL", output)
+                judge = load_judge(folder, load_run(folder))
+                self.assertLess(judge["rows"]["D04"]["groundedness"]["score"], 4)
+                self.assertIn("groundedness", (folder / "report.md").read_text(encoding="utf-8"))
+
+    def test_judge_does_not_announce_completion_when_result_saving_fails(self):
+        for writer in ("write_json", "save_report"):
+            with self.subTest(writer=writer):
+                folder = self.collect(writer)
+                with patch(f"lab.{writer}", side_effect=OSError("Result storage unavailable")):
+                    output = self.command("judge", folder, expected=1)
+                self.assertIn("ERROR: Result storage unavailable", output)
+                self.assertNotIn("평가 완료:", output)
+                self.assertNotIn("Judge 결과:", output)
+
     def test_partial_run_resumes_without_duplicate_rows(self):
         folder = self.collect("baseline")
         run = load_run(folder)
@@ -205,7 +227,8 @@ class WorkshopTests(unittest.TestCase):
         run["rows"][0]["raw_response"] = json.dumps(run["rows"][0]["response"], ensure_ascii=False)
         run["evidence_hash"] = evidence_hash(run)
         write_json(folder / "run.json", run)
-        self.command("judge", folder, expected=1)
+        output = self.command("judge", folder, expected=1)
+        self.assertNotIn("평가 완료:", output)
 
     def test_interactive_review_requires_an_actual_verdict_and_reason(self):
         folder = self.collect("baseline")

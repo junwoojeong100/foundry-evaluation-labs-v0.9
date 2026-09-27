@@ -25,6 +25,8 @@
 
 `run`이 0으로 끝나도 응답이 업무 검사에서 실패할 수 있습니다. “실험을 수집했다”와 “답이 맞다”를 구분합니다.
 
+`judge`의 **`평가 완료: N개 답변 × 2개 지표 (점수·이유 저장)`**는 전체 사례 ID와 두 점수·이유가 유효하고 `judge.json`·`report.md`까지 저장된 뒤 출력됩니다. **낮은 점수도 유효한 평가 결과**이므로 완료 메시지가 나옵니다. 원격 상태 `completed`나 파일 존재만으로 대신 판단하지 않습니다. 저장된 결과를 재사용할 때도 검증 후 같은 완료 메시지가 나오며, 재채점은 하지 않습니다.
+
 <a id="data-contract"></a>
 ## 데이터 한 줄 읽기
 
@@ -188,10 +190,13 @@ LIVE의 `READY_FOR_HUMAN_REVIEW`는 **사람이 다음 출시 검토를 할 수 
 | 구독이 목록에 없음 | 포털·CLI의 계정과 테넌트 확인. 다른 디렉터리의 게스트 계정이라면 사용할 구독의 테넌트로 로그인 |
 | Owner인데 역할 할당/생성이 안 됨 | 구독 범위의 역할인지, PIM에서 활성인지 확인. 관리 그룹 정책·deny assignment·조건부 액세스는 Owner로 우회하지 않기 |
 | 공급자가 등록되지 않았다고 함 | 해당 구독의 Resource providers에서 `Microsoft.CognitiveServices`를 등록하고 `Registered` 확인 |
-| `python` 또는 `lab.py`를 찾을 수 없음 | Python 설치, 현재 폴더, 가상환경 활성화 확인. macOS/Linux에서는 `python3` 가능 |
+| `python` 또는 `lab.py`를 찾을 수 없음 | VS Code에서 `lab.py`가 있는 폴더를 열고 [준비 1](../README.md#setup-tools)의 가상환경 활성화부터 확인. 새 터미널마다 활성화 필요 |
+| 명령 입력 후 `SyntaxError`, 화면에 `>>>`가 보임 | Python 대화창에 셸 명령을 입력한 상태. `exit()`로 나온 뒤 VS Code 터미널에 명령만 입력 |
+| 파일을 수정했는데 실행에 반영되지 않음 | 브라우저가 아니라 VS Code의 로컬 복사본인지, File → Save로 저장했는지, 명령의 파일 경로가 맞는지 확인. 완료된 결과는 덮어쓰지 않기 |
 | Windows에서 `Activate.ps1` 실행이 차단됨 | 조직 정책을 해제하지 않고 설치 명령부터 모든 `python`을 `.\.venv\Scripts\python.exe`로 대체. [준비 1](../README.md#setup-tools) 확인 |
 | LIVE 패키지 없음/버전 불일치 | 가상환경 안에서 `python -m pip install -r requirements.txt`. 임의 최신 업그레이드 금지 |
 | config 예시 값 오류 | endpoint의 `YOUR-...`를 실제 프로젝트 주소로 교체. 두 배포 이름은 본인이 만든 `eval-model` 또는 실제 이름인지 확인 |
+| classic 허브 연결 문자열이나 모델 주소만 있음 | 새 Foundry 프로젝트의 `/api/projects/...` 주소가 필요. [기존 환경 조건](setup.md#existing-environment)을 확인하고 새 환경 사용 또는 [DEMO로 분리 전환](setup.md#switch-to-demo) |
 | 저장했는데 config를 찾을 수 없음 | `lab.py` 옆의 `config.json`인지, `config.json.txt`로 저장되지 않았는지 확인 |
 | `prompts/my-v2.txt`를 찾을 수 없음 | 제공된 V2를 그대로 쓰더라도 **복사본 파일명은 `my-v2.txt`**여야 함. [실습 4](../README.md#lab-4)의 다른 이름 저장 후 재실행 |
 | `validate-data`가 `ERROR:`를 출력 | 표시된 줄·필드 수정. JSON 객체 전체를 한 줄로 저장하고 빈 줄 제거. 필수 8개 필드·숫자/null·true/false·공식 출처 확인 후 같은 검사 재실행. 통과 전 유료 `run` 실행하지 않기 |
@@ -207,12 +212,14 @@ LIVE의 `READY_FOR_HUMAN_REVIEW`는 **사람이 다음 출시 검토를 할 수 
 | 429 | 여러 팀의 TPM/RPM과 Judge 부하 확인. 잠시 기다린 뒤 미완료 작업만 재개 |
 | 모델 배포가 쿼터/지역 문제로 실패 | [모델 가용성 확인](#model-availability). 본인 권한이 있어도 배포 용량이 자동 확보되지는 않음 |
 | Foundry 평가 미완료/종료 코드 3 | 같은 `judge` 명령 재실행. 저장된 ID로 조회하므로 새 답변·평가를 생성하지 않음 |
+| 원격 `completed`인데 `평가 완료`는 없음 | 로컬 결과 수집·검증·저장을 기다림. 오류가 나면 원본 ID를 보존하고 원인을 해결한 뒤 같은 `judge` 재개 |
 | Judge 결과 ID/점수/이유 누락 | `foundry-output.json`과 `foundry-job.json` 보존. SDK/서비스 계약 확인. 누락을 통과로 바꾸지 않기 |
 | 한쪽에만 Judge 결과가 있어 비교 불가 | 다른 쪽도 `judge --like`로 완료한 뒤 비교 |
 | 포털에서 실행이 안 보이거나 점수가 다름 | 같은 테넌트·프로젝트의 `eval_id`/`run_id`인지 확인. 행 순서 대신 질문/ID로 대조하고 원점수와 threshold를 구분. 결과를 찾으려고 새 평가를 제출하지 않기 |
 | 서로 다른 데이터/모델/평가기라고 함 | 결과 폴더·입력 파일·배포 변경 여부 확인. 비교 가능한 새 실험을 별도 이름으로 수행 |
 | Gate `BLOCK`, 종료 코드 2 | `gate.md`의 실패 이유 읽기. 실행 장애가 아니라 의도한 품질 차단 |
-| DEMO에서 새 프롬프트/질문을 거부 | 고정 예제 재생에는 수정 효과가 없음. 새 입력은 LIVE로 실행 |
+| DEMO에서 새 프롬프트/질문을 거부 | 고정 예제는 제공된 원본만 사용. 실습 6의 새 질문은 `validate-data`만 실행. 새 입력의 모델 응답을 측정하려면 별도의 LIVE 준비가 필요하며 모드만 바꾸지 않기 |
+| 어느 단계까지 했는지 기억나지 않음 | 실습지 준비 표와 [결과 파일별 재개 표](setup.md#resume-checkpoints) 확인. 새 결과를 뽑거나 파일을 지워 처음부터 반복하지 않기 |
 | 리소스 삭제가 완료되지 않음 | [정리 절차](cleanup.md)의 범위·잠금·상태 확인. 요청 성공 알림만 보고 삭제 완료로 기록하지 않기 |
 
 오류 공유 시 **명령·단계·오류 종류·비밀을 제거한 필요한 ID**만 전달합니다. 전체 설정·응답·고객 데이터·토큰을 공개 게시하지 않습니다.

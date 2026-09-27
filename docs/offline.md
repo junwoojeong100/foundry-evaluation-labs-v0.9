@@ -36,6 +36,10 @@ B가 적절합니다. 240000원은 미승인 초안의 금액이며, 공식 한�
 3. VS Code의 **File → Open Folder**에서 `lab.py`가 바로 보이는 폴더를 열고 **Terminal → New Terminal**을 선택합니다.
 4. 아래에서 본인 운영체제의 블록만 실행합니다. 이미 LIVE 준비에서 가상환경을 만들었다면 생성은 생략하고 활성화만 합니다.
 
+**브라우저의 파일 링크는 읽기용입니다.** 수정은 VS Code의 로컬 파일에서 합니다. **Ctrl+P / macOS Cmd+P**에 파일 경로를 입력해 열고 **File → Save**로 저장합니다. 검색되지 않으면 왼쪽 탐색기에서 해당 폴더를 펼쳐 파일을 엽니다. `.md`는 **View → Command Palette → Markdown: Open Preview to the Side**로 읽되, 수정은 원본 텍스트 탭에서 합니다.
+
+명령은 아래 코드 블록 안의 내용만 복사해 **VS Code 터미널**에 붙여 넣고 Enter를 누릅니다. Python 파일의 실행 버튼이나 `>>>` 대화창을 사용하지 않습니다. `>>>`가 보이면 `exit()`로 먼저 나옵니다.
+
 macOS / Linux:
 
 ```bash
@@ -60,11 +64,25 @@ python lab.py doctor
 
 **완료 확인:** `LOCAL OK`와 `dev 8개, holdout 4개`가 보입니다.
 
-VS Code에서 `results` 폴더를 만들고 [WORKSHEET.md](../WORKSHEET.md)를 엽니다. **File → Save As / 파일 → 다른 이름으로 저장**에서 **`results` 폴더를 선택하고 파일명을 `my-worksheet.md`**로 저장합니다. 최종 경로는 `results/my-worksheet.md`입니다. 기존 실습지가 있으면 새로 복사하지 않고 이어 씁니다. 실습 경로는 **DEMO**로 적습니다. Azure 환경을 전혀 만들지 않았다면 Azure 항목은 **해당 없음**입니다. LIVE 준비 중 전환했다면 **기존 자원 기록을 지우지 말고 전환한 단계**를 함께 적습니다.
+VS Code 왼쪽 탐색기의 실습 폴더를 오른쪽 클릭해 **New Folder / 새 폴더 → `results`**를 만듭니다. 이미 있으면 그대로 둡니다. **실습지 파일명을 먼저 고릅니다:** 처음부터 DEMO라면 **`results/my-worksheet.md`**, LIVE에서 전환한다면 **`results/my-worksheet-demo.md`**입니다. 이미 해당 DEMO 기록이 있으면 새로 복사하지 않고 이어 씁니다.
+
+새 실습지가 필요할 때만 [WORKSHEET.md](../WORKSHEET.md)를 로컬에서 열고 **File → Save As / 파일 → 다른 이름으로 저장**에서 **`results` 폴더와 위에서 고른 파일명**으로 저장합니다. **기존 LIVE 실습지는 덮어쓰지 않습니다.** 이후 “실습지”는 이 DEMO 복사본입니다. 경로는 **DEMO**로, Azure 환경을 전혀 만들지 않았다면 Azure 항목은 **해당 없음**으로 적습니다. LIVE에서 전환했다면 DEMO 준비 표에도 정리할 자원과 전환 단계를 기록합니다.
+
+<a id="working-files"></a>
+**직접 저장할 파일은 두 개뿐입니다.** 지금은 실습지만 만들고 `data/my-case.jsonl`은 실습 6에서 만듭니다.
+
+| 시점 | 열 원본 | 다른 이름으로 저장할 위치 |
+|---|---|---|
+| 지금 | `WORKSHEET.md` | `results/my-worksheet.md` (LIVE에서 전환했다면 `results/my-worksheet-demo.md`) |
+| 실습 6 | `data/my-case.example.jsonl` | `data/my-case.jsonl` |
+
+`config.json`은 필요 없습니다. 결과 하위 폴더와 보고서는 명령이 자동으로 만듭니다. **실습지를 제외한 결과 JSON·보고서, 제공된 규정·질문·프롬프트는 수정하지 않습니다.** 복사본은 VS Code 기본 **UTF-8**로 저장합니다.
 
 **지금 기록:** 실습지 0–1의 첫 항목에 앞에서 고른 A/B와 규정에서 찾은 이유를 적습니다. D02 항목은 실습 1에서 작성합니다.
 
-이후 **한 명령씩 실행하고 완료 확인을 본 뒤** 다음으로 갑니다. 별도 표시가 없으면 두 운영체제에서 같은 명령을 씁니다. `.md` 결과는 VS Code 탐색기에서 엽니다. 기본 실습 결과 폴더는 `demo-`로 시작하며 LIVE 결과와 섞지 않습니다.
+이후 **한 명령씩 실행하고 완료 확인을 본 뒤** 다음으로 갑니다. 별도 표시가 없으면 두 운영체제에서 같은 명령을 씁니다. 명령은 항상 `lab.py`가 있는 폴더에서 실행합니다. Windows 출력에서 `/` 대신 `\`가 보여도 같은 경로입니다. 기본 실습 결과 폴더는 `demo-`로 시작하며 LIVE 결과와 섞지 않습니다.
+
+**오류·중단 시:** `ERROR:`는 [문제 해결](reference.md#troubleshooting)에서 해결한 뒤 진행하고, 낮은 점수·`FAIL`·`BLOCK`은 관찰 결과로 기록합니다. 새 터미널에서는 가상환경만 다시 활성화합니다. 재개할 명령이 헷갈리면 [결과 파일로 재개 위치 찾기](setup.md#resume-checkpoints)를 사용합니다. DEMO 오류를 해결하려고 `--mode live`로 바꾸지 않습니다.
 
 **준비 끝. 이제 아래 실습 1로 이어갑니다.**
 
@@ -111,7 +129,9 @@ python lab.py inspect results/demo-baseline D04
 python lab.py judge results/demo-baseline
 ```
 
-이 명령도 AI를 호출하지 않고 **작성된 점수와 이유를 읽습니다.** `results/demo-baseline/judge.json`이 생기고 8개 각각 두 점수가 보이면 다시 D04를 엽니다.
+이 명령도 AI를 호출하지 않고 **작성된 점수와 이유를 읽습니다.** **`평가 완료: 8개 답변 × 2개 지표`**와 `Judge 결과: results/demo-baseline/judge.json`이 나오면 다시 D04를 엽니다.
+
+`평가 완료`는 모든 사례의 점수·이유 확인과 파일 저장이 끝났다는 뜻이지 답변 합격이 아닙니다. JSON을 직접 셀 필요 없이 **`report.md`의 요약 표 → `사례별 근거`의 답변·점수 이유**를 읽습니다.
 
 ```bash
 python lab.py inspect results/demo-baseline D04
@@ -132,7 +152,7 @@ python lab.py run --mode demo --prompt v2 --out results/demo-candidate
 python lab.py judge results/demo-candidate --like results/demo-baseline
 ```
 
-`--like`는 기준 실행과 같은 채점 계약을 사용하라는 뜻입니다. 두 점수가 모두 보이면 비교합니다.
+`--like`는 기준 실행과 같은 채점 계약을 사용하라는 뜻입니다. **`평가 완료: 8개 답변 × 2개 지표`**와 `Judge 결과: results/demo-candidate/judge.json`을 확인하면 비교합니다.
 
 ```bash
 python lab.py compare results/demo-baseline results/demo-candidate
@@ -145,6 +165,8 @@ python lab.py review results/demo-candidate D06
 ```
 
 명령은 입력을 기다립니다. 답변을 읽고 소문자 `pass` 또는 `fail`을 입력한 뒤 Enter, 이어서 **규정과 대조한 이유를 5자 이상** 입력하고 Enter를 누릅니다. 워크시트에 적는 것만으로는 이 검토가 저장되지 않습니다.
+
+**판정할 때는 `answer` 문장까지 읽습니다.** [출장 규정](../data/policies.md)과 금액·날짜·사전 승인 조건을 대조하고 없는 승인을 만들어 내지 않았는지 확인합니다. 코드의 `PASS`나 Judge의 4점 이상을 그대로 사람의 `pass`로 옮기지 않습니다.
 
 **완료 확인:** 업무 검사 **8/8, 100%**, 새 통과 D03·D04·D08, 회귀 없음. `검토 저장: results/demo-candidate/reviews.json`도 보입니다. 실습지 4에 관찰을 기록합니다. 작성된 V2 답변이 낫다는 관찰이며, 프롬프트의 실제 개선 효과는 아닙니다.
 
@@ -161,7 +183,7 @@ python lab.py run --mode demo --frozen results/demo-candidate --split holdout --
 python lab.py judge results/demo-holdout --like results/demo-baseline
 ```
 
-4개 각각 두 점수가 보이면 사람 검토를 합니다.
+**`평가 완료: 4개 답변 × 2개 지표`**와 `Judge 결과: results/demo-holdout/judge.json`을 확인하면 사람 검토를 합니다.
 
 ```bash
 python lab.py review results/demo-holdout H04
@@ -179,6 +201,8 @@ python lab.py gate results/demo-baseline results/demo-candidate results/demo-hol
 
 <a id="lab-6"></a>
 ## 6. 새 질문 설계와 마무리
+
+**이미 LIVE에서 N02를 작성했다면:** `data/my-case.jsonl`을 덮어쓰지 않습니다. 아래 작성 과정 대신 **할 일 3의 파일 확인**으로 가서 기존 질문을 검사하고, 실습지에 LIVE에서 작성한 질문을 재사용했다고 적습니다.
 
 **할 일 1 — 파일 준비:** VS Code에서 [추가 사례 예제](../data/my-case.example.jsonl)를 열고 **File → Save As**에서 **같은 `data` 폴더에 파일명을 `my-case.jsonl`**로 저장합니다. 최종 경로는 `data/my-case.jsonl`입니다. 원본은 바꾸지 않고 **복사본의 내용을 아래 한 줄 전체로 교체**합니다.
 

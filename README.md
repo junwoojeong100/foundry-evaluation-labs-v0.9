@@ -16,7 +16,7 @@
 | Azure 계정·권한·사용 가능한 모델이 없음 | **[DEMO 가이드](docs/offline.md)**만 따라갑니다. Python만 사용하며 실제 모델 성능은 측정하지 않습니다. |
 | 이미 허가받은 프로젝트와 모델이 있음 | [0. 오답 발견](#lab-0) 후 [기존 환경 사용](docs/setup.md#existing-environment)에서 필요한 준비만 확인합니다. |
 
-**아래는 LIVE 한 경로입니다.** 중간에 `live`를 `demo`로 바꾸지 않습니다.
+**아래는 LIVE 한 경로입니다.** 명령의 `live`만 `demo`로 바꿔 실행하지 않습니다. Azure 제약으로 계속할 수 없다면 [DEMO 전환 절차](docs/setup.md#switch-to-demo)에 따라 기존 기록을 보존하고 별도 경로로 진행합니다.
 
 **실습 0–6은 LIVE·DEMO·실습지에서 같은 번호**입니다. 실습지는 관련 기록을 0–1, 2–3으로 묶어 두었습니다. 환경 준비는 실습 번호와 별도입니다.
 
@@ -34,9 +34,9 @@
 
 ### 진행할 때 지킬 세 가지
 
-1. **시간 제한 없이, 한 명령씩 실행합니다.** 터미널에서 입력을 다시 받을 때까지 기다리고 각 단계의 **완료 확인**을 읽습니다. 예상 출력인 `text` 블록은 명령이 아닙니다.
+1. **시간 제한 없이, 한 명령씩 실행합니다.** 코드 블록 안의 명령만 복사하고 Enter를 누릅니다. 터미널에서 입력을 다시 받을 때까지 기다리고 각 단계의 **완료 확인**을 읽습니다. 예상 출력인 `text` 블록은 명령이 아닙니다.
 2. **명령은 항상 `lab.py`가 있는 폴더에서 실행합니다.** 별도 표시가 없으면 macOS/Linux 터미널과 Windows PowerShell에서 같은 명령을 사용합니다.
-3. **파일명과 결과 폴더명은 안내대로 유지합니다.** `results/baseline` 같은 경로는 현재 실습 폴더 기준입니다. `.md` 결과는 VS Code 왼쪽 탐색기에서 열면 됩니다. 이전 결과가 있다면 지우지 말고 [재개 방법](docs/setup.md#resume)을 따릅니다.
+3. **파일명과 결과 폴더명은 안내대로 유지합니다.** `results/baseline` 같은 경로는 현재 실습 폴더 기준입니다. Windows 출력에서 `/` 대신 `\`가 보여도 같은 경로입니다. `.md` 결과는 VS Code 왼쪽 탐색기에서 열면 됩니다. 이전 결과가 있다면 지우지 말고 [재개 방법](docs/setup.md#resume)을 따릅니다.
 
 ---
 
@@ -85,11 +85,15 @@ B가 적절합니다. 240000원은 **미승인 초안**의 금액입니다. A는
 3. VS Code에서 **File → Open Folder**로 **`lab.py`와 `requirements.txt`가 바로 보이는 폴더**를 엽니다. 압축을 푼 바깥 폴더가 아니라 실제 파일이 있는 폴더입니다.
 4. **Terminal → New Terminal**을 선택합니다. 이후 명령은 이 터미널에 입력합니다.
 
+브라우저는 가이드 읽기·Azure 화면 조작에, VS Code는 **내 PC의 파일 수정·명령 실행**에 사용합니다. 브라우저의 파일 링크를 읽었다고 로컬 파일이 수정되지는 않습니다. Python 파일의 실행 버튼이나 `>>>`가 표시된 Python 대화창에는 명령을 넣지 않습니다. `>>>`에 들어갔다면 `exit()` 후 같은 터미널에서 진행합니다.
+
 | 도구 | 설치 | 설치 확인 |
 |---|---|---|
 | Python 3.10 이상 | [Python 다운로드](https://www.python.org/downloads/). Windows에서는 PATH 추가 선택 | macOS/Linux: `python3 --version`, Windows: `py -3 --version` |
 | Azure CLI | [운영체제별 설치](https://learn.microsoft.com/cli/azure/install-azure-cli) | `az version` |
 | 편집기 | [VS Code 다운로드](https://code.visualstudio.com/) | 폴더와 터미널을 열 수 있음 |
+
+**파일 열기:** VS Code에서 **Ctrl+P / macOS Cmd+P**를 누르고 가이드의 경로(예: `WORKSHEET.md`)를 입력한 뒤 Enter를 누릅니다. 검색되지 않으면 왼쪽 탐색기에서 해당 폴더를 펼쳐 파일을 엽니다. `.md` 표가 읽기 어렵다면 **View → Command Palette**에서 **Markdown: Open Preview to the Side**를 선택합니다. **수정은 미리보기가 아니라 원본 텍스트 탭**에서 하고 **File → Save**로 저장합니다.
 
 **아래 두 블록 중 본인 운영체제 것만 실행합니다.** `.venv`는 이 실습의 Python 패키지를 담는 전용 폴더입니다.
 
@@ -121,9 +125,21 @@ python -m pip install -r requirements.txt
 python lab.py doctor
 ```
 
-**완료 확인:** `LOCAL OK: Python ... , dev 8개, holdout 4개`가 보입니다. 이는 로컬 파일 확인이며 아직 Azure 연결 성공을 뜻하지 않습니다.
+**완료 확인:** `LOCAL OK: Python ... , dev 8개, holdout 4개`가 보입니다. 이는 로컬 파일 확인이며 아직 Azure 연결 성공을 뜻하지 않습니다. 이후 새 터미널을 열었다면 가상환경 활성화부터 다시 합니다. 설치부터 반복하지 않습니다.
 
-VS Code 탐색기에서 `results` 폴더를 만들고 [WORKSHEET.md](WORKSHEET.md)를 엽니다. **File → Save As / 파일 → 다른 이름으로 저장**에서 **`results` 폴더를 선택하고 파일명을 `my-worksheet.md`**로 저장합니다. 최종 경로는 `results/my-worksheet.md`입니다. 이미 기록한 파일이 있으면 그대로 이어 씁니다. 앞으로 “실습지에 기록”은 이 복사본을 수정하라는 뜻입니다.
+VS Code 왼쪽 탐색기의 실습 폴더를 오른쪽 클릭해 **New Folder / 새 폴더 → `results`**를 만듭니다. 이미 있으면 그대로 둡니다. [WORKSHEET.md](WORKSHEET.md)를 로컬에서 열고 **File → Save As / 파일 → 다른 이름으로 저장**에서 **`results` 폴더를 선택하고 파일명을 `my-worksheet.md`**로 저장합니다. 최종 경로는 `results/my-worksheet.md`입니다. 이미 기록한 파일이 있으면 그대로 이어 씁니다. 앞으로 “실습지에 기록”은 이 복사본을 수정하라는 뜻입니다.
+
+<a id="working-files"></a>
+**앞으로 직접 저장할 파일은 아래 네 개입니다. 지금 한꺼번에 만들지 않고 해당 단계에서 만듭니다.**
+
+| 시점 | 열 원본 | 다른 이름으로 저장할 위치 |
+|---|---|---|
+| 지금 | `WORKSHEET.md` | `results/my-worksheet.md` |
+| 준비 6 | `config.example.json` | `config.json` (`lab.py` 옆) |
+| 실습 4 | `prompts/v2.txt` | `prompts/my-v2.txt` |
+| 실습 6 | `data/my-case.example.jsonl` | `data/my-case.jsonl` |
+
+`results/baseline` 같은 **결과 하위 폴더와 보고서는 명령이 자동으로 만듭니다.** 미리 만들거나 내용을 직접 입력하지 않습니다. 실습지를 제외한 `results/`의 JSON·보고서는 읽기용입니다. 원본 규정·질문·프롬프트는 유지하고, 복사본은 VS Code 기본 **UTF-8**로 저장합니다.
 
 **지금 기록:** 실습지 0–1의 첫 항목에 앞에서 고른 A/B와 규정에서 찾은 이유를 적습니다. 준비 표의 날짜·LIVE도 채웁니다. D02 항목은 실습 1에서 작성합니다.
 
@@ -182,6 +198,8 @@ az account show --query "{subscription:name,subscriptionId:id,tenantId:tenantId,
 3. 프로젝트 이름에 **`eval-workshop`**을 넣고 **Advanced options**를 엽니다.
 4. **같은 구독·방금 만든 전용 그룹·허용된 지역**을 선택합니다. 공유 자원이 아니라 **새 Foundry 리소스**를 사용하고, 이름 입력란이 있으면 위 표처럼 지정합니다.
 5. **Create**를 선택하고 프로젝트가 열릴 때까지 기다립니다.
+
+**Hub / 허브를 먼저 만들라는 화면이면 진행하지 않습니다.** 이 실습은 Foundry 리소스 아래의 새 **Foundry 프로젝트**를 사용하며, classic의 허브 기반 프로젝트와는 설정·SDK가 다릅니다. New Foundry 화면과 선택한 프로젝트 유형을 다시 확인합니다.
 
 **완료 확인:** **Manage → Project details / Resource details**에서 프로젝트와 상위 Foundry 리소스를 확인할 수 있고, Azure 포털의 전용 그룹에서도 배포 상태가 `Succeeded`입니다. 그룹·리소스·프로젝트 이름과 실제 지역을 실습지에 기록합니다.
 
@@ -255,7 +273,7 @@ East US 2는 시작 예시이지 모델 용량 보장이 아닙니다. 조직 �
 }
 ```
 
-기본 경로에서는 **주소 하나만 수정**합니다. 배포를 다른 이름으로 만들었다면 아래 두 값도 실제 **배포 이름**으로 바꿉니다. 파일명이 `config.json.txt`가 아닌지 확인합니다. `.env`는 필요 없습니다.
+기본 경로에서는 **주소 하나만 수정**합니다. 주소에는 **`.services.ai.azure.com/api/projects/실제프로젝트이름`**이 포함되어야 합니다. Azure 포털의 브라우저 주소, `/api/projects/...`가 없는 리소스 주소, `.openai.azure.com` 모델 주소는 넣지 않습니다. 배포를 다른 이름으로 만들었다면 아래 두 값도 실제 **배포 이름**으로 바꿉니다. 파일명이 `config.json.txt`가 아닌지 확인합니다. `.env`는 필요 없습니다.
 
 ```bash
 python lab.py doctor --live
@@ -270,13 +288,17 @@ python lab.py doctor --live
 
 | 보이는 결과 | 뜻 | 다음 행동 |
 |---|---|---|
+| `평가 완료: …개 답변 × 2개 지표 (점수·이유 저장)` | 모든 사례의 두 점수·이유를 확인하고 로컬에 저장함 | 건수가 해당 단계와 같은지 확인하고 진행. **답변 합격을 뜻하지는 않음** |
 | `D04 FAIL` 또는 낮은 점수 | 답변을 수집·평가했지만 답이 기준에 못 미침 | 원인을 기록하고 진행. 좋은 점수가 나올 때까지 다시 뽑지 않음 |
 | `Judge: 아직 미평가` | 답변만 있고 AI 채점 전 | 해당 단계의 `judge` 실행 |
+| `Foundry 상태: completed`만 보임 | 원격 작업 종료. 로컬 결과 수집·검사가 남을 수 있음 | 터미널의 **`평가 완료`까지** 기다림. 이후 `ERROR:`가 나오면 문제 해결 |
 | `아직 처리 중입니다` / 종료 코드 `3` | 클라우드 평가가 아직 끝나지 않음 | **방금 실행한 `judge` 명령 전체를 그대로 재실행**. `--like`도 유지 |
 | `ERROR:` / 종료 코드 `1` | 입력·환경·실행 오류 | 다음 단계로 가지 말고 [문제 해결](docs/reference.md#troubleshooting) |
 | `BLOCK` / 종료 코드 `2` | 최종 품질 기준에 따라 변경을 보류 | `gate.md`의 이유를 기록하고 실습 6으로 진행. 단, 점수·검토 누락은 먼저 보완 |
 
-`judge`는 기본적으로 **최대 5분 동안 완료를 기다린 뒤** 터미널 입력을 돌려줍니다. 대기 중 같은 명령을 재실행하면 **저장된 원격 작업을 조회**하며 새 평가를 제출하지 않습니다. `judge.json`이 생기고 **모든 사례에 Groundedness·Relevance 점수와 이유가 있어야 평가 완료**입니다. 오류나 점수 누락은 낮은 점수와 다릅니다.
+`judge`는 기본적으로 **최대 5분 동안 완료를 기다린 뒤** 터미널 입력을 돌려줍니다. **`아직 처리 중입니다`로 끝난 경우에만** 같은 명령을 재실행합니다. **저장된 원격 작업을 조회**하며 새 평가를 제출하지 않습니다. 새 터미널에서 동시에 실행하지 않습니다. `평가 완료`가 나오면 재실행하지 않고 다음 단계로 갑니다.
+
+**`평가 완료`는 점수·이유 검증과 `judge.json`·`report.md` 저장이 끝난 뒤에만 나옵니다.** JSON을 직접 세거나 수정할 필요 없이 **완료 건수 → `보고서:`에 나온 `report.md` → `사례별 근거`의 답변·점수 이유** 순서로 확인합니다. 오류나 점수 누락은 낮은 점수와 다릅니다. 중단할 때는 실습지 준비 표에 마지막 단계와 **다음 명령 전체**를 적습니다.
 
 <a id="setup-smoke"></a>
 ### 준비 7. 답변 한 개로 연결 확인
@@ -293,7 +315,7 @@ python lab.py run --mode live --prompt v1 --data data/my-case.example.jsonl --ou
 python lab.py judge results/setup-smoke
 ```
 
-대기 중이면 위 `judge`를 그대로 재실행합니다. 두 점수가 저장되면 답변 한 건을 엽니다.
+`아직 처리 중입니다`로 끝났을 때만 위 `judge`를 그대로 재실행합니다. **`평가 완료: 1개 답변 × 2개 지표`**가 나오면 답변 한 건을 엽니다.
 
 ```bash
 python lab.py inspect results/setup-smoke N01
@@ -396,7 +418,7 @@ python lab.py judge results/baseline
 
 **새 답변을 만드는 것이 아니라 저장한 8개를 채점**합니다. Groundedness는 질문·규정·답변, Relevance는 질문·답변을 봅니다. 둘 다 정답 설명인 `ground_truth`는 받지 않습니다.
 
-진행 중이면 위 `judge` 명령을 그대로 다시 실행합니다. **`results/baseline/judge.json`이 생기고 8개 모두 두 점수와 이유가 저장된 뒤** 다음으로 갑니다. `report.md`도 점수가 포함된 내용으로 갱신됩니다.
+`아직 처리 중입니다`로 끝났을 때만 위 `judge` 명령을 그대로 다시 실행합니다. **`평가 완료: 8개 답변 × 2개 지표`**가 나와야 다음으로 갑니다. `results/baseline/judge.json`이 저장되고 `report.md`도 점수와 이유를 포함한 내용으로 갱신됩니다.
 
 **할 일 3 — 같은 D04를 대조:**
 
@@ -439,7 +461,7 @@ python lab.py run --mode live --prompt prompts/my-v2.txt --out results/candidate
 python lab.py judge results/candidate --like results/baseline
 ```
 
-`--like`는 변경 전과 **같은 Judge 모델·평가기 버전**을 사용합니다. 대기 중이면 `--like`까지 포함한 위 명령을 그대로 재실행합니다. **`results/candidate/judge.json`에 8개 모두 두 점수가 저장된 뒤** 비교합니다.
+`--like`는 변경 전과 **같은 Judge 모델·평가기 버전**을 사용합니다. `아직 처리 중입니다`로 끝났을 때만 `--like`까지 포함한 위 명령을 그대로 재실행합니다. **`평가 완료: 8개 답변 × 2개 지표`**와 `Judge 결과: results/candidate/judge.json`을 확인한 뒤 비교합니다.
 
 ```bash
 python lab.py compare results/baseline results/candidate
@@ -456,6 +478,8 @@ python lab.py review results/candidate D06
 ```
 
 이 명령은 **입력을 기다립니다.** 답변을 읽은 뒤 소문자 `pass` 또는 `fail`을 입력하고 Enter, 이어서 **규정과 대조한 이유를 5자 이상** 입력하고 Enter를 누릅니다.
+
+**판정할 때는 `answer` 문장까지 읽습니다.** [출장 규정](data/policies.md)과 비교해 금액·날짜·사전 승인 조건이 맞는지, 없는 승인을 만들어 내지 않았는지 확인합니다. 코드의 `PASS`나 Judge의 4점 이상을 그대로 사람의 `pass`로 옮기지 않습니다.
 
 아래는 **실제 답변이 없는 승인을 만들지 않고 사전 승인이 필요하다고 안내한 경우에만** 쓸 수 있는 입력 예입니다. 그대로 통과시키지 말고 본인 답변에 맞게 판단합니다.
 
@@ -485,7 +509,7 @@ python lab.py run --mode live --frozen results/candidate --split holdout --out r
 python lab.py judge results/holdout --like results/baseline
 ```
 
-대기 중이면 `--like`까지 포함한 위 명령을 재실행합니다. **`results/holdout/judge.json`에 4개 모두 두 점수가 저장되면**, H04를 읽고 판정합니다.
+`아직 처리 중입니다`로 끝났을 때만 `--like`까지 포함한 위 명령을 재실행합니다. **`평가 완료: 4개 답변 × 2개 지표`**와 `Judge 결과: results/holdout/judge.json`을 확인하면 H04를 읽고 판정합니다.
 
 ```bash
 python lab.py review results/holdout H04
@@ -574,7 +598,7 @@ python lab.py run --mode live --prompt prompts/my-v2.txt --data data/my-case.jso
 python lab.py judge results/my-case --like results/baseline
 ```
 
-대기 중이면 위 명령을 그대로 재실행합니다. **`results/my-case/judge.json`에 두 점수가 저장된 뒤** 확인합니다.
+`아직 처리 중입니다`로 끝났을 때만 위 명령을 그대로 재실행합니다. **`평가 완료: 1개 답변 × 2개 지표`**와 `Judge 결과: results/my-case/judge.json`을 확인한 뒤 답변을 읽습니다.
 
 ```bash
 python lab.py inspect results/my-case N02

@@ -215,6 +215,8 @@ def judge_command(args) -> int:
     write_json(args.folder / "judge.json", judge)
     save_report(args.folder, run, judge)
     print_summary(args.folder, run, judge)
+    print(f"평가 완료: {len(judge['rows'])}개 답변 × {len(METRICS)}개 지표 (점수·이유 저장)")
+    print(f"Judge 결과: {args.folder / 'judge.json'}")
     if judge.get("report_url"):
         print(f"Foundry 보고서: {judge['report_url']}")
     return 0

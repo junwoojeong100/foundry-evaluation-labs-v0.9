@@ -246,12 +246,13 @@ class DocumentationTests(unittest.TestCase):
 
     def test_offline_guide_commands_execute_as_written_without_network(self):
         document = ROOT / "docs" / "offline.md"
+        text = document.read_text(encoding="utf-8")
         commands = lab_commands(document)
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)
             case_file = output / "data" / "my-case.jsonl"
             case_file.parent.mkdir()
-            example = re.findall(r"```jsonl\n(.*?)```", document.read_text(encoding="utf-8"), re.DOTALL)[0]
+            example = re.findall(r"```jsonl\n(.*?)```", text, re.DOTALL)[0]
             case_file.write_text(example.replace("170000", "180000"), encoding="utf-8")
             input_paths = {"data/my-case.jsonl": str(case_file)}
             with (
@@ -269,8 +270,17 @@ class DocumentationTests(unittest.TestCase):
                         str(output / arg) if arg.startswith("results/") else input_paths.get(arg, arg)
                         for arg in command
                     ]
-                    with self.subTest(command=command):
+                    command_output = io.StringIO()
+                    with self.subTest(command=command), redirect_stdout(command_output):
                         self.assertEqual(lab.main(argv), 2 if argv[0] == "gate" else 0)
+                        if argv[0] == "judge":
+                            folder = Path(argv[1])
+                            count = len(read_json(folder / "judge.json")["rows"])
+                            checkpoint = f"평가 완료: {count}개 답변 × 2개 지표"
+                            self.assertIn(checkpoint, text)
+                            self.assertIn(checkpoint, command_output.getvalue())
+                            self.assertIn(f"Judge 결과: {folder / 'judge.json'}", command_output.getvalue())
+                            self.assertIn("사례별 근거", (folder / "report.md").read_text(encoding="utf-8"))
             result = read_json(output / "results" / "demo-candidate" / "gate.json")
             self.assertEqual(result["status"], "BLOCK")
             self.assertEqual(result["business_rates"], {"baseline": 0.625, "candidate": 1.0, "holdout": 0.75})

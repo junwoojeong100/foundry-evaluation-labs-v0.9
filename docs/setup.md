@@ -48,11 +48,30 @@
 
 새 자원을 만들거나 기존 모델의 이름·설정을 바꾸지 않습니다. 아직 하지 않았다면 [실습 0](../README.md#lab-0)의 A/B 판단만 먼저 한 뒤 이 절로 돌아옵니다.
 
-1. 환경 소유자에게 **테넌트 ID·구독 ID·Project endpoint·모델 배포 이름·사용 및 정리 허용 범위**를 확인합니다. API 키나 공유 비밀번호를 받지 않습니다.
+**사용 가능한 환경:** 새 포털에서 사용하는 **Foundry 프로젝트**와 그 프로젝트에서 접근 가능한 모델 배포입니다. Project endpoint는 `https://리소스이름.services.ai.azure.com/api/projects/프로젝트이름` 형태입니다. 허브 기반 classic 프로젝트의 연결 문자열이나 Azure OpenAI 모델 주소만 있다면 이 실습의 설정으로 대신 사용할 수 없습니다.
+
+1. 환경 소유자에게 아래 정보를 받아 둡니다. 다음 순서에서 실습지를 만든 뒤 준비 표에 기록합니다. API 키나 공유 비밀번호를 받지 않습니다.
 2. [준비 1](../README.md#setup-tools)에서 로컬 도구를 준비하고, [준비 2](../README.md#setup-sign-in)의 **로그인과 구독 확인**을 수행합니다. 자원을 만들지 않으므로 Owner 취득이나 공급자 등록은 요구하지 않습니다.
 3. [준비 4](../README.md#setup-permissions)의 접근 권한을 확인합니다. 부족한 역할은 할당 권한이 있는 소유자에게 요청합니다.
 4. 기존 배포가 **Chat Completions·Structured Outputs·Judge 평가**를 지원하는지 확인합니다. [준비 6](../README.md#setup-config)의 설정에 실제 주소와 배포 이름을 넣고 [준비 7](../README.md#setup-smoke)을 완료합니다.
 5. [실습 1](../README.md#lab-1)로 이어갑니다. 마지막에는 소유자와 합의한 본인 작업만 정리합니다. **공유 프로젝트·모델·리소스 그룹은 일괄 삭제하지 않습니다.**
+
+| 소유자에게 확인할 정보 | 사용할 곳 |
+|---|---|
+| 테넌트 ID·구독 ID | 포털과 CLI를 같은 계정·구독에 연결 |
+| 리소스 그룹·Foundry 리소스·프로젝트 이름, 지역 | 준비 4의 대상 구분과 마지막 정리 범위 확인 |
+| Project endpoint·실제 모델 배포 이름 | `config.json`. 모델 이름이 아니라 배포 이름을 사용 |
+| 본인과 프로젝트 관리 ID의 Foundry User, 사용·비용·정리 허용 범위 | 호출·평가 권한 및 공유 환경 보호 |
+
+본인 화면에서 프로젝트 관리 ID를 조회할 수 없으면 소유자에게 준비 4의 ID·역할 대조를 요청합니다. **`eval-workshop`·`eval-model`은 신규 생성 경로의 예시 이름**이므로 기존 자원의 이름을 바꾸지 않습니다. 두 모델 용도로 같은 배포를 쓰면 `config.json`의 `model_deployment`와 `judge_deployment`에 모두 그 이름을 넣습니다.
+
+<a id="switch-to-demo"></a>
+## LIVE가 막혀 DEMO로 전환할 때
+
+1. 새 LIVE 호출을 멈추고, 실습지 준비 표에 **중단한 단계·오류·이미 만든 Azure 자원**을 기록합니다. 기존 결과·설정·작성한 질문을 지우지 않습니다.
+2. [DEMO 가이드의 준비](offline.md#prepare)로 이동합니다. 설치한 Python·VS Code·가상환경은 재사용합니다. LIVE 실습지는 보존하고, 안내대로 **`results/my-worksheet-demo.md`**를 만들어 DEMO 기록을 분리합니다.
+3. DEMO 가이드의 `results/demo-*` 폴더만 사용해 실습 1–6을 진행합니다. LIVE 명령의 모드만 바꾸거나 LIVE 점수와 DEMO 점수를 비교하지 않습니다.
+4. LIVE에서 만든 자원이 있다면 DEMO가 끝나도 [정리 절차](cleanup.md)를 수행합니다. 이미 제출한 원격 평가는 터미널을 닫거나 DEMO로 전환해도 자동 취소되지 않습니다.
 
 <a id="cost"></a>
 ## 비용 확인
@@ -66,7 +85,7 @@ Azure 포털의 **Cost Management → Cost analysis**에서 해당 전용 그룹
 
 1. VS Code에서 이전의 **`lab.py`가 있는 폴더**를 열고 새 터미널을 엽니다.
 2. 가상환경만 다시 활성화합니다. macOS/Linux는 `source .venv/bin/activate`, Windows는 `.\.venv\Scripts\Activate.ps1`입니다. 활성화가 막혔던 Windows 환경에서는 계속 `.\.venv\Scripts\python.exe`를 사용합니다. 패키지를 매번 재설치하지 않습니다.
-3. `results/my-worksheet.md`의 **마지막 완료 단계 / 다음 명령**을 확인합니다. 로그인이 만료됐으면 [로그인](../README.md#setup-sign-in)만 다시 합니다.
+3. 본인 실습지의 **마지막 완료 단계 / 다음 명령**을 확인합니다. 기본은 `results/my-worksheet.md`, LIVE에서 전환한 DEMO는 `results/my-worksheet-demo.md`입니다. LIVE 로그인이 만료됐으면 [로그인](../README.md#setup-sign-in)만 다시 합니다. DEMO는 로그인하지 않습니다.
 
 | 중단 당시 상태 | 재개 방법 |
 |---|---|
@@ -76,3 +95,19 @@ Azure 포털의 **Cost Management → Cost analysis**에서 해당 전용 그룹
 | 프롬프트·데이터·설정을 바꿈 | 기존 결과를 덮어쓰지 않음. 별도 결과 이름으로 새 실험을 설계 |
 
 완료된 `run.json`·`judge.json`을 지워 재실행하지 않습니다. 응답 직후 저장 전에 끊긴 한 행은 재호출될 수 있으므로 추가 비용이 없다고 보장하지 않습니다. 폴더를 옮겼거나 원격 ID 저장 중 끊겼다면 [재개·복구 도움말](reference.md#resume)을 봅니다.
+
+<a id="resume-checkpoints"></a>
+### 마지막 단계가 기억나지 않는다면
+
+**VS Code에서 본인 경로의 `results/`만 확인합니다.** 아래 `baseline`·`candidate`·`holdout`은 LIVE의 폴더명이며, DEMO에서는 각각 `demo-baseline`·`demo-candidate`·`demo-holdout`입니다. 아직 환경 준비 중이었다면 [준비 바로가기](#tools)에서 마지막 완료 신호 다음 단계로 돌아갑니다.
+
+| 저장된 상태 / 아직 없는 것 | LIVE에서 이어갈 위치 | DEMO에서 이어갈 위치 |
+|---|---|---|
+| `baseline/run.json`의 `status`가 `complete`, `judge.json`은 없음 | [실습 3](../README.md#lab-3): D04 사람 판단부터, 그 뒤 Judge | [실습 3](offline.md#lab-3): 동일 순서 |
+| `baseline/judge.json`은 있음, candidate는 아직 없음 | [실습 4](../README.md#lab-4): 가설·복사본 수정부터 | [실습 4](offline.md#lab-4): 가설·V2 예제부터 |
+| `candidate/run.json`은 완료, `judge.json` 또는 `comparison.md`가 없음 | [실습 4](../README.md#lab-4): 후보 Judge → 비교 중 빠진 단계 | [실습 4](offline.md#lab-4): 동일 순서 |
+| 후보 비교는 완료, D06의 `reviews.json` 기록이 없음 | [실습 4](../README.md#lab-4)의 `review` | [실습 4](offline.md#lab-4)의 `review` |
+| 후보 검토는 완료, holdout 생성·Judge·H04 검토 또는 Gate가 남음 | [실습 5](../README.md#lab-5)의 첫 미완료 단계 | [실습 5](offline.md#lab-5)의 첫 미완료 단계 |
+| `candidate/gate.md`와 판단 기록까지 있음 | [실습 6](../README.md#lab-6): 추가 질문·보고 | [실습 6](offline.md#lab-6): 질문 검사·보고 |
+
+파일 유무는 위치를 찾는 단서일 뿐입니다. **`status`가 `collecting`이면 같은 `run`, 평가 처리 중이면 같은 `judge`를 먼저 재개**합니다. `judge.json`이 있어도 오류가 났다면 같은 `judge`로 유효성을 확인합니다. `--like`를 생략하거나 결과 파일을 수정하지 않습니다. 이미 적은 사람의 최초 판단은 지우지 않습니다.
