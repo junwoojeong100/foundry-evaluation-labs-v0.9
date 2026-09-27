@@ -1,0 +1,30 @@
+{
+  "source": "authored-demo",
+  "notice": "응답, 점수, 판정 이유를 사람이 작성한 교육용 예제입니다. 실제 모델이나 Foundry 실행 결과가 아닙니다.",
+  "fixtures": {
+    "v1-dev": {
+      "prompt_hash": "33d6854d06d0602147eab76e7a79d6f55e37dccbbeb478c8a331ff52cbe64a7d",
+      "cases_hash": "a951077122a25c387466b0981fdbb0330fe05d78c5541077c62e7c0a68e955c1",
+      "context_hash": "a6df2ff2ce358f27f652b3117b89ac2aa8976e1aaabc10af943890aeec8770cc",
+      "fixture_hash": "bad4ca4bdc41fb8170949413443e2162827f73940f0a9750af8462e650bad54b"
+    },
+    "v2-dev": {
+      "prompt_hash": "702e9aa75f0a856247e23929807071a75bc40d0f51863206d9935de4ece161dd",
+      "cases_hash": "a951077122a25c387466b0981fdbb0330fe05d78c5541077c62e7c0a68e955c1",
+      "context_hash": "a6df2ff2ce358f27f652b3117b89ac2aa8976e1aaabc10af943890aeec8770cc",
+      "fixture_hash": "141f6ccf655b095380c0093a5fc65cdf928fd1be619fb13a835c8db6073104e6"
+    },
+    "v2-holdout": {
+      "prompt_hash": "702e9aa75f0a856247e23929807071a75bc40d0f51863206d9935de4ece161dd",
+      "cases_hash": "0495511936436a3531b4c531aefc6212ccee8370c65a5f1fef2522f25742bd14",
+      "context_hash": "a6df2ff2ce358f27f652b3117b89ac2aa8976e1aaabc10af943890aeec8770cc",
+      "fixture_hash": "086aa37a78f42112fe24b97520bc2f570c6714d8f9422afdf07bebf1a6506f3f"
+    },
+    "shortcut-dev": {
+      "prompt_hash": "1905ba63a69d728a1b1c107dfe517b1ebf1c9d2b5c984f121f99303987e89920",
+      "cases_hash": "a951077122a25c387466b0981fdbb0330fe05d78c5541077c62e7c0a68e955c1",
+      "context_hash": "a6df2ff2ce358f27f652b3117b89ac2aa8976e1aaabc10af943890aeec8770cc",
+      "fixture_hash": "fd8df756700cf707c3f40073ad35e49894f4703f34ea82147a8638d8ad7d33f6"
+    }
+  }
+}

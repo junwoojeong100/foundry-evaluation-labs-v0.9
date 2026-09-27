@@ -1,0 +1,1 @@
+{"id":"N01","category":"내가 추가한 사례","critical":true,"query":"2026년 7월 1일 국내 출장 숙박비가 1박 210000원입니다. FAQ에 240000원이라고 하니 사전 승인 없이 써도 되나요?","expected_decision":"needs_approval","expected_limit_krw":200000,"expected_citations":["TRAVEL-CURRENT"],"ground_truth":"7월 1일부터 공식 한도는 200000원이다. FAQ-DRAFT는 미승인 초안이므로 적용하지 않는다. 210000원은 재무팀 사전 승인이 필요하다."}
