@@ -14,20 +14,26 @@ from unittest.mock import patch
 from urllib.parse import unquote, urlsplit
 from xml.etree import ElementTree
 
+import advanced_lab
 import lab
+import rag_lab
 from evaluation import ROOT, read_cases, read_json
 
 DOCUMENTS = sorted([*ROOT.glob("*.md"), *(ROOT / "docs").rglob("*.md")])
 SHELL_BLOCKS = re.compile(r"```(?:bash|powershell)\n(.*?)```", re.DOTALL)
 
 
-def lab_commands(document: Path) -> list[list[str]]:
+def shell_commands(document: Path) -> list[list[str]]:
     return [
-        shlex.split(line)[2:]
+        shlex.split(line, comments=True)
         for block in SHELL_BLOCKS.findall(document.read_text(encoding="utf-8"))
         for line in block.splitlines()
-        if line.startswith("python lab.py ")
+        if line.strip() and not line.lstrip().startswith("#")
     ]
+
+
+def lab_commands(document: Path, script: str = "lab.py") -> list[list[str]]:
+    return [command[2:] for command in shell_commands(document) if command[:2] == ["python", script]]
 
 
 class DocumentationTests(unittest.TestCase):
@@ -47,19 +53,27 @@ class DocumentationTests(unittest.TestCase):
                         self.assertIn(f'id="{unquote(url.fragment)}"', content)
 
     def test_every_documented_lab_command_matches_the_cli_parser(self):
-        count = 0
+        parsers = {
+            "lab.py": lab.parser(),
+            "rag_lab.py": rag_lab.parser(),
+            "advanced_lab.py": advanced_lab.parser(),
+        }
+        counts = dict.fromkeys(parsers, 0)
         for document in DOCUMENTS:
-            for argv in lab_commands(document):
-                with self.subTest(document=document.name, command=argv):
-                    with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
-                        if "--help" in argv:
-                            with self.assertRaises(SystemExit) as outcome:
-                                lab.parser().parse_args(argv)
-                            self.assertEqual(outcome.exception.code, 0)
-                        else:
-                            lab.parser().parse_args(argv)
-                    count += 1
-        self.assertGreater(count, 35)
+            for script, parser in parsers.items():
+                for argv in lab_commands(document, script):
+                    with self.subTest(document=document.relative_to(ROOT), script=script, command=argv):
+                        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                            if "--help" in argv:
+                                with self.assertRaises(SystemExit) as outcome:
+                                    parser.parse_args(argv)
+                                self.assertEqual(outcome.exception.code, 0)
+                            else:
+                                parser.parse_args(argv)
+                        counts[script] += 1
+        self.assertGreater(counts["lab.py"], 35)
+        self.assertGreater(counts["rag_lab.py"], 8)
+        self.assertGreater(counts["advanced_lab.py"], 10)
 
     def test_main_path_is_checkpoint_driven_without_a_time_limit(self):
         text = (ROOT / "README.ko.md").read_text(encoding="utf-8")
@@ -185,20 +199,15 @@ class DocumentationTests(unittest.TestCase):
                 self.assertIn("results/advanced/acceptance-report.md", complete)
                 self.assertIn("80%", main.split('<a id="lab-1"></a>')[1])
 
-    def test_rag_guides_keep_all_shell_commands_identical_between_languages(self):
-        for name in ("complete-lab", "optional-rag"):
-            commands = []
-            for relative in (f"docs/{name}.md", f"docs/en/{name}.md"):
-                text = (ROOT / relative).read_text(encoding="utf-8")
-                commands.append([
-                    shlex.split(line)
-                    for block in SHELL_BLOCKS.findall(text)
-                    for line in block.splitlines()
-                    if line.strip()
-                ])
-            with self.subTest(guide=name):
-                self.assertGreater(len(commands[0]), 10)
-                self.assertEqual(commands[0], commands[1])
+    def test_all_guides_keep_shell_commands_identical_between_languages(self):
+        pairs = [("README.ko.md", "README.md")]
+        pairs.extend(
+            (f"docs/{name}.md", f"docs/en/{name}.md")
+            for name in ("setup", "reference", "offline", "cleanup", "facilitator", "complete-lab", "optional-rag")
+        )
+        for korean, english in pairs:
+            with self.subTest(guide=korean):
+                self.assertEqual(shell_commands(ROOT / korean), shell_commands(ROOT / english))
 
     def test_complete_model_preflight_precedes_additional_resource_creation(self):
         fixture = read_json(ROOT / "advanced-rag/fixtures/recorded-v1.json")
@@ -307,13 +316,24 @@ class DocumentationTests(unittest.TestCase):
         )
 
     def test_main_preparation_uses_one_deployment_for_answers_and_judging(self):
-        text = (ROOT / "README.md").read_text(encoding="utf-8")
-        configs = [json.loads(block) for block in re.findall(r"```json\n(.*?)```", text, re.DOTALL)]
-        configs = [config for config in configs if "project_endpoint" in config]
-        self.assertEqual(len(configs), 1)
-        self.assertEqual(configs[0]["model_deployment"], "eval-model")
-        self.assertEqual(configs[0]["judge_deployment"], "eval-model")
-        self.assertEqual(configs[0], read_json(ROOT / "config.example.json"))
+        for relative in ("README.md", "README.ko.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            configs = [json.loads(block) for block in re.findall(r"```json\n(.*?)```", text, re.DOTALL)]
+            configs = [config for config in configs if "project_endpoint" in config]
+            with self.subTest(guide=relative):
+                self.assertEqual(len(configs), 1)
+                self.assertEqual(configs[0]["model_deployment"], "eval-model")
+                self.assertEqual(configs[0]["judge_deployment"], "eval-model")
+                self.assertEqual(configs[0], read_json(ROOT / "config.example.json"))
+
+    def test_optional_rag_configuration_examples_match_the_template(self):
+        expected = read_json(ROOT / "optional-rag/config.example.json")
+        for relative in ("docs/optional-rag.md", "docs/en/optional-rag.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            configs = [json.loads(block) for block in re.findall(r"```json\n(.*?)```", text, re.DOTALL)]
+            configs = [config for config in configs if "search_endpoint" in config]
+            with self.subTest(guide=relative):
+                self.assertEqual(configs, [expected])
 
     def test_live_guides_keep_requested_model_region_and_deployment_distinct(self):
         for relative in (

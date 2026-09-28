@@ -67,11 +67,13 @@ python lab.py doctor
 **완료 확인:** `LOCAL OK`와 `dev 8개, holdout 4개`가 보입니다.
 
 <a id="working-files"></a>
-**직접 저장할 파일은 실습 6의 `data/my-case.jsonl` 하나뿐입니다.** 그 단계에서 `data/my-case.example.jsonl`을 복사하므로 지금 만들지 않습니다. `config.json`은 필요 없습니다. 결과 폴더와 보고서는 명령이 자동으로 만듭니다. **생성된 JSON·보고서, 제공된 규정·질문·프롬프트는 수정하지 않습니다.** 복사본은 VS Code 기본 **UTF-8**로 저장합니다. LIVE에서 전환했다면 기존 결과와 Azure 자원을 보존합니다.
+**직접 편집할 파일은 실습 6의 `data/my-case.jsonl` 하나뿐입니다.** 저장소에 N02 예제 작업본이 이미 포함되어 있으므로 해당 단계에서 먼저 열어 확인합니다. 파일이 있다는 사실이 직접 작성하거나 실행했다는 뜻은 아닙니다. `config.json`은 필요 없습니다. 결과 폴더와 보고서는 명령이 자동으로 만듭니다. **생성된 JSON·보고서, 제공된 규정·질문·프롬프트는 수정하지 않습니다.** 작업본은 VS Code 기본 **UTF-8**로 저장합니다. LIVE에서 전환했다면 본인 질문·프롬프트와 기존 결과·Azure 자원을 보존합니다.
 
 이후 **한 명령씩 실행하고 완료 확인을 본 뒤** 다음으로 갑니다. 별도 표시가 없으면 두 운영체제에서 같은 명령을 씁니다. 명령은 항상 `lab.py`가 있는 폴더에서 실행합니다. Windows 출력에서 `/` 대신 `\`가 보여도 같은 경로입니다. 기본 실습 결과 폴더는 `demo-`로 시작하며 LIVE 결과와 섞지 않습니다.
 
-**오류·중단 시:** `ERROR:`는 [문제 해결](reference.md#troubleshooting)에서 해결한 뒤 진행하고, 낮은 점수·`FAIL`·`BLOCK`은 관찰 결과로 기록합니다. 새 터미널에서는 가상환경만 다시 활성화합니다. 재개할 명령이 헷갈리면 [결과 파일로 재개 위치 찾기](setup.md#resume-checkpoints)를 사용합니다. DEMO 오류를 해결하려고 `--mode live`로 바꾸지 않습니다.
+**오류·중단 시:** `ERROR:`는 [문제 해결](reference.md#troubleshooting)에서 해결한 뒤 진행하고, 낮은 점수·`FAIL`은 관찰 결과로 기록합니다. `BLOCK`은 실습 5에서 품질 실패와 증거 누락을 구분합니다. [결과 파일로 재개 위치 찾기](setup.md#resume-checkpoints)를 사용하되 완료된 `run`·`judge`를 반복하면 저장된 결과를 읽을 뿐 새 예제를 만들지 않습니다. DEMO 오류를 해결하려고 `--mode live`로 바꾸지 않습니다.
+
+새 터미널에서는 `lab.py` 폴더로 돌아와 macOS/Linux의 `source .venv/bin/activate` 또는 PowerShell의 `.\.venv\Scripts\Activate.ps1`만 실행합니다. 생성·설치부터 반복하지 않습니다. 활성화가 막히면 가상환경 Python 직접 실행 방식을 유지합니다.
 
 **준비 끝. 이제 아래 실습 1로 이어갑니다.**
 
@@ -157,6 +159,8 @@ python lab.py review results/demo-candidate D06
 
 **판정할 때는 `answer` 문장까지 읽습니다.** [출장 규정](../data/policies.md)과 금액·날짜·사전 승인 조건을 대조하고 없는 승인을 만들어 내지 않았는지 확인합니다. 코드의 `PASS`나 Judge의 4점 이상을 그대로 사람의 `pass`로 옮기지 않습니다.
 
+자동 실행은 [AI 보조 검토](reference.md#assisted-review)로 구분합니다. AI 판정을 사람의 승인으로 저장하지 않으며, 실제 사람 검토 미완료는 그대로 남깁니다.
+
 **완료 확인:** 업무 검사 **8/8, 100%**, 새 통과 D03·D04·D08, 회귀 없음. `검토 저장: results/demo-candidate/reviews.json`도 보입니다. 보고서의 사례별 근거로 차이를 설명합니다. 작성된 V2 답변이 낫다는 관찰이며, 프롬프트의 실제 개선 효과는 아닙니다.
 
 <a id="lab-5"></a>
@@ -186,14 +190,14 @@ python lab.py gate results/demo-baseline results/demo-candidate results/demo-hol
 
 **완료 확인:** 업무 검사 **3/4, 75%**, Gate **BLOCK**, 종료 코드 `2`. H04를 `fail`로 기록하면 사람의 반려도 이유에 포함됩니다. `results/demo-candidate/gate.md`를 열어 보류 이유를 확인하고 **아래 실습 6으로 계속 진행합니다.**
 
-`BLOCK`은 정상적인 품질 판단이며 실습 실패가 아닙니다. 반면 `ERROR:`나 점수·검토 누락은 해당 단계를 먼저 해결합니다. Dev와 holdout은 질문이 달라 전후 점수로 비교하지 않습니다. Holdout을 보고 수정하면 다음에는 새로운 holdout이 필요합니다.
+이 예제의 품질 실패에 따른 `BLOCK`은 실습 실패가 아닙니다. **점수·사람 검토 누락도 `BLOCK` 사유가 될 수 있습니다.** 누락은 해당 단계를 완료한 뒤 같은 `gate` 명령을 다시 실행해 갱신합니다. 검토 저장만으로 `gate.md`가 바뀌지는 않습니다. `ERROR:`는 먼저 해결하고, 실제 품질 실패는 통과로 바꾸지 않습니다. Dev와 holdout은 질문이 달라 전후 점수로 비교하지 않습니다. Holdout을 보고 수정하면 다음에는 새로운 holdout이 필요합니다.
 
 <a id="lab-6"></a>
 ## 6. 새 질문 설계와 마무리
 
-**이미 LIVE에서 N02를 작성했다면:** `data/my-case.jsonl`을 덮어쓰지 않습니다. 아래 작성 과정 대신 **할 일 3의 파일 확인**으로 가서 기존 질문을 검사하고, 마지막 요약에서 LIVE 질문을 재사용했다고 설명합니다.
+**할 일 1 — 작업본 확인:** 먼저 `data/my-case.jsonl`을 엽니다. 저장소에는 숙박비 **180000원**인 N02 예제가 이미 포함되어 있습니다. 그대로 사용하려면 **할 일 3의 파일 확인**으로 가고 “제공 예제 그대로”라고 기록합니다. 이전 LIVE·DEMO에서 작성한 본인 질문이라면 덮어쓰지 않고 같은 검사로 가서 재사용했다고 기록합니다.
 
-**할 일 1 — 파일 준비:** VS Code에서 [추가 사례 예제](../data/my-case.example.jsonl)를 열고 **File → Save As**에서 **같은 `data` 폴더에 파일명을 `my-case.jsonl`**로 저장합니다. 최종 경로는 `data/my-case.jsonl`입니다. 원본은 바꾸지 않고 **복사본의 내용을 아래 한 줄 전체로 교체**합니다.
+**직접 수정 연습을 하려면** 이 작업본을 사용합니다. 파일이 없을 때만 [추가 사례 예제](../data/my-case.example.jsonl)를 열고 **File → Save As**로 `data/my-case.jsonl`을 만듭니다. 원본은 바꾸지 않습니다. **작업본의 내용을 아래 한 줄 전체로 교체**한 뒤 할 일 2의 두 값을 수정합니다. 원본 예제의 N01이 아니라 **N02 한 건**을 준비합니다.
 
 ```jsonl
 {"id":"N02","category":"과거 출장의 한도 초과","critical":true,"query":"2026년 6월 15일 국내 출장 숙박비가 1박 170000원입니다. 9월에 정산하면 사전 승인 없이 처리해도 되나요?","expected_decision":"needs_approval","expected_limit_krw":160000,"expected_citations":["TRAVEL-PREVIOUS"],"ground_truth":"정산일이 아니라 출장일의 과거 한도 160000원을 적용한다. 170000원은 한도 초과이므로 재무팀 사전 승인이 필요하며 바로 정산할 수 있다고 안내하면 안 된다."}
@@ -208,7 +212,7 @@ python lab.py gate results/demo-baseline results/demo-candidate results/demo-hol
 
 **나머지 값은 그대로 둡니다.** 6월 15일 출장의 규정 한도 `expected_limit_krw`는 **160000**이며 청구 금액이 아닙니다. 180000원도 한도 초과이므로 결정 `needs_approval`과 출처 `TRAVEL-PREVIOUS`는 바뀌지 않습니다.
 
-마지막 요약에서 **예제 수정 / 직접 작성 / 예제 그대로** 중 사용한 방식을 구분합니다. 막히면 수정 전 예제를 그대로 사용했다고 설명합니다.
+마지막 요약에서 **예제 수정 / 직접 작성 / 예제 그대로 / 이전 질문 재사용** 중 사용한 방식을 구분합니다. 막히면 수정 전 예제를 그대로 사용했다고 설명합니다.
 
 <details>
 <summary>다른 질문을 직접 설계할 때만: 8개 필드의 의미</summary>
@@ -237,7 +241,7 @@ python lab.py validate-data data/my-case.jsonl
 
 **완료 확인:** `DATA OK: 1 case(s)`. `ERROR:`가 나오면 표시된 필드나 줄을 수정하고 같은 검사만 다시 실행합니다. 2개 이상이면 다른 줄을 제거하고 N02 한 줄만 남깁니다. 이는 JSONL 문법·필수 필드·값 형식 확인이며 **정답의 타당성이나 모델 성능 검증은 아닙니다.** 정답은 규정과 직접 대조합니다. **DEMO는 N02의 답변을 생성하거나 채점하지 않습니다.** LIVE 명령을 추가로 실행하지 않습니다.
 
-잡으려는 문제와 **“응답 생성·Judge 미실행”**을 구분하고, 마지막 네 문장으로 설명합니다.
+잡으려는 문제와 **“이 DEMO 경로에서는 N02 응답 생성·Judge 미실행”**을 구분합니다. 이전 LIVE 결과가 있더라도 별도 기록으로 남기고 DEMO의 실행 성과로 세지 않습니다. 마지막 네 문장으로 설명합니다.
 
 > 작성된 ___ 예제에서 ___ 문제를 확인했다.<br>
 > V1/V2 예제의 같은 질문에서는 ___, holdout 예제에서는 ___를 관찰했다.<br>
@@ -249,10 +253,10 @@ python lab.py validate-data data/my-case.jsonl
 - [ ] `results/demo-baseline`, `results/demo-candidate`, `results/demo-holdout`에 각각 `report.md`·`judge.json`이 있고 업무 통과율 62.5%·100%·75%를 확인했다.
 - [ ] D04의 최초 사람 판단과 Judge 예제를 비교했고, D06·H04의 실제 판정과 이유를 각 `reviews.json`에 저장했다.
 - [ ] `results/demo-candidate/comparison.md`와 `gate.md`를 읽고 `BLOCK` 이유를 설명했다.
-- [ ] N02의 데이터 검사를 완료했고, 답변·Judge 미실행임을 기록했다.
+- [ ] N02의 데이터 검사와 작성·재사용 방식을 기록했고, 이 DEMO 경로에서는 답변·Judge 미실행임을 명시했다.
 - [ ] 마지막 네 문장에서 **작성된 예제 분석**임을 설명하며 실제 모델 개선을 주장하지 않는다.
 
-체크리스트까지 확인하면 **DEMO 실습 완료**입니다. `results/`를 로컬에 보관합니다. DEMO만 실행했다면 Azure 정리 대상은 없습니다. LIVE 환경을 만들다가 전환했다면 [리소스 정리](cleanup.md)도 확인합니다.
+체크리스트까지 확인하면 **DEMO 실습 완료**입니다. 자동 리허설은 실제 사람이 하지 않은 검토를 완료로 체크하지 않습니다. `results/`를 로컬에 보관합니다. DEMO만 실행했다면 Azure 정리 대상은 없습니다. LIVE 환경을 만들다가 전환했다면 [리소스 보존·비용](cleanup.md)도 확인합니다.
 
 ---
 
@@ -284,6 +288,8 @@ python lab.py inspect results/trap-candidate D06
 새로 통과한 사례: D03, D08
 업무 검사 회귀: D06(decision)
 ```
+
+이 선택 연습은 `judge`를 실행하지 않으므로 `Judge 합격→불합격 회귀: 미평가`와 `Judge 비교: 미포함`도 정상입니다. 여기서는 **업무 검사 회귀만** 확인합니다.
 
 평균은 좋아졌지만 D06에서 **없는 승인을 만들어 내는 새 실패**가 생겼습니다. 이 변경을 보류할 이유를 한 문장으로 설명하면 완료입니다.
 

@@ -2,7 +2,7 @@
 
 # Gaon Lab travel policy: fictional workshop reference
 
-This is **not a real company's policy**. The executable workshop passes the complete [Korean source](../../data/policies.md) to every question. This English translation is for reading, not a replacement input for an existing experiment.
+This is **not a real company's policy**. The introductory fixed-policy path passes the complete [Korean source](../../data/policies.md) to every question; the RAG paths supply retrieved context instead. This English translation is for reading, not a replacement input for an existing experiment.
 
 ## TRAVEL-CURRENT: official policy effective July 1, 2026
 

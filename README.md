@@ -84,7 +84,7 @@ B is appropriate. KRW 240000 appears in an **unapproved draft**. A sounds helpfu
 
 If you already have an authorized environment, use [existing-environment setup](docs/en/setup.md#existing-environment) instead of creating another one. Introductory participants then continue to [activity 1](#lab-1); complete-RAG participants return to [complete-path Search setup](docs/en/complete-lab.md#search-setup).
 
-**Starting requirements for the new-environment path:** a Microsoft Entra ID account, an active Azure subscription, and an **active Owner role** on that subscription, including an applicable inherited role. This is for creating resources and assigning roles; it is not the minimum permission for using an existing environment. No API keys are used.
+**Starting requirements for the new-environment path:** a Microsoft Entra ID account, an active Azure subscription, and an **active Owner role** on that subscription, including an applicable inherited role. This workshop chooses Owner so one person can create resources and assign roles; Azure does not require Owner for every provisioning path, and existing-environment users do not need it. See the [permission contract](docs/en/reference.md#permissions-contract) for other authorized role combinations. No API keys are used.
 
 You need **one project and one model deployment**. You do not need a search service, agent server, Docker, Git, azd, or Jupyter. Do not enter real personal data, confidential information, or passwords.
 
@@ -140,20 +140,22 @@ When installation finishes without errors, check the local files:
 python lab.py doctor
 ```
 
-**Checkpoint:** `LOCAL OK: Python ... , dev 8개, holdout 4개` means the local files contain eight dev and four holdout cases. It does **not** confirm Azure connectivity. Reactivate the virtual environment when opening a new terminal; do not reinstall everything.
+**Checkpoint:** `LOCAL OK: Python ... , dev 8개, holdout 4개` means the local files contain eight dev and four holdout cases. It does **not** confirm Azure connectivity. In a new terminal, return to this folder and run only `source .venv/bin/activate` (macOS/Linux) or `.\.venv\Scripts\Activate.ps1` (PowerShell). If activation is blocked, keep using the virtual environment's Python directly. Do not recreate the environment or reinstall packages.
 
 <a id="working-files"></a>
-**Create these three working copies only when their steps ask for them.**
+**Edit only these three local working files, when their steps ask for them.**
 
 This table belongs to the introduction. **Complete-RAG participants create only `config.json` in setup 6**; their own guide introduces later files.
 
-| When | Source | Save as |
+| When | Local working file | Starting material |
 |---|---|---|
-| Setup 6 | `config.example.json` | `config.json`, beside `lab.py` |
-| Activity 4 | `prompts/v2.txt` | `prompts/my-v2.txt` |
-| Activity 6 | `data/my-case.example.jsonl` | `data/my-case.jsonl` |
+| Setup 6 | `config.json`, beside `lab.py` | Copy `config.example.json` |
+| Activity 4 | `prompts/my-v2.txt` | Included example working copy; compare it with `prompts/v2.txt` |
+| Activity 6 | `data/my-case.jsonl` | Included N02 working copy; `data/my-case.example.jsonl` is the N01 setup case |
 
-The commands automatically create output directories and reports such as `results/baseline`. Do not prefill them. Treat generated JSON and reports as read-only evidence. Keep original policies, questions, and prompts unchanged, and save working copies as **UTF-8**. If an example working copy already exists in your download, inspect it and distinguish reuse from editing.
+**The repository already includes `prompts/my-v2.txt` and `data/my-case.jsonl`.** Their presence does not mean you edited or ran them. Inspect them at the relevant step; do not overwrite your previous work.
+
+The commands automatically create output directories and reports such as `results/baseline`. Do not prefill or manually edit generated JSON and reports; read them as evidence. Keep original policies, questions, and prompts unchanged, and save working files as **UTF-8**.
 
 <a id="setup-sign-in"></a>
 ### Setup 2. Sign in to the intended subscription
@@ -223,6 +225,8 @@ For commands instead of portal creation, use the [Azure CLI alternative](docs/en
 ### Setup 4. Verify generation and evaluation permissions
 
 **Owner alone does not necessarily grant model and evaluation data access.** Your terminal uses **your user identity**; cloud evaluation uses the **project's managed identity**.
+
+The parent-resource assignments below are this dedicated workshop's common starting configuration, not the only minimum scope for every evaluation or existing project. Access is inherited by child projects too. For shared or existing environments, confirm the required scope with the owner using the [permission contract](docs/en/reference.md#permissions-contract).
 
 1. In Foundry, open the project's Azure resource from **Manage → Project details**. Its resource ID ends in **`/accounts/ACCOUNT/projects/PROJECT`**. Match the names to the resources verified in setup 3.
 2. Under that project's **Identity → System assigned**, check its **Object (principal) ID** against the IAM member below. Do not copy the parent account's identity. If the menu or ID is missing, use the [managed-identity help](docs/en/reference.md#managed-identity-access).
@@ -302,13 +306,16 @@ python lab.py doctor --live
 | `Judge: 아직 미평가` | “Judge: not evaluated yet” | Run this step's `judge`. |
 | Only `Foundry 상태: completed` | The remote job ended; local collection may remain | Wait for **`평가 완료`**. Resolve any later `ERROR:`. |
 | `아직 처리 중입니다` / exit `3` | “Still processing” | Repeat the **entire same `judge` command**, including `--like`. |
+| `중단했습니다` / exit `130` | Interrupted from the terminal | Preserve the files and use the [resume checkpoints](docs/en/setup.md#resume-checkpoints). |
 | `ERROR:` / exit `1` | An input, environment, or execution error | Stop and [troubleshoot](docs/en/reference.md#troubleshooting). |
 | `BLOCK` / exit `2` | The quality gate holds the change | Record `gate.md` reasons and continue to activity 6, after addressing missing evidence. |
 | `usage:` / `error:` with exit `2` | Missing required arguments or invalid options | Correct and rerun the command; this is not `BLOCK`. |
 
-The default `judge` **status-polling budget is 300 seconds**. Authentication, submission, HTTP responses, and result collection can make total command time longer. Repeat it **only if still processing**. It retrieves the saved remote job instead of submitting another one. Do not run it concurrently in another terminal.
+The default `judge` **status-polling budget is 300 seconds**. Authentication, submission, HTTP responses, and result collection can make total command time longer. If it exits with “still processing,” repeat the same command: it retrieves the saved remote job instead of submitting another one. Do not run it concurrently in another terminal.
 
-The completion message appears only after score/reason validation and `judge.json`/`report.md` are saved. Read the count, the report path after `보고서:`, and the per-case evidence under `사례별 근거`. Missing scores are not merely low scores. After interruption, find your next command in the [result-file resume table](docs/en/setup.md#resume-checkpoints).
+**After an error or interruption, fix the cause and check the [result-file resume table](docs/en/setup.md#resume-checkpoints).** Resume an incomplete `run` with the same inputs and `--out`; it skips saved answers, though an answer not saved before interruption may incur another call. If the remote job is still processing or completed and its IDs are saved, `judge` can resume polling/collection after a connection or local-save error. If submission stopped before its ID was saved, or the service reports `failed`/`canceled`, follow [remote-ID recovery](docs/en/reference.md#resume), not a blind resubmission.
+
+The completion message appears only after score/reason validation and `judge.json`/`report.md` are saved. Read the count, the report path after `보고서:`, and the per-case evidence under `사례별 근거`. Missing scores are not merely low scores. After completion, continue; repeating a completed `run` or `judge` reads saved results rather than generating better ones.
 
 <a id="setup-smoke"></a>
 ### Setup 7. Verify one generated and evaluated answer
@@ -325,7 +332,7 @@ After **`1/1  N01 저장`** (“N01 saved”), evaluate the saved answer:
 python lab.py judge results/setup-smoke
 ```
 
-Repeat only if still processing. Wait for **`평가 완료: 1개 답변 × 2개 지표`**: one answer, two metrics. Then inspect it:
+If still processing, repeat the same command. For an error or interruption, use the [status and resume guidance](#command-status). Wait for **`평가 완료: 1개 답변 × 2개 지표`**: one answer, two metrics. Then inspect it:
 
 ```bash
 python lab.py inspect results/setup-smoke N01
@@ -458,10 +465,10 @@ A judge may penalize an appropriate refusal to invent an unknown amount. If its 
 **Choose a hypothesis first:** “To reduce ___, I will change ___.” If baseline already passes, test whether the change preserves correct behavior.
 
 1. Open [V1](prompts/v1.txt) and the [V2 example](prompts/v2.txt).
-2. With V2 open, choose **Save As `prompts/my-v2.txt`**. Do not change the originals.
-3. Edit one or two sentences to match your hypothesis. Reusing V2 unchanged is allowed, but **still use the filename `prompts/my-v2.txt`** and record that choice. The Korean V2 requires official policy, the actual travel date, no invented limits/approval, and consistent JSON and explanation.
+2. Open **`prompts/my-v2.txt`**. The included example adds a missing-date guard to V2: do not list date-specific limits before the travel date is known, and cite only `SCOPE` then. Include this difference in your hypothesis. **Only if the working file is missing**, open V2 and **Save As `prompts/my-v2.txt`**. Keep the originals and any previous personal edits intact.
+3. Edit one or two sentences in the working file to match your hypothesis and save. Using the included working example, or copying V2 unchanged, is also allowed; record which you used. **Always use the filename `prompts/my-v2.txt`**. V2 requires official policy, the actual travel date, no invented limits/approval, and consistent JSON and explanation.
 
-Keep **model, policy, questions/expectations, judge, and thresholds unchanged**.
+Keep **model, policy, questions/expectations, judge, and thresholds unchanged**. Once candidate generation starts, keep this working prompt unchanged through activity 6. If candidate results already exist, [resume](docs/en/setup.md#resume) rather than replacing the prompt and rerunning into the same folder.
 
 **Generate the same eight dev answers:**
 
@@ -486,6 +493,8 @@ In `results/candidate/comparison.md`, inspect the business pass rate, newly pass
 In **Build → Evaluations**, open the baseline's **`straightforward-…` group name**, not just its Last run link. Under **Evaluation runs**, select only **`v1-dev-…` and `my-v2-dev-…`**, then **Compare runs**. Set **Baseline** explicitly to `v1-dev-…`; the first-selected candidate might otherwise become the reference. Do not mix holdout or extra cases into before/after comparison.
 
 The portal summarizes averages/statistics, not the local business checks or score-4 regressions. **Too few samples / Inconclusive** means there is insufficient evidence for a statistically established improvement. If comparison is unavailable, inspect the same question in each run.
+
+`comparison.md`, human verdicts in `reviews.json`, and `gate.md` are **local workshop records**, not additional Foundry evaluations. A portal Pass does not replace them.
 
 **Review the actual D06 answer:**
 
@@ -518,7 +527,7 @@ python lab.py run --mode live --frozen results/candidate --split holdout --out r
 python lab.py judge results/holdout --like results/baseline
 ```
 
-Wait for **`평가 완료: 4개 답변 × 2개 지표`** and `Judge 결과: results/holdout/judge.json`. Repeat only if still processing, keeping `--like`.
+Wait for **`평가 완료: 4개 답변 × 2개 지표`** and `Judge 결과: results/holdout/judge.json`. If still processing, repeat the same command, keeping `--like`.
 
 ```bash
 python lab.py review results/holdout H04
@@ -539,7 +548,7 @@ The gate writes `results/candidate/gate.md`.
 | **BLOCK** | Record its reasons and hold the change. **Continue to activity 6.** Exit code 2 is intentional quality blocking. |
 | **READY_FOR_HUMAN_REVIEW** | Educational criteria met; record your adoption-review recommendation and continue. **Not production approval.** |
 
-**Checkpoint:** use `gate.md` to explain the result, your decision, and case-based evidence. Address missing scores or omitted human review; do not turn a genuine `fail` into `pass` to remove a block. In an automated rehearsal, explicitly leave real human review incomplete.
+**Checkpoint:** use `gate.md` to explain the result, your decision, and case-based evidence. If scores or human review are missing, finish those steps and **rerun the same `gate` command** to update the decision; saving a review alone does not refresh `gate.md`. Do not turn a genuine `fail` into `pass` to remove a block. In an automated rehearsal, explicitly leave real human review incomplete.
 
 Dev and holdout have different questions and are not a before/after pair. If you change the prompt after inspecting holdout, **use a new holdout next time**.
 
@@ -548,9 +557,9 @@ Dev and holdout have different questions and are not a before/after pair. If you
 <a id="lab-6"></a>
 ## 6. Evaluate one question of your own
 
-Open [the extra-case example](data/my-case.example.jsonl) and **Save As `data/my-case.jsonl`**. Keep the original unchanged.
+**Inspect `data/my-case.jsonl` first.** The repository includes an N02 example with an expense of **180000**. You may use it unchanged and go straight to local validation below; record “provided example unchanged.” If it contains your previous LIVE or DEMO question, preserve it, go to validation, and record reuse. If `results/my-case` also exists, use [resume checkpoints](docs/en/setup.md#resume-checkpoints) rather than replacing the question.
 
-Replace the copy with this **entire single line**. It creates **N02**, not setup case N01. Keep the Korean question and expectation for the shared experiment.
+**To practice editing instead:** use this working file. Only if it is missing, open [the extra-case example](data/my-case.example.jsonl) and **Save As `data/my-case.jsonl`**, keeping the original unchanged. Replace the working copy with this **entire single line**, then make the two edits below. It creates **N02**, not setup case N01. Keep the Korean question and expectation for the shared experiment.
 
 ```jsonl
 {"id":"N02","category":"과거 출장의 한도 초과","critical":true,"query":"2026년 6월 15일 국내 출장 숙박비가 1박 170000원입니다. 9월에 정산하면 사전 승인 없이 처리해도 되나요?","expected_decision":"needs_approval","expected_limit_krw":160000,"expected_citations":["TRAVEL-PREVIOUS"],"ground_truth":"정산일이 아니라 출장일의 과거 한도 160000원을 적용한다. 170000원은 한도 초과이므로 재무팀 사전 승인이 필요하며 바로 정산할 수 있다고 안내하면 안 된다."}
@@ -565,7 +574,7 @@ Meaning: a June 15 trip costs KRW 170000 per night and is claimed in September. 
 | Hotel expense in `query` | `170000` → `180000` |
 | Expense described in `ground_truth` | `170000` → `180000` |
 
-Keep the **160000 limit**, `needs_approval`, and `TRAVEL-PREVIOUS`. The expense is not the policy limit. In your final summary, distinguish editing the example, writing your own question, or using the example unchanged.
+Keep the **160000 limit**, `needs_approval`, and `TRAVEL-PREVIOUS`. The expense is not the policy limit. In your final summary, distinguish editing the example, writing your own question, using the example unchanged, or reusing your previous question.
 
 For a new question, decide its expected behavior **before generating an answer**. Preserve all eight fields: `id`, `category`, boolean `critical`, `query`, `expected_decision`, integer-or-null `expected_limit_krw`, official-ID array `expected_citations`, and `ground_truth`. Keep ID `N02` for the commands below. Do not put another business domain into the travel-policy checker.
 
@@ -591,7 +600,7 @@ After **`1/1  N02 저장`**, evaluate:
 python lab.py judge results/my-case --like results/baseline
 ```
 
-Wait for **`평가 완료: 1개 답변 × 2개 지표`** and `Judge 결과: results/my-case/judge.json`. Repeat the same command only if still processing.
+Wait for **`평가 완료: 1개 답변 × 2개 지표`** and `Judge 결과: results/my-case/judge.json`. If still processing, repeat the same command, including `--like`.
 
 ```bash
 python lab.py inspect results/my-case N02

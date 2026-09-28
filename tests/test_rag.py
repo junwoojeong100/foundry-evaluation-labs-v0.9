@@ -10,7 +10,7 @@ import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import rag_lab
 import lab
@@ -254,6 +254,106 @@ class RagTests(unittest.TestCase):
             initialize(client, CONFIG, self.documents)
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0][0], "GET")
+
+    def test_setup_rejects_changed_definitions_before_creating_or_uploading(self):
+        definitions = {
+            "indexes/" + CONFIG["index_name"]: index_definition(CONFIG, self.corpus_hash),
+            "knowledgesources/" + CONFIG["knowledge_source"]: knowledge_source_definition(CONFIG),
+            "knowledgebases/" + CONFIG["knowledge_base"]: knowledge_base_definition(CONFIG),
+        }
+        mutations = [
+            ("indexes/" + CONFIG["index_name"], ("fields", 2, "analyzer"), "en.lucene"),
+            ("indexes/" + CONFIG["index_name"], ("fields", 3, "searchable"), False),
+            ("indexes/" + CONFIG["index_name"], ("fields", 0, "key"), False),
+            ("indexes/" + CONFIG["index_name"], ("fields", 4, "filterable"), False),
+            ("indexes/" + CONFIG["index_name"], ("semantic", "defaultConfiguration"), "other-semantic"),
+            ("indexes/" + CONFIG["index_name"], ("semantic", "configurations", 0, "prioritizedFields", "prioritizedContentFields"), [{"fieldName": "title"}]),
+            ("indexes/" + CONFIG["index_name"], ("fields",), None),
+            ("knowledgesources/" + CONFIG["knowledge_source"], ("searchIndexParameters", "semanticConfigurationName"), "other-semantic"),
+            ("knowledgesources/" + CONFIG["knowledge_source"], ("searchIndexParameters", "sourceDataFields"), [{"name": "id"}]),
+            ("knowledgebases/" + CONFIG["knowledge_base"], ("knowledgeSources",), [{"name": "other-source"}]),
+        ]
+        for path, keys, value in mutations:
+            with self.subTest(path=path, keys=keys):
+                actual = copy.deepcopy(definitions)
+                target = actual[path]
+                for key in keys[:-1]:
+                    target = target[key]
+                target[keys[-1]] = value
+
+                def request(method, resource, *args, **kwargs):
+                    self.assertEqual(method, "GET", "Check all existing definitions before creating or uploading.")
+                    return actual[resource]
+
+                with self.assertRaisesRegex(ValueError, "Existing .* contract"):
+                    initialize(SimpleNamespace(request=request), CONFIG, self.documents)
+
+    def test_setup_accepts_server_defaults_and_resumes_only_incomplete_uploads(self):
+        index = index_definition(CONFIG, self.corpus_hash)
+        index["@odata.etag"] = "server-etag"
+        index["fields"].reverse()
+        for field in index["fields"]:
+            field["retrievable"] = True
+        source = knowledge_source_definition(CONFIG)
+        source["searchIndexParameters"]["sourceDataFields"].reverse()
+        base = knowledge_base_definition(CONFIG)
+        definitions = {
+            "indexes/" + CONFIG["index_name"]: index,
+            "knowledgesources/" + CONFIG["knowledge_source"]: source,
+            "knowledgebases/" + CONFIG["knowledge_base"]: base,
+        }
+        for count in (0, 2, len(self.documents)):
+            with self.subTest(indexed_count=count):
+                inventory = [{**document, "corpus_hash": self.corpus_hash} for document in self.documents[:count]]
+                uploads = []
+
+                def request(method, path, body=None, **kwargs):
+                    if method == "GET":
+                        return definitions[path]
+                    self.assertEqual(method, "POST", "Do not overwrite existing object definitions.")
+                    if path.endswith("/docs/search"):
+                        return {"value": inventory}
+                    self.assertTrue(path.endswith("/docs/index"))
+                    uploads.extend(body["value"])
+                    return {"value": [{"key": item["id"], "status": True} for item in uploads]}
+
+                client = SimpleNamespace(request=Mock(side_effect=request))
+                result = initialize(client, CONFIG, self.documents)
+                self.assertEqual(result["document_count"], len(self.documents))
+                self.assertEqual(result["index"], index)
+                self.assertEqual(result["knowledge_source"], source)
+                self.assertEqual(result["knowledge_base"], base)
+                self.assertEqual(len(uploads), len(self.documents) if count < len(self.documents) else 0)
+                self.assertEqual(
+                    [(call.args[0], call.args[1]) for call in client.request.call_args_list[:3]],
+                    [("GET", path) for path in definitions],
+                )
+
+    def test_setup_creates_missing_objects_and_uploads_the_corpus(self):
+        definitions, uploads = {}, []
+
+        def request(method, path, body=None, **kwargs):
+            if method == "GET":
+                return definitions.get(path)
+            if method == "PUT":
+                self.assertTrue(kwargs["create_only"])
+                self.assertNotIn(path, definitions)
+                definitions[path] = body
+                return body
+            self.assertEqual(method, "POST")
+            if path.endswith("/docs/search"):
+                return {"value": []}
+            self.assertTrue(path.endswith("/docs/index"))
+            uploads.extend(body["value"])
+            return {"value": [{"key": item["id"], "status": True} for item in uploads]}
+
+        result = initialize(SimpleNamespace(request=request), CONFIG, self.documents)
+        self.assertEqual(len(definitions), 3)
+        self.assertEqual(result["document_count"], len(self.documents))
+        self.assertEqual(
+            uploads,
+            [{"@search.action": "upload", **document, "corpus_hash": self.corpus_hash} for document in self.documents],
+        )
 
     def test_optional_guides_have_identical_executable_commands_and_anchors(self):
         root = Path(rag_lab.ROOT)

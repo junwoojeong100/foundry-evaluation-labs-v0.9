@@ -8,9 +8,17 @@
 
 ## 1. Keep the results locally
 
-Keep the baseline/candidate/holdout reports, scores, reviews, comparison, and gate. Export additional portal records if needed. Check pending remote jobs; closing the terminal does not cancel them. Wait for completion or cancel only your own job when explicitly appropriate.
+Keep the **entire result folder for the path you actually ran**. Reports/scores alone omit input/response snapshots, remote IDs in `foundry-job.json`, raw evaluation results, and reviews needed for resumption and comparison. Export additional portal records if needed.
 
-**Checkpoint:** needed local evidence is saved and remote job state is known. Apply your organization's data-retention policy if extending the workshop to real information.
+| Executed path | Local evidence to retain |
+|---|---|
+| Introductory LIVE/DEMO | Your smoke, baseline, candidate, holdout, and extra-case results; distinguish LIVE from `demo-*` folders |
+| Minimal RAG | `results/rag-setup.json`, query outputs, and experiment files such as `results/rag-search/` and `results/rag-iq/` |
+| Complete RAG | Entire `results/advanced/`: retrieval, calibration, stage generation/evaluation, freeze, fresh-question registration, and acceptance. See [stage artifacts](complete-lab.md#resume) |
+
+Poll pending jobs using the **entire original command, retaining options such as `--like`**. Complete-path calibration uses the original `calibrate` command. Cancel only your own job when separately needed and supported by its run screen, then verify its state. **Closing the terminal does not cancel remote work.**
+
+**Checkpoint:** needed local evidence and actual remote job states are saved. If a job is still pending, record the next check rather than marking it complete. Apply your organization's data-retention policy if extending the workshop to real information.
 
 <a id="retain-resources"></a>
 ## 2. Default: retain and check costs
@@ -19,8 +27,10 @@ Keep the baseline/candidate/holdout reports, scores, reviews, comparison, and ga
 
 1. Match the recorded account, subscription, and dedicated group. Confirm the actually created Foundry resource/project remain in `swedencentral`.
 2. In **Build → Models**, confirm the created deployment remains. Keep remote evaluation IDs and states. Group existence alone does not prove every child still exists.
-3. Leave the group, account, project, deployment, evaluations, and required role assignments in place. Do not run group/model deletion or `azd down`.
-4. Scope **Cost Management → Cost analysis** to the group. Costs may not yet be reported. Retention is **not a billing stop**, and alerts do not automatically stop spending.
+3. Leave the group, account, project, deployment, evaluations, and required role assignments in place. **If you ran RAG, also verify the Search service, indexes, knowledge sources/bases, and the complete path's embedding/planning deployments.** Do not run group/model deletion or `azd down`.
+4. Scope **Cost Management → Cost analysis** to the group. If reusing Search/models in another group, confirm that cost scope with the owner too. Costs may not yet be reported. Retention is **not a billing stop**, and alerts do not automatically stop spending.
+
+**RAG costs:** [Basic Search incurs provisioned-capacity charges while retained](https://learn.microsoft.com/azure/search/search-sku-tier). Free semantic/knowledge-retrieval allowances do not make the Basic service free. Embedding, LLM planning, generation, and judging usage are separate; local generation token totals do not represent the whole bill. Check only resources you actually used; this is not a request to create more.
 
 Confirm **not deleted**, why, the next check date or condition, and reported or pending costs. With no planned deletion date, **retain until a separate request**. Do not mark uncreated resources or unrun evaluations complete.
 
@@ -33,10 +43,12 @@ Continue only after a separate owner decision to delete.
 Open the exact recorded **subscription → resource group**. Before continuing, confirm all three:
 
 - Its name and subscription ID match the dedicated group created during setup.
-- Its account, project, and deployment belong to this workshop.
+- Its account, project, deployment, and any Search service are approved for deletion as part of this workshop.
 - No shared resources, other exercises, or production dependencies are included.
 
 If any point is uncertain, do not delete. In shared environments, operate only on items explicitly approved by the owner.
+
+A personal suffix on shared Search objects does not authorize deleting the service. Do not mark connected resources in another group as deleted merely because this group was removed.
 
 ## 4. Delete only the authorized dedicated group
 

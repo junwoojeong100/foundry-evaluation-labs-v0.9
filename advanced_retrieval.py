@@ -12,8 +12,8 @@ from urllib.parse import quote, urlparse
 from evaluation import digest, read_json, write_json
 from foundry_client import deployment_snapshot, validate_history
 from rag_client import (
-    DOCUMENT_FIELDS, SEMANTIC_CONFIG, index_definition, knowledge_source_definition,
-    normalize_documents, validate_rag_config,
+    DOCUMENT_FIELDS, SEMANTIC_CONFIG, definition_matches, index_definition,
+    knowledge_source_definition, normalize_documents, validate_rag_config,
 )
 
 API_VERSION = "2026-08-01-preview"
@@ -165,34 +165,6 @@ def verify_definitions(search, config: dict, expected: dict) -> None:
     }
     if definition_hashes(actual) != expected:
         raise ValueError("Live index/knowledge definitions changed after the experiment was frozen.")
-
-
-def definition_matches(actual: object, expected: object) -> bool:
-    """Compare declared settings, allowing extra server-default properties."""
-    if isinstance(expected, dict):
-        if not isinstance(actual, dict):
-            return False
-        for key, value in expected.items():
-            if key not in actual:
-                return False
-            if key == "resourceUri" and isinstance(actual[key], str) and isinstance(value, str):
-                if actual[key].rstrip("/").casefold() != value.rstrip("/").casefold():
-                    return False
-            elif not definition_matches(actual[key], value):
-                return False
-        return True
-    if isinstance(expected, list):
-        if not isinstance(actual, list) or len(actual) != len(expected):
-            return False
-        if expected and all(isinstance(item, dict) and isinstance(item.get("name"), str) for item in expected):
-            if not all(isinstance(item, dict) and isinstance(item.get("name"), str) for item in actual):
-                return False
-            by_name = {item["name"]: item for item in actual}
-            return len(by_name) == len(expected) and all(
-                definition_matches(by_name.get(item["name"]), item) for item in expected
-            )
-        return all(definition_matches(left, right) for left, right in zip(actual, expected))
-    return type(actual) is type(expected) and actual == expected
 
 
 def initialize(search, project, client, config: dict, documents: list[dict], cache_path: Path) -> dict:

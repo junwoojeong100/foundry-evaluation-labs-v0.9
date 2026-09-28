@@ -23,7 +23,11 @@
 | `review` | 실제 답변의 판정과 이유 저장. 사람과 AI 보조 검토를 구분 | 없음 |
 | `gate` | 고정 기준으로 교육용 채택 검토/보류 판단 | 없음 |
 
-`--help`로 명령 또는 각 하위 명령의 도움말을 볼 수 있습니다. 예: `python lab.py run --help`.
+`--help`로 명령 또는 각 하위 명령의 도움말을 볼 수 있습니다. 예:
+
+```bash
+python lab.py run --help
+```
 
 **종료 코드:** `0` 명령 완료, `1` 입력/환경/실행 오류, `2` Gate 차단, `3` Foundry 평가 대기 중, `130` 사용자가 중단.
 
@@ -87,12 +91,13 @@ python lab.py validate-data data/my-case.jsonl
 
 **의도된 한계:** 코드 검사는 `answer` 문장의 의미를 이해하지 않습니다. 결정 필드는 `needs_approval`인데 설명에는 “승인 완료”라고 쓰는 모순을 코드 검사만으로 막지 못합니다. 반대로 Judge는 정확한 출처 ID나 모든 날짜 조건을 놓칠 수 있습니다.
 
-다음은 이번 실습의 증거 범위가 아닙니다: 검색 recall/NDCG, 도구 호출 정확성, Hosted Agent 동작, 멀티턴 대화, 일반적인 보안 검증, 광범위한 red teaming, 실제 업무 실행 권한, 운영 SLA.
+다음은 **고정 규정 입문 경로**의 증거 범위가 아닙니다: 검색 recall/NDCG, 도구 호출 정확성, Hosted Agent 동작, 멀티턴 대화, 일반적인 보안 검증, 광범위한 red teaming, 실제 업무 실행 권한, 운영 SLA. 최소 RAG의 검색 지표와 완결형의 대화·합격 기준은 각 전용 가이드에서 확인하며 아래 입문 Gate에 합치지 않습니다.
 
 ## 실험의 통제와 결과 해석
 
 - 답변 모델은 **프롬프트 + 규정 + 질문**만 받습니다. 정답 필드와 `ground_truth`는 입력에서 제외합니다.
 - Judge는 **저장된 실제 답변 JSON 전체**를 채점합니다. Groundedness에는 답변 생성 때 사용한 같은 context를 전달합니다.
+- Relevance에는 질문과 답변을 전달하며 규정 context는 전달하지 않습니다. 올바르게 “규정에 없음”을 알리거나 추가 정보를 요청한 답변도 낮게 평가될 수 있으므로 이유를 규정과 대조합니다.
 - 이번 Judge 입력에는 `ground_truth`를 매핑하지 않습니다. 그 설명은 사람이 기대 행동을 이해하고 검토할 때 사용합니다.
 - 전후 비교는 같은 mode, dev 질문/정답, context, 모델 배포·보고된 모델 버전, 생성 설정, 업무 평가기 버전을 요구합니다.
 - `judge --like`는 baseline의 평가 그룹과 평가기 버전·Judge 모델 정보를 재사용합니다. 모델 배포를 수업 중 변경하지 않습니다.
@@ -104,7 +109,7 @@ python lab.py validate-data data/my-case.jsonl
 
 **작은 표본:** dev 8개, holdout 4개는 학습을 위한 최소 사례입니다. 운영 품질 보증이나 통계적 유의성의 근거가 아닙니다. LLM 결과는 실행마다 달라질 수 있으며, 이 도구는 좋은 결과가 나올 때까지 자동 반복하지 않습니다.
 
-**Judge 척도:** 공식 RAG 평가기의 기본 합격선은 3일 수 있습니다. 이 실습은 서버 평가기 정의를 임의 변경하지 않고 **원점수 4 이상**을 로컬 합격선으로 사용합니다. 포털 Label/Pass와 로컬 통과율이 다른 경우 먼저 threshold를 확인합니다.
+**Judge 척도:** 공식 RAG 평가기의 기본 합격선은 3일 수 있습니다. 이 실습은 서버 평가기 정의를 임의 변경하지 않고 **원점수 4 이상**을 로컬 합격선으로 사용합니다. 포털 Label/Pass와 로컬 통과율이 다른 경우 먼저 threshold를 확인합니다. 4/5점은 정확도 80%가 아닙니다.
 
 <a id="self-check"></a>
 ## 다섯 질문으로 스스로 확인하기
@@ -159,6 +164,8 @@ AI 보조 검토는 `reviews.json`에 남지만 **사람 검토의 건수나 최
 기존 파일의 `reviewer` 없는 기록은 이전 형식의 사람 검토로 읽습니다. 이 필드는 검토 유형을 명시하는 교육용 기록이며, 실제 사람의 신원을 인증하거나 승인 권한을 증명하는 장치는 아닙니다.
 
 ## 어디에 무엇이 남는가
+
+아래 파일 표와 입력 매핑은 **입문 `lab.py`** 기준입니다. 최소 RAG는 [검색 결과·입력 증거](optional-rag.md#evidence), 완결형은 [단계별 산출물](complete-lab.md#resume)을 사용합니다. 최소 RAG의 context는 규정 전체가 아니라 실제 검색 문맥이며, 완결형의 평가 입력에는 별도 대화 계약이 있습니다.
 
 | 파일 | 내용 |
 |---|---|
@@ -226,13 +233,15 @@ AI 보조 검토는 `reviews.json`에 남지만 **사람 검토의 건수나 최
 | config 예시 값 오류 | endpoint의 `YOUR-...`를 실제 프로젝트 주소로 교체. 두 배포 이름은 본인이 만든 `eval-model` 또는 실제 이름인지 확인 |
 | classic 허브 연결 문자열이나 모델 주소만 있음 | 새 Foundry 프로젝트의 `/api/projects/...` 주소가 필요. [기존 환경 조건](setup.md#existing-environment)을 확인하고 새 환경 사용 또는 [DEMO로 분리 전환](setup.md#switch-to-demo) |
 | 저장했는데 config를 찾을 수 없음 | `lab.py` 옆의 `config.json`인지, `config.json.txt`로 저장되지 않았는지 확인 |
-| `prompts/my-v2.txt`를 찾을 수 없음 | 제공된 V2를 그대로 쓰더라도 **복사본 파일명은 `my-v2.txt`**여야 함. [실습 4](../README.ko.md#lab-4)의 다른 이름 저장 후 재실행 |
+| `prompts/my-v2.txt`를 찾을 수 없음 | 먼저 저장소 폴더·파일 경로·저장 여부 확인. 포함된 작업본이 정말 없을 때만 [실습 4](../README.ko.md#lab-4)에 따라 준비. 기존 개인 작업을 V2로 덮어쓰지 않기 |
+| `my-v2.txt`·`my-case.jsonl`이 이미 있음 | 저장소의 예제 작업본. 기존 내용·개인 수정부터 확인하고 재사용/직접 편집을 구분. `my-v2.txt`는 날짜 미확인 시 조건부 한도를 나열하지 않고 SCOPE만 인용하는 지침이 추가되어 `v2.txt`와 동일하지 않음 |
 | `validate-data`가 `ERROR:`를 출력 | 표시된 줄·필드 수정. JSON 객체 전체를 한 줄로 저장하고 빈 줄 제거. 필수 8개 필드·숫자/null·true/false·공식 출처 확인 후 같은 검사 재실행. 통과 전 유료 `run` 실행하지 않기 |
 | `validate-data`의 건수가 1이 아님 | N01 등 다른 사례를 복사본에 남겼는지 확인. 이번 추가 사례 파일에는 N02 한 줄만 저장. 원본 질문 파일이나 기존 결과는 수정하지 않기 |
 | `review`에서 멈춘 것처럼 보임 | 오류가 아니라 입력 대기. `pass`/`fail` 입력 후 Enter, 규정과 대조한 이유 5자 이상 입력 후 Enter. `검토 저장` 확인 |
-| Gate가 사람 검토 누락이라고 함 | candidate D06·holdout H04의 `review` 명령을 실행해 실제 판정과 이유를 각 `reviews.json`에 저장 |
+| Gate가 사람 검토 누락이라고 함 | candidate D06·holdout H04의 `review`로 실제 판정과 이유를 저장한 뒤 **같은 `gate`를 재실행**. 생성·Judge 재실행은 필요 없음 |
 | 로그인/401 | 본인 계정으로 `az login`. 올바른 테넌트인지 확인. 키를 코드에 붙이지 않기 |
 | Owner인데 모델 호출/평가가 403 | [Foundry User 확인](setup.md#permissions): **본인과 프로젝트 관리 ID**의 역할 및 상위 Foundry 리소스 범위를 확인. 전파를 기다린 뒤 같은 테넌트로 다시 로그인 |
+| 모델은 보이는데 쿼터 조회가 403/빈 목록 | 쿼터는 별도 구독 범위 조회. [권한 계약](#permissions-contract)과 모델/SKU 필터를 확인하고 쿼터 0으로 단정하지 않기 |
 | Private Link/공용 접근 차단 | 승인된 VNet/VPN/실행 환경에서 접속. 수업을 위해 방화벽을 임의로 해제하지 않기 |
 | 모델 404 | 모델 카탈로그 이름이 아닌 **배포 이름**, 올바른 프로젝트 연결인지 확인. 기본 설정의 두 배포 항목은 `gpt-6-luna`가 아니라 `eval-model` |
 | JSON Schema/파라미터 400 | 선택한 모델의 Chat Completions·Structured Outputs·생성 토큰 옵션 지원 확인 |
@@ -242,6 +251,7 @@ AI 보조 검토는 `reviews.json`에 남지만 **사람 검토의 건수나 최
 | 리소스 그룹의 Deployments에 `PolicyDeployment` 실패가 보이지만 모델은 동작 | 모델 배포 상태와 별개의 조직 정책 작업일 수 있음. 배포 오류를 확인하고, 중앙 Log Analytics 작업 영역 누락 같은 조직 진단 설정 문제는 정책 관리자에게 전달. 기록을 지우거나 정책을 해제해 성공처럼 보이게 하지 않기 |
 | Foundry 평가 미완료/종료 코드 3 | 같은 `judge` 명령 재실행. 저장된 ID로 조회하므로 새 답변·평가를 생성하지 않음 |
 | 원격 `completed`인데 `평가 완료`는 없음 | 로컬 결과 수집·검증·저장을 기다림. 오류가 나면 원본 ID를 보존하고 원인을 해결한 뒤 같은 `judge` 재개 |
+| `judge` 수집·저장 오류 | 연결·권한·저장 공간 등 출력된 원인을 해결한 뒤 `--like`를 포함한 같은 명령 전체로 재개. `judge.json`이 있어도 보고서 저장 전 오류였다면 검증·저장을 다시 수행할 수 있음 |
 | Judge 결과 ID/점수/이유 누락 | `foundry-output.json`과 `foundry-job.json` 보존. SDK/서비스 계약 확인. 누락을 통과로 바꾸지 않기 |
 | 한쪽에만 Judge 결과가 있어 비교 불가 | 다른 쪽도 `judge --like`로 완료한 뒤 비교 |
 | 포털에서 실행이 안 보이거나 점수가 다름 | 같은 테넌트·프로젝트의 `eval_id`/`run_id`인지 확인. 행 순서 대신 질문/ID로 대조하고 원점수와 threshold를 구분. 결과를 찾으려고 새 평가를 제출하지 않기 |
@@ -253,10 +263,29 @@ AI 보조 검토는 `reviews.json`에 남지만 **사람 검토의 건수나 최
 
 오류 공유 시 **명령·단계·오류 종류·비밀을 제거한 필요한 ID**만 전달합니다. 전체 설정·응답·고객 데이터·토큰을 공개 게시하지 않습니다.
 
+<a id="permissions-contract"></a>
+## 권한은 작업·대상·범위를 함께 확인
+
+**전용 신규 환경:** 이 가이드는 [Foundry RBAC의 시작 구성](https://learn.microsoft.com/azure/foundry/concepts/rbac-foundry#minimum-role-assignments-to-get-started)을 따라 **본인과 프로젝트 관리 ID 각각에 상위 Foundry 리소스 범위의 Foundry User**를 확인합니다. 포털 생성자가 역할 할당 권한을 가졌을 때 자동 부여될 수 있지만 CLI 생성에서는 자동 부여를 가정하지 않습니다. Owner의 관리 권한과 Foundry 데이터 접근 권한은 별개입니다.
+
+**기존·공유 환경:** [클라우드 평가 사전 조건](https://learn.microsoft.com/azure/foundry/observability/how-to/cloud-evaluation#prerequisites)은 호출자의 **프로젝트 범위 Foundry User**를 명시합니다. 공식 RBAC의 기업 예제에는 프로젝트 Foundry User + 상위 리소스 Reader 조합도 있습니다. 위 전용 환경의 상위 범위를 모든 평가의 유일한 최소 범위로 해석하지 않습니다. 소유자가 실제 모델·연결·사용 API의 권한을 확인하며, 수업 때문에 공유 계정 전체의 권한을 확대하지 않습니다.
+
+| 값 | 용도 / 주의 |
+|---|---|
+| 본인의 사용자 Object ID | 로컬 `AzureCliCredential`이 사용하는 로그인 사용자. 역할 대상 형식은 `User` |
+| 프로젝트 `identity.principalId` | 서비스 측 접근을 위해 준비하는 **프로젝트 관리 ID**. 역할 대상 형식은 `ServicePrincipal` |
+| 상위 계정 `identity.principalId` | 프로젝트 관리 기능에 필요한 **별도 계정 관리 ID**. 위 프로젝트 ID 대신 넣지 않음 |
+| `/accounts/ACCOUNT`로 끝나는 리소스 ID | 역할을 적용할 **범위**. 사용자/관리 ID가 아니며 하위 프로젝트에도 권한이 상속됨 |
+| `53ca6127-db72-4b80-b1b0-d745d6d5456d` | **역할 정의 ID**. Foundry User(이전 Azure AI User)의 이름 변경 후에도 동일 |
+
+자원 생성에는 해당 범위의 생성 권한, 역할 부여에는 역할 할당 권한이 필요합니다. Owner는 둘을 제공하는 한 방법이지 모든 참가자의 최소 역할은 아닙니다. **쿼터 조회**는 별도로 구독 범위의 `Microsoft.CognitiveServices/locations/usages/read`를 요구합니다. 필요한 사용자에게만 **Cognitive Services Usages Reader** 또는 이미 이를 포함하는 역할을 사용합니다. Foundry 리소스 범위의 역할만으로 구독 쿼터 조회가 보장되지는 않습니다.
+
+RAG의 **사용자 → Search** 접근과 **Search 관리 ID → 모델** 접근도 별개입니다. Search Service Contributor는 검색 객체뿐 아니라 서비스 설정도 관리할 수 있고, 문서 업로드·조회에는 Search Index Data Contributor가 따로 필요합니다. 서비스 범위 권한 아래에서 고유 객체 이름은 충돌 방지이지 사용자별 보안 격리가 아닙니다. 실제 할당은 [Search 접근](optional-rag.md#search-access)과 [완결형 모델 접근](complete-lab.md#search-model-access)만 따릅니다.
+
 <a id="managed-identity-access"></a>
 ## 프로젝트 관리 ID를 선택할 수 없을 때
 
-이 절은 [준비 4: 권한 확인](../README.ko.md#setup-permissions)의 포털 선택이 어려울 때만 사용합니다.
+이 절은 [준비 4: 권한 확인](../README.ko.md#setup-permissions)의 포털 선택이 어려울 때만 사용합니다. 역할 할당 권한이 없으면 아래 명령을 시도하는 대신 소유자에게 대상과 범위의 대조를 요청합니다.
 
 1. Foundry의 **Manage → Project details**에서 해당 프로젝트의 Azure 리소스를 엽니다. 프로젝트 리소스 ID는 `/accounts/계정이름/projects/프로젝트이름`으로 끝납니다.
 2. Azure 포털의 프로젝트 **Identity → System assigned**에서 **Object (principal) ID**를 복사합니다. ID 메뉴가 보이지 않으면 리소스의 JSON 보기에서 `identity.principalId`를 확인합니다. 상위 Foundry 계정의 ID가 아닙니다.
@@ -269,7 +298,21 @@ az role assignment create --assignee-object-id "YOUR-PROJECT-PRINCIPAL-ID" --ass
 
 GUID는 **Foundry User / 이전 Azure AI User**의 역할 정의 ID입니다. 출력 후 IAM에서 **대상 ID와 범위**를 확인하고 준비 4단계로 돌아갑니다.
 
-프로젝트에 시스템 할당 ID 자체가 없다면 프로젝트의 **Identity → System assigned → On → Save**로 먼저 활성화합니다. 조직 정책 때문에 활성화할 수 없다면 정책 소유자와 확인하며, 대신 비밀 키나 별도의 사용자 계정을 만들지 않습니다.
+프로젝트에 시스템 할당 ID 자체가 없다면 환경 소유자의 승인 범위 안에서 프로젝트의 **Identity → System assigned → On → Save**로 먼저 활성화합니다. 조직 정책 때문에 활성화할 수 없다면 정책 소유자와 확인하며, 대신 비밀 키나 별도의 사용자 계정을 만들지 않습니다.
+
+<a id="model-endpoint-contract"></a>
+## 이름·버전·주소를 구분하기
+
+| 개념 | 이번 경로에서의 값과 쓰임 |
+|---|---|
+| 모델 이름 | `gpt-6-luna`: 카탈로그의 모델. `config.json`의 배포 이름 대신 넣지 않음 |
+| 모델 버전 | 예: `2026-09-22`: 배포가 가리키는 모델 버전. 완결형의 기록된 V1 비교에는 이 지정 버전이 필요 |
+| 배포 이름 | 신규 환경의 `eval-model`: 프로젝트에서 조회·호출할 배포. `model_deployment`와 `judge_deployment`에 사용 |
+| 지역·배포 유형 | 리소스·프로젝트의 `swedencentral`과 모델 SKU `GlobalStandard`는 별개 설정. 그룹의 지역이 하위 자원의 지역을 자동 결정하지 않음 |
+| Project endpoint | `https://ACCOUNT.services.ai.azure.com/api/projects/PROJECT`: `config.json`에 넣는 주소. 리소스 ID·classic 연결 문자열·모델 전용 주소와 다름 |
+| SDK/API 버전 | 패키지 `2.7.0`·프로젝트 API `v1`은 모델 버전과 별개. SDK가 프로젝트 주소에 `/openai/v1`을 붙이므로 설정에는 이를 미리 붙이지 않음 |
+
+`GlobalStandard`는 전 세계 처리 인프라를 사용할 수 있으므로 **`swedencentral` 배포가 모든 추론을 스웨덴 안에서 처리한다는 보장은 아닙니다**. 실제 데이터로 확장하기 전 [배포 유형별 처리 위치](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/deployment-types)를 확인합니다. 이 가이드는 가상 규정을 사용하며 수업 중 SKU를 바꾸지 않습니다.
 
 <a id="model-availability"></a>
 ## 모델·지역·쿼터가 맞지 않을 때
@@ -277,9 +320,9 @@ GUID는 **Foundry User / 이전 Azure AI User**의 역할 정의 ID입니다. �
 기본 경로는 **`gpt-6-luna`·`swedencentral`**입니다. 실제로 배포할 수 있는지는 **본인 구독의 Foundry 모델 카드와 배포 화면**이 기준입니다. 문서에 이름이 있다는 사실이 용량 확보나 생성·평가 호환성을 뜻하지는 않습니다.
 
 1. 정확한 계정·구독·지역에서 `gpt-6-luna` 모델 카드와 제공 버전을 확인합니다. 모델 이름이 보이지 않으면 비슷한 이름으로 대체하지 않고 중단 상태를 기록합니다.
-2. 같은 리소스의 **Build → Models**에서 실패 원인과 남은 쿼터를 확인합니다. 모델·배포 유형·지역별 쿼터는 서로 다릅니다. **Global Standard** 지원 여부와 남은 용량을 각각 확인합니다.
+2. 같은 리소스의 **Build → Models**에서 실패 원인과 남은 쿼터를 확인합니다. 모델·배포 유형·지역별 쿼터는 서로 다릅니다. **Global Standard** 지원 여부와 남은 용량·capacity 단위를 각각 확인합니다. 쿼터 조회가 403이거나 비어 있으면 [구독 범위 조회 권한](#permissions-contract)과 정확한 모델/SKU를 먼저 확인합니다.
 3. 지원 모델이 있어도 쿼터가 없으면 증가를 요청하거나 환경 소유자와 실행 조건 변경을 먼저 합의합니다. **지정 모델·지역을 임의 변경하거나 기존 업무 배포의 쿼터를 줄이지 않습니다.** 모델을 바꾸기로 했다면 그 이름·버전·요금을 기록하고 전후 비교 전체를 같은 조건으로 새로 설계합니다.
-4. **배포 이름은 `eval-model` 하나**로 유지하고 [한 건의 생성·평가](setup.md#smoke)를 완료한 뒤 본 실습을 시작합니다. `config.json`의 두 모델 항목에는 카탈로그 모델명이 아니라 이 배포 이름을 넣습니다.
+4. **신규 입문의 배포 이름은 `eval-model` 하나**로 유지하고 [한 건의 생성·평가](setup.md#smoke)를 완료한 뒤 본 실습을 시작합니다. `config.json`의 두 모델 항목에는 카탈로그 모델명이 아니라 배포 이름을 넣습니다. 허가된 기존 환경의 이름은 [기존 환경 조건](setup.md#existing-environment)을 따릅니다.
 
 모델이 **Chat Completions·Structured Outputs(JSON Schema)·생성 토큰 옵션·Foundry Judge**를 동일하게 지원한다고 가정하지 않습니다. 특히 추론에 토큰을 사용하는 모델은 최종 답변이 짧아도 `finish_reason=length`가 발생할 수 있습니다. 이 경우 점수 실패와 실행 호환성 문제를 구분하고, 출력 설정을 바꿔야 한다면 baseline부터 새 실험으로 시작합니다. Model router나 다른 파트너 모델을 기본 경로에 임의 추가하지 않습니다.
 
@@ -288,13 +331,16 @@ GUID는 **Foundry User / 이전 Azure AI User**의 역할 정의 ID입니다. �
 <a id="resume"></a>
 ## 중단·재실행과 원격 ID 복구
 
+`judge`의 기본 **상태 조회 대기 예산은 300초**입니다. 인증·제출·HTTP 응답·결과 수집까지 포함한 전체 명령 제한 시간이 아닙니다. 종료 코드 `3`은 실패나 새 제출 지시가 아니라, 저장된 원격 ID로 다음 조회를 이어가라는 뜻입니다.
+
 **정상 재개**
 
 - 완료된 `run`/`judge`를 같은 입력으로 다시 실행하면 저장된 결과를 읽습니다.
 - 부분 수집에서는 **저장된 행을 재호출하지 않고** 남은 행을 생성합니다.
 - 단, 모델이 응답한 직후 저장 전에 연결/프로세스가 끊어졌다면 그 한 행은 재호출될 수 있고 추가 비용이 발생할 수 있습니다. 정확히 한 번의 유료 호출을 보장하지 않습니다.
-- 원격 `run_id`가 있으면 같은 `judge` 명령으로 조회를 재개합니다. 터미널을 닫아도 이미 제출된 원격 평가는 계속될 수 있습니다.
-- 프롬프트나 데이터가 달라졌다면 새 `--out` 폴더를 사용합니다. 이전 결과를 덮어쓰거나 합치지 않습니다.
+- 원격 `run_id`가 있으면 **`--like`를 포함한 원래 `judge` 명령 전체**로 조회를 재개합니다. 완결형 교정은 원래 `calibrate` 명령을 사용합니다. 한 결과 폴더는 한 터미널에서만 실행합니다. 터미널을 닫아도 이미 제출된 원격 평가는 계속될 수 있습니다.
+- **대기와 오류 복구를 구분합니다.** 코드 `3`이면 그대로 조회를 재개하고, `ERROR:`이면 원인을 먼저 해결한 뒤 같은 명령을 사용합니다. 수집·저장 오류 복구도 재개의 대상이므로 “처리 중일 때만 재실행 가능”한 것은 아닙니다. 원격 생성 여부가 불명확하면 아래 ID 복구부터 수행합니다.
+- 입문·최소 RAG의 프롬프트나 데이터가 달라졌다면 새 `--out` 폴더를 사용합니다. **완결형 `run`에는 `--out`이 없으므로** [별도 작업 폴더의 새 실험](complete-lab.md#resume)을 따릅니다. 이전 결과를 덮어쓰거나 합치지 않습니다.
 
 **폴더 이름이나 위치를 바꾼 경우**
 
@@ -341,7 +387,7 @@ python lab.py doctor
 
 ## SDK와 확인 범위
 
-**문서 확인일: 2026-09-27.**
+**공식 권한·SDK/API 문서 대조일: 2026-09-28.** 이 대조와 로컬 검사는 새로운 Azure 실행 검증이 아닙니다.
 
 | 구분 | 이 가이드의 선택 |
 |---|---|
@@ -353,10 +399,13 @@ python lab.py doctor
 | 실제 모델 호출 | `AIProjectClient.get_openai_client()`의 `chat.completions.create` + JSON Schema |
 | 실제 평가 | 같은 프로젝트 OpenAI client의 `evals.create`, `evals.runs.create`, `retrieve`, `output_items.list` |
 | 평가기 조회 | SDK 2.7의 `project.beta.evaluators.list_versions`. 조회한 버전 하나를 고정해 재사용 |
+| SDK 기본 API | 프로젝트 API `v1`, OpenAI client 경로는 프로젝트 주소 + `/openai/v1`. 저장소는 별도 `api_version`을 설정하지 않음 |
 
 직접 의존성만 고정한 `requirements.txt`입니다. 전이 의존성과 패키지 파일 해시까지 잠근 전체 lockfile은 아닙니다.
 
-**모델 확인:** `swedencentral`의 `gpt-6-luna` 버전 `2026-09-22`, **GlobalStandard 60K TPM** 배포를 사용합니다. 현재 실제 실행 결과는 [새 완결형 실습](complete-lab.md#results)을 확인합니다. 다른 구독·지역의 가용성은 별도로 확인해야 합니다.
+현재 Learn의 일반 예제는 `azure-ai-projects>=2.2.0`·`DefaultAzureCredential`을 사용할 수 있지만, **이 저장소의 실행 계약은 위 고정 버전과 `AzureCliCredential`**입니다. 예제에 맞추려고 임의 업그레이드하거나 인증 방식을 바꾸지 않습니다. `beta.evaluators`는 미리 보기 API이므로 전체 워크플로를 GA로 표현하지 않습니다. Search를 쓰는 별도 경로의 `2026-04-01`(minimal/extractive)과 `2026-08-01-preview`(LLM 계획)는 이 프로젝트 API 버전과도 다릅니다.
+
+**기록된 모델 구성:** 2026-09-27 실행은 `swedencentral`의 `gpt-6-luna` 버전 `2026-09-22`, **GlobalStandard 60K TPM**을 사용했습니다. 그 실제 실행 결과는 [완결형 실습](complete-lab.md#results)을 확인합니다. 현재 또는 다른 구독·지역의 가용성은 별도로 확인해야 합니다.
 
 **로컬에서 확인하는 것:** 작성된 예제의 전체 실습 경로, 업무 검사·Gate의 조건, 누락/변조/회귀 차단, 문서 명령과 N02 데이터 검사, 설치된 SDK로 만든 요청·응답의 모양. README의 준비부터 추가 사례까지 LIVE 명령도 메모리 내 HTTP 응답으로 연결해 실행하며, 실제 Azure 응답이나 Judge 품질을 검증하는 것은 아닙니다.
 
@@ -383,7 +432,9 @@ SDK가 설치되어 있으면 SDK 계약 검사도 실행합니다. 없으면 �
 |---|---|
 | [Foundry 프로젝트 만들기](https://learn.microsoft.com/azure/foundry/how-to/create-projects) | New Foundry 포털의 프로젝트 생성과 고급 옵션 |
 | [Foundry 역할과 범위](https://learn.microsoft.com/azure/foundry/concepts/rbac-foundry) | Owner와 데이터 작업의 차이, 본인·프로젝트 관리 ID의 Foundry User |
+| [AIProjectClient API](https://learn.microsoft.com/python/api/azure-ai-projects/azure.ai.projects.aiprojectclient?view=azure-python) | 프로젝트 주소·기본 `v1`·`get_openai_client()` 경로·beta의 미리 보기 성격 |
 | [Foundry 모델 배포](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/deploy-foundry-models) | Discover → Models, 배포 이름, Global Standard와 쿼터 |
+| [모델 배포 유형](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/deployment-types) | 리소스 지역과 추론 처리 위치, 토큰 과금과 예약 용량의 차이 |
 | [Azure 제공 모델](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure) | 모델별 Chat Completions·Structured Outputs 등 지원 기능 확인 방법. 개별 배포의 실측 검증을 대신하지 않음 |
 | [리소스 그룹 삭제](https://learn.microsoft.com/azure/azure-resource-manager/management/delete-resource-group) | 삭제 범위·확인·잠금과 되돌릴 수 없음 |
 | [예산과 알림](https://learn.microsoft.com/azure/cost-management-billing/costs/tutorial-acm-create-budgets) | 예산 알림은 자동 지출 중지 장치가 아님, 비용 집계 지연 |
@@ -395,5 +446,8 @@ SDK가 설치되어 있으면 SDK 계약 검사도 실행합니다. 없으면 �
 | [공식 Groundedness Python 예제](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/ai/azure-ai-projects/samples/evaluations/agentic_evaluators/sample_groundedness.py) | Foundry Evals의 실제 Python 요청 형태 |
 | [Structured Outputs](https://learn.microsoft.com/azure/ai-foundry/openai/how-to/structured-outputs) | Chat Completions의 JSON Schema 출력 |
 | [지역·제한·네트워크](https://learn.microsoft.com/azure/foundry/concepts/evaluation-regions-limits-virtual-network) | 수업 환경별로 확인해야 하는 기능 제공 범위 |
+| [Search RBAC](https://learn.microsoft.com/azure/search/search-security-rbac) | 서비스/검색 객체 관리와 문서 읽기·쓰기 권한의 구분 |
+| [Agentic retrieval](https://learn.microsoft.com/azure/search/agentic-retrieval-overview) | 정식 minimal 추출과 미리 보기 LLM 계획·대화 기능의 구분 |
+| [Search 요금제](https://learn.microsoft.com/azure/search/search-sku-tier) | Basic 등 Dedicated 서비스의 프로비전 용량 기준 유지 비용 |
 
 Microsoft Foundry의 새 문서 경로와 **Foundry classic의 `azure-ai-evaluation` 예제는 서로 다른 경로**입니다. 둘을 섞어 endpoint·인증·데이터 매핑·결과 형식을 추정하지 않습니다.

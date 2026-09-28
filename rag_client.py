@@ -177,19 +177,51 @@ def search_client(config: dict, *, api_version=SEARCH_API_VERSION):
         raise RuntimeError(f"Azure Search request failed ({type(exc).__name__}): {exc}") from exc
 
 
+def definition_matches(actual: object, expected: object) -> bool:
+    """Compare declared settings, allowing extra server-default properties."""
+    if isinstance(expected, dict):
+        if not isinstance(actual, dict):
+            return False
+        for key, value in expected.items():
+            if key not in actual:
+                return False
+            if key == "resourceUri" and isinstance(actual[key], str) and isinstance(value, str):
+                if actual[key].rstrip("/").casefold() != value.rstrip("/").casefold():
+                    return False
+            elif not definition_matches(actual[key], value):
+                return False
+        return True
+    if isinstance(expected, list):
+        if not isinstance(actual, list) or len(actual) != len(expected):
+            return False
+        if expected and all(isinstance(item, dict) and isinstance(item.get("name"), str) for item in expected):
+            if not all(isinstance(item, dict) and isinstance(item.get("name"), str) for item in actual):
+                return False
+            by_name = {item["name"]: item for item in actual}
+            return len(by_name) == len(expected) and all(
+                definition_matches(by_name.get(item["name"]), item) for item in expected
+            )
+        return all(definition_matches(left, right) for left, right in zip(actual, expected))
+    return type(actual) is type(expected) and actual == expected
+
+
 def initialize(client, config: dict, documents: list[dict]) -> dict:
     corpus_hash = digest(documents)
-    definition = index_definition(config, corpus_hash)
     index_path = "indexes/" + quote(config["index_name"], safe="")
-    existing = client.request("GET", index_path, missing_ok=True)
-    if existing is None:
-        client.request("PUT", index_path, definition, create_only=True)
-    elif existing.get("description") != definition["description"]:
-        raise ValueError("This index has a different owner/corpus contract. Choose a new index name; do not overwrite it.")
-    else:
-        fields = {field["name"]: field["type"] for field in existing["fields"]}
-        if fields != {field["name"]: field["type"] for field in definition["fields"]}:
-            raise ValueError("Existing index fields differ from the optional workshop schema.")
+    source_path = "knowledgesources/" + quote(config["knowledge_source"], safe="")
+    base_path = "knowledgebases/" + quote(config["knowledge_base"], safe="")
+    definitions = {
+        "index": (index_path, index_definition(config, corpus_hash)),
+        "knowledge source": (source_path, knowledge_source_definition(config)),
+        "knowledge base": (base_path, knowledge_base_definition(config)),
+    }
+    existing = {}
+    for kind, (path, definition) in definitions.items():
+        existing[kind] = client.request("GET", path, missing_ok=True)
+        if existing[kind] is not None and not definition_matches(existing[kind], definition):
+            raise ValueError(f"Existing {kind} has a different retrieval/corpus contract. Use new object names; do not overwrite it.")
+    if existing["index"] is None:
+        client.request("PUT", index_path, definitions["index"][1], create_only=True)
 
     indexed = client.request("POST", index_path + "/docs/search", {
         "search": "*", "select": ",".join(DOCUMENT_FIELDS), "top": 100,
@@ -210,20 +242,10 @@ def initialize(client, config: dict, documents: list[dict]) -> dict:
         ):
             raise RuntimeError(f"Document upload is incomplete or failed: {outcomes}")
 
-    source = knowledge_source_definition(config)
-    source_path = "knowledgesources/" + quote(config["knowledge_source"], safe="")
-    existing_source = client.request("GET", source_path, missing_ok=True)
-    if existing_source is None:
-        client.request("PUT", source_path, source, create_only=True)
-    elif existing_source.get("kind") != "searchIndex" or existing_source.get("searchIndexParameters", {}).get("searchIndexName") != config["index_name"]:
-        raise ValueError("Knowledge source targets another index; do not overwrite it.")
-    base = knowledge_base_definition(config)
-    base_path = "knowledgebases/" + quote(config["knowledge_base"], safe="")
-    existing_base = client.request("GET", base_path, missing_ok=True)
-    if existing_base is None:
-        client.request("PUT", base_path, base, create_only=True)
-    elif [source["name"] for source in existing_base.get("knowledgeSources", [])] != [config["knowledge_source"]]:
-        raise ValueError("Knowledge base has different sources; do not overwrite it.")
+    for kind in ("knowledge source", "knowledge base"):
+        if existing[kind] is None:
+            path, definition = definitions[kind]
+            client.request("PUT", path, definition, create_only=True)
     return {
         "api_version": SEARCH_API_VERSION, "corpus_hash": corpus_hash,
         "document_count": len(documents), "index": client.request("GET", index_path),

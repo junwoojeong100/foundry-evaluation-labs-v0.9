@@ -33,7 +33,7 @@ B is appropriate. KRW 240000 is an unapproved draft proposal. Exceeding the offi
 <a id="prepare"></a>
 ## Setup. Prepare files and a terminal
 
-1. Download the [repository ZIP](https://github.com/junwoojeong100/foundry-evaluation-v1), or obtain an authorized copy.
+1. On the [repository page](https://github.com/junwoojeong100/foundry-evaluation-v1), choose **Code → Download ZIP** and extract it, or obtain an authorized copy. Skip this if you already have the files.
 2. Install [Python 3.10+](https://www.python.org/downloads/) and [VS Code](https://code.visualstudio.com/). On Windows, enable Python PATH setup.
 3. Open the folder containing `lab.py` and choose **Terminal → New Terminal**.
 4. Use only your operating system's block. If a virtual environment already exists, activate rather than recreate it.
@@ -63,9 +63,11 @@ python lab.py doctor
 **Checkpoint:** `LOCAL OK` and `dev 8개, holdout 4개`.
 
 <a id="working-files"></a>
-**The only working copy you create is `data/my-case.jsonl` in activity 6**, copied from `data/my-case.example.jsonl`; do not create it yet. No `config.json` is needed. Commands create result directories automatically. Keep the original policy, questions, prompts, and generated evidence unchanged. Save copies as UTF-8. If switching from LIVE, preserve its results and Azure resources.
+**The only file you edit is `data/my-case.jsonl` in activity 6.** The repository already includes an N02 example working copy; inspect it at that step. Its presence does not mean you wrote or executed it. No `config.json` is needed. Commands create result directories automatically. Keep the original policy, questions, prompts, and generated evidence unchanged. Save working files as UTF-8. If switching from LIVE, preserve your question, prompt, results, and Azure resources.
 
-Run one command at a time from the `lab.py` folder; use only `demo-*` result folders for this path. Resolve `ERROR:` through [troubleshooting](reference.md#troubleshooting); treat FAIL, low scores, or BLOCK as observations. Use [resume checkpoints](setup.md#resume-checkpoints) after interruption. Do not switch to `--mode live` to work around a DEMO error.
+Run one command at a time from the `lab.py` folder; use only `demo-*` result folders for this path. Resolve `ERROR:` through [troubleshooting](reference.md#troubleshooting); treat FAIL and low scores as observations. For BLOCK, distinguish quality failures from missing evidence in activity 5. Use [resume checkpoints](setup.md#resume-checkpoints) after interruption; repeating a completed `run` or `judge` reads saved results rather than creating new examples. Do not switch to `--mode live` to work around a DEMO error.
+
+In a new terminal, return to the `lab.py` folder and run only `source .venv/bin/activate` (macOS/Linux) or `.\.venv\Scripts\Activate.ps1` (PowerShell). Do not recreate the environment or repeat installation. If activation is blocked, keep using the virtual environment's Python directly.
 
 **Setup complete. Continue to activity 1.**
 
@@ -141,6 +143,8 @@ python lab.py review results/demo-candidate D06
 
 Enter `pass` or `fail`, then a policy-based reason of at least five characters. Read the `answer` text and check amounts, dates, and approval claims; do not copy the code or judge verdict. Save human verdicts through this command so the gate can use them.
 
+Automated walkthroughs must use [assistant-attributed reviews](reference.md#assisted-review). Do not save an AI verdict as human approval; leave unperformed human review incomplete.
+
 **Checkpoint:** business **8/8 (100%)**, newly passing D03/D04/D08, no regressions, and `검토 저장: results/demo-candidate/reviews.json`. Record the observation, not a claim of measured prompt improvement.
 
 <a id="lab-5"></a>
@@ -170,14 +174,14 @@ python lab.py gate results/demo-baseline results/demo-candidate results/demo-hol
 
 **Checkpoint:** business **3/4 (75%)**, **BLOCK**, expected exit code **2**. If H04 is reviewed as `fail`, human rejection is another reason. Read `results/demo-candidate/gate.md`, record your decision, and **continue to activity 6**.
 
-BLOCK is a quality decision, unlike execution errors or missing evidence. Dev and holdout are different sets. If you change the prompt after examining holdout, use a new holdout next time.
+This example's quality BLOCK is not a failure to complete the workshop. **Missing scores or human review can also cause BLOCK.** Complete those missing steps, then rerun the same `gate` command; saving a review alone does not refresh `gate.md`. Resolve `ERROR:` first, but do not change real quality failures into passes. Dev and holdout are different sets. If you change the prompt after examining holdout, use a new holdout next time.
 
 <a id="lab-6"></a>
 ## 6. Design an extra question and finish
 
-If LIVE already created `data/my-case.jsonl`, preserve it and skip to validation, explaining that reuse in your final summary.
+**Inspect `data/my-case.jsonl` first.** The repository includes an N02 example with an expense of **180000**. You may use it unchanged and go straight to validation below; record “provided example unchanged.” If it contains your previous LIVE or DEMO question, preserve it, validate it, and record reuse.
 
-Otherwise, save [the extra-case example](../../data/my-case.example.jsonl) as `data/my-case.jsonl` and replace the copy with this single line:
+**To practice editing instead:** use this working file. Only if it is missing, save [the extra-case example](../../data/my-case.example.jsonl) as `data/my-case.jsonl`. Keep the original unchanged. Replace the working copy with this single line, then make the two edits below. Prepare **one N02 case**, not the source example's N01.
 
 ```jsonl
 {"id":"N02","category":"과거 출장의 한도 초과","critical":true,"query":"2026년 6월 15일 국내 출장 숙박비가 1박 170000원입니다. 9월에 정산하면 사전 승인 없이 처리해도 되나요?","expected_decision":"needs_approval","expected_limit_krw":160000,"expected_citations":["TRAVEL-PREVIOUS"],"ground_truth":"정산일이 아니라 출장일의 과거 한도 160000원을 적용한다. 170000원은 한도 초과이므로 재무팀 사전 승인이 필요하며 바로 정산할 수 있다고 안내하면 안 된다."}
@@ -185,7 +189,7 @@ Otherwise, save [the extra-case example](../../data/my-case.example.jsonl) as `d
 
 Change **`170000` → `180000`** in both `query` and `ground_truth`, but keep the **160000** policy limit, `needs_approval`, and `TRAVEL-PREVIOUS`. The question concerns a June 15 trip claimed in September; travel date determines the limit.
 
-Distinguish an edited, original, or unchanged example in your final summary. For your own question, define all eight required fields and expectations from policy first; keep ID N02. Save one JSON object per line with no blank lines, integer or `null` limits, and lowercase booleans.
+Distinguish editing the example, writing your own question, using the example unchanged, or reusing your previous question in your final summary. For your own question, define all eight required fields and expectations from policy first; keep ID N02. Save one JSON object per line with no blank lines, integer or `null` limits, and lowercase booleans.
 
 ```bash
 python lab.py validate-data data/my-case.jsonl
@@ -193,7 +197,7 @@ python lab.py validate-data data/my-case.jsonl
 
 **Checkpoint:** `DATA OK: 1 case(s)`. Fix field/line errors locally. The checker validates format, not the truth of the expectation. **DEMO does not generate or judge N02.** Do not add LIVE calls to this path.
 
-Distinguish “N02 generation/judge not executed” from completed work, and explain your findings in four sentences:
+Distinguish “N02 generation/judge not executed in this DEMO path” from completed work. Keep any previous LIVE results as separate records; do not count them as DEMO execution. Explain your findings in four sentences:
 
 > In authored example ___, I found ___.<br>
 > The same V1/V2 questions showed ___, and holdout showed ___.<br>
@@ -205,10 +209,10 @@ Distinguish “N02 generation/judge not executed” from completed work, and exp
 - [ ] The three `demo-*` folders contain reports/scores and business rates 62.5%, 100%, and 75%.
 - [ ] D04's initial judgment is compared with the authored scores; D06 and H04 reviews are saved.
 - [ ] Comparison and gate are read, and BLOCK is explained.
-- [ ] N02 validates but is explicitly not generated/judged.
+- [ ] N02 validates, its creation/reuse method is recorded, and it is explicitly not generated/judged in this DEMO path.
 - [ ] The final report describes authored examples, not measured model improvement.
 
-Keep `results/` locally. DEMO-only work creates no Azure resources. If you began LIVE first, verify [retention and costs](cleanup.md#retain-resources).
+Automated rehearsals must not mark an unperformed human review complete. Keep `results/` locally. DEMO-only work creates no Azure resources. If you began LIVE first, verify [retention and costs](cleanup.md#retain-resources).
 
 ---
 
@@ -240,5 +244,7 @@ Fixed outcomes of these authored examples:
 새로 통과한 사례: D03, D08
 업무 검사 회귀: D06(decision)
 ```
+
+This optional exercise does not run `judge`, so `Judge 합격→불합격 회귀: 미평가` and `Judge 비교: 미포함` are expected: **only business-check regressions** are measured here.
 
 The average improves, but D06 newly invents approval. Explain why that warrants holding the change. Do not apply authored scores from `examples/` to LIVE answers or changed prompts.

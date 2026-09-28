@@ -44,7 +44,7 @@ python lab.py validate-data data/my-case.jsonl
 
 | Field | Meaning |
 |---|---|
-| `id` | Unique case ID, such as `N02` |
+| `id` | Unique case ID starting with a letter, such as `N02` |
 | `category` | Failure mode being tested |
 | `critical` | Boolean; critical cases are P0 |
 | `query` | Employee question |
@@ -74,7 +74,7 @@ These decisions do not actually execute approvals, payments, or reimbursements.
 
 The code cannot understand an explanation that contradicts otherwise correct fields. Conversely, the judge may overlook exact IDs or date boundaries. An appropriate “unknown” or request for a missing date can also receive a low generic Relevance score.
 
-Not measured here: retrieval recall/NDCG, tool-call accuracy, hosted-agent behavior, multi-turn dialogue, broad security/red-team coverage, execution authorization, or production SLA.
+Not measured by the **fixed-policy introductory path**: retrieval recall/NDCG, tool-call accuracy, hosted-agent behavior, multi-turn dialogue, broad security/red-team coverage, execution authorization, or production SLA. Minimal-RAG retrieval metrics and complete-path dialogue/acceptance criteria belong to their dedicated guides, not the introductory gate below.
 
 ## Controlled comparisons
 
@@ -143,6 +143,8 @@ Older records without a `reviewer` field retain their legacy human interpretatio
 
 ## Saved evidence
 
+The file table and mappings below describe **introductory `lab.py`**. For minimal RAG, use [retrieval/input evidence](optional-rag.md#evidence); for complete RAG, use [stage-specific artifacts](complete-lab.md#resume). Minimal RAG passes retrieved context rather than the whole policy, and complete RAG has a separate dialogue evaluation contract.
+
 | File | Contents |
 |---|---|
 | `run.json` | Cases, context/prompt snapshots, hashes, mode, deployment, responses, latency and generation usage |
@@ -204,14 +206,16 @@ Portal Overall score/Pass may use threshold 3. Portal **100%** can therefore coe
 | Example config rejected | Replace the project endpoint and use actual deployment names; do not use model names. |
 | Only a classic connection string/model endpoint exists | A new Foundry project endpoint is required. |
 | `config.json` not found | Check its folder and `.json.txt` extensions. |
-| `my-v2.txt` missing | Save the V2 copy under the exact documented filename. |
+| `prompts/my-v2.txt` missing | Check the repository folder, path, and saved file first. Follow [activity 4](../../README.md#lab-4) only if the included working file is genuinely missing; do not overwrite personal work with V2. |
+| `my-v2.txt` / `my-case.jsonl` already exists | These are included example working files. Inspect contents/personal edits and distinguish reuse from your own edit. `my-v2.txt` adds instructions against conditional limits before date clarification and cites only SCOPE then; it is not identical to `v2.txt`. |
 | JSONL validation fails | Fix the identified line/field; retain all eight fields and valid types. |
 | Extra-case count is not one | Remove unintended extra rows; keep N02 only. |
 | `review` appears stuck | It is waiting for verdict and reason; confirm `검토 저장`. |
-| Gate reports missing human review | Use `review` for candidate D06 and holdout H04 to save actual verdicts and reasons in each `reviews.json`. |
+| Gate reports missing human review | Save actual verdicts/reasons with candidate D06 and holdout H04 `review`, then **repeat the same `gate`**. No new generation or judging is needed. |
 | Only AI reviews exist | A real human review is still required; do not relabel the AI record. |
 | 401/authentication failure | Sign in with the intended user and tenant; do not paste keys into code. |
 | 403 despite Owner | Check Foundry User for both user and project identity at parent scope; allow propagation. |
+| Model visible but quota lookup returns 403/an empty list | Quota has separate subscription-scoped access. Check the [permission contract](#permissions-contract) and model/SKU filter; do not infer zero quota. |
 | Private Link/public-access restriction | Use an approved VNet/VPN/environment; do not disable the firewall. |
 | Model 404 | Check the project and **deployment** name; default is `eval-model`, not `gpt-6-luna`. |
 | JSON Schema/parameter 400 | Verify model support for Chat Completions, Structured Outputs, and generation options. |
@@ -221,6 +225,7 @@ Portal Overall score/Pass may use threshold 3. Portal **100%** can therefore coe
 | Resource-group history shows a failed `PolicyDeployment` while the model works | Inspect that deployment separately. A diagnostic policy may reference a missing central Log Analytics workspace. Preserve the warning and refer it to the policy owner; do not delete history or disable policy to manufacture success. |
 | Judge exit 3 | Repeat the same entire command, preserving `--like`, to retrieve the same job. |
 | Remote completed, no local completion message | Wait for collection/validation; preserve IDs and fix any explicit error. |
+| `judge` collection/persistence error | Fix the reported cause, such as connectivity, permissions, or storage, then resume the entire command including `--like`. Even if `judge.json` exists, a report-save error can require validation/persistence again. |
 | Missing result ID, score, or reason | Preserve raw output/job files; investigate the SDK/service contract. Do not pass missing evidence. |
 | Only one compared run has scores | Complete the other judge using the fixed contract. |
 | Portal run missing/different scores | Match tenant/project/IDs and raw scores; distinguish threshold differences. |
@@ -232,8 +237,29 @@ Portal Overall score/Pass may use threshold 3. Portal **100%** can therefore coe
 
 When sharing errors, include only the command, checkpoint, error type, and necessary sanitized identifiers. Do not publish credentials, full customer data, or unredacted recordings.
 
+<a id="permissions-contract"></a>
+## Match permission, identity, and scope
+
+**New dedicated environment:** this guide follows the [Foundry RBAC starting configuration](https://learn.microsoft.com/azure/foundry/concepts/rbac-foundry#minimum-role-assignments-to-get-started): **Foundry User for both your user and the project's managed identity on the parent Foundry resource**. Portal creation can add these assignments when the creator can assign roles; do not assume CLI creation does so. Owner management permissions are separate from Foundry data access.
+
+**Existing/shared environment:** the [cloud evaluation prerequisites](https://learn.microsoft.com/azure/foundry/observability/how-to/cloud-evaluation#prerequisites) specify **Foundry User on the project** for the caller. The official enterprise RBAC example also uses project-scoped Foundry User plus parent-resource Reader. The dedicated setup's parent scope is not the uniquely minimal scope for every evaluation. Have the owner verify the actual models, connections, and APIs; do not broaden shared-account access for a class.
+
+| Value | Purpose / distinction |
+|---|---|
+| Your user Object ID | Signed-in caller used by local `AzureCliCredential`; assignee type `User` |
+| Project `identity.principalId` | **Project managed identity** prepared for service-side access; assignee type `ServicePrincipal` |
+| Parent account `identity.principalId` | **Separate account identity** needed for project management; do not substitute it for the project identity |
+| Resource ID ending in `/accounts/ACCOUNT` | Assignment **scope**, not a principal ID; permissions are inherited by child projects |
+| `53ca6127-db72-4b80-b1b0-d745d6d5456d` | **Role definition ID** for Foundry User, unchanged from the Azure AI User name |
+
+Resource creation needs creation permission at the appropriate scope; assigning roles needs role-assignment permission. Owner is one way to provide both, not every participant's minimum role. **Quota lookup** separately requires subscription-scoped `Microsoft.CognitiveServices/locations/usages/read`. Use **Cognitive Services Usages Reader**, or an existing role including that permission, only for users who need it. A Foundry-resource assignment alone does not authorize subscription quota lookup.
+
+RAG's **user → Search** access is also separate from **Search identity → model** access. Search Service Contributor can manage service settings as well as search objects; document upload/query needs Search Index Data Contributor separately. With service-scoped access, unique object names prevent collisions but are not user-level security isolation. Follow only the actual [Search access](optional-rag.md#search-access) and [complete-path model access](complete-lab.md#search-model-access) instructions.
+
 <a id="managed-identity-access"></a>
 ## If the project identity cannot be selected
+
+Use this fallback only when portal selection in [setup 4](../../README.md#setup-permissions) is difficult. If you cannot assign roles, ask the owner to verify identity and scope instead of attempting the command.
 
 1. Open the project's Azure resource. Its ID ends in `/accounts/ACCOUNT/projects/PROJECT`.
 2. Copy **Identity → System assigned → Object (principal) ID**, or `identity.principalId` from JSON view. Do not use the parent account's identity.
@@ -246,15 +272,29 @@ az role assignment create --assignee-object-id "YOUR-PROJECT-PRINCIPAL-ID" --ass
 
 The GUID is Foundry User, formerly Azure AI User. Verify member and scope in IAM. If the project lacks a system identity, enable **Identity → System assigned → On → Save** through the authorized process; do not replace it with shared credentials.
 
+<a id="model-endpoint-contract"></a>
+## Distinguish names, versions, and endpoints
+
+| Concept | Value and use in this path |
+|---|---|
+| Model name | `gpt-6-luna`: catalog model, not the deployment field in `config.json` |
+| Model version | For example, `2026-09-22`: backing model version; required for the complete path's recorded V1 comparison |
+| Deployment name | New setup uses `eval-model`: the deployment to look up/call, placed in `model_deployment` and `judge_deployment` |
+| Region/deployment type | Resource/project `swedencentral` and model SKU `GlobalStandard` are separate settings; the group's region does not set child-resource regions |
+| Project endpoint | `https://ACCOUNT.services.ai.azure.com/api/projects/PROJECT`: the configuration URL, not a resource ID, classic connection string, or model-only endpoint |
+| SDK/API version | Package `2.7.0` and project API `v1` are distinct from model versions. The SDK appends `/openai/v1`; do not append it in configuration |
+
+`GlobalStandard` can use worldwide processing infrastructure. A **`swedencentral` deployment does not guarantee all inference stays in Sweden**. Before using real data, check [deployment-type processing locations](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/deployment-types). This guide uses fictional policy; do not change SKU mid-experiment.
+
 <a id="model-availability"></a>
 ## Model, region, and quota
 
 The target is **`gpt-6-luna` in `swedencentral`**, but the actual subscription catalog and deployment screen determine availability.
 
 1. Confirm the exact model name/version in the correct account and region. Do not silently substitute another name.
-2. Check supported SKUs and quota separately, including Global Standard availability.
+2. Check supported SKUs, remaining quota, and capacity units separately, including Global Standard availability. For a 403 or empty quota lookup, verify [subscription-scoped read access](#permissions-contract) and the exact model/SKU first.
 3. If quota is unavailable, request an increase or agree on a new experiment with the owner. Do not reduce others' deployments or silently switch regions/models.
-4. Keep deployment name `eval-model` and prove compatibility with the [smoke check](setup.md#smoke).
+4. For new introductory resources, keep deployment name `eval-model` and prove compatibility with the [smoke check](setup.md#smoke). Use deployment names, not catalog model names, in both configuration fields. Follow [existing-environment conditions](setup.md#existing-environment) for authorized existing names.
 
 Do not assume identical Chat Completions, JSON Schema, generation-option, or judge support. Reasoning-token usage can cause truncation despite short final prose. Changing output settings requires a new baseline, not a mid-experiment edit. Do not add a model router or partner model implicitly.
 
@@ -263,7 +303,13 @@ If blocked, record it and optionally [switch explicitly to DEMO](setup.md#switch
 <a id="resume"></a>
 ## Interrupted work and remote-ID recovery
 
-Completed commands read saved evidence. Partial generation skips saved rows; a response interrupted before persistence may be billed again. Existing remote `run_id` values are retrieved, not resubmitted. Closing the terminal does not cancel cloud work. Use a new output folder when changing inputs.
+The default `judge` **status-polling budget is 300 seconds**, not a wall-clock limit including authentication, submission, HTTP responses, and collection. Exit **3** means resume polling the saved remote IDs, not failure or a request to submit again.
+
+Completed `run`/`judge` commands read saved evidence. Partial generation skips saved rows; a response interrupted before persistence may be billed again. Existing remote `run_id` values are retrieved using the **entire original command, including `--like`**, not resubmitted. Complete-path calibration uses its original `calibrate` command. Use only one terminal per result folder. Closing the terminal does not cancel cloud work.
+
+**Waiting and error recovery are different.** For exit 3, resume polling. For `ERROR:`, resolve its cause first, then use the same command. Collection/persistence errors can also require resumption; retries are not limited to still-processing runs. If remote creation is uncertain, follow ID recovery below first.
+
+For changed introductory/minimal-RAG inputs, use a new `--out` folder. **Complete-path `run` has no `--out`**: follow [new-experiment setup in a separate working folder](complete-lab.md#resume). Do not overwrite or merge earlier evidence.
 
 If moving the repository broke the virtual environment, recreate **only `.venv`**, after preserving anything you intentionally placed there. Do not delete configuration, results, or your prompt/question copies.
 
@@ -304,7 +350,7 @@ For an explicitly terminated failed/canceled run, fix its cause first. An owner 
 
 ## SDK and verification scope
 
-Documentation checked **2026-09-27**.
+Official RBAC and SDK/API documentation cross-checked **2026-09-28**. This review and local testing are not a new Azure execution.
 
 | Item | Selection |
 |---|---|
@@ -316,8 +362,13 @@ Documentation checked **2026-09-27**.
 | Generation | `AIProjectClient.get_openai_client()` → `chat.completions.create`, JSON Schema |
 | Evaluation | `evals.create`, run creation/retrieval, and all output pages |
 | Evaluator catalog | `project.beta.evaluators.list_versions`; chosen versions are fixed |
+| SDK default API | Project API `v1`; OpenAI client uses the project endpoint + `/openai/v1`. The repository does not override `api_version` |
 
-Direct dependencies are pinned, not a full transitive/hash lockfile. Catalog checks confirmed `gpt-6-luna` version `2026-09-22`; the rehearsal deployed GlobalStandard 60K TPM. DataZoneStandard was only listed, not deployed.
+Direct dependencies are pinned, not a full transitive/hash lockfile.
+
+Current Learn examples may use `azure-ai-projects>=2.2.0` and `DefaultAzureCredential`; **this repository's contract is the exact pins above and `AzureCliCredential`**. Do not upgrade or switch authentication merely to match a general example. `beta.evaluators` is a preview API, so do not call the whole workflow GA. The separate Search paths use `2026-04-01` for minimal/extractive retrieval and `2026-08-01-preview` for LLM planning; these are not project API versions.
+
+**Recorded configuration:** the September 27, 2026 run used `gpt-6-luna` version `2026-09-22` in `swedencentral`, GlobalStandard 60K TPM. See the [complete-path result](complete-lab.md#results). Current availability, including other subscriptions/regions, must be checked separately.
 
 Local tests check authored examples, gate behavior, missing/tampered evidence, docs/JSONL contracts, and installed SDK request/response shapes with an in-memory transport. They do not by themselves validate real permissions, capacity, billing, or current portal UI.
 
@@ -340,7 +391,9 @@ The retained V1 comparison, calibration, and acceptance evidence belongs to that
 |---|---|
 | [Create a Foundry project](https://learn.microsoft.com/azure/foundry/how-to/create-projects) | New project and CLI prerequisites |
 | [Foundry RBAC](https://learn.microsoft.com/azure/foundry/concepts/rbac-foundry) | User/project identity and role scope |
+| [AIProjectClient API](https://learn.microsoft.com/python/api/azure-ai-projects/azure.ai.projects.aiprojectclient?view=azure-python) | Project endpoint, default `v1`, OpenAI client route, and beta preview status |
 | [Deploy models](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/deploy-foundry-models) | Catalog, deployment names, types |
+| [Model deployment types](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/deployment-types) | Resource region versus inference location; token billing versus reserved capacity |
 | [Azure-sold models](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure) | Model capabilities |
 | [Delete a resource group](https://learn.microsoft.com/azure/azure-resource-manager/management/delete-resource-group) | Scope, locks, irreversibility |
 | [Budgets and alerts](https://learn.microsoft.com/azure/cost-management-billing/costs/tutorial-acm-create-budgets) | Alerts and reporting delays |
@@ -352,5 +405,8 @@ The retained V1 comparison, calibration, and acceptance evidence belongs to that
 | [Groundedness SDK example](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/ai/azure-ai-projects/samples/evaluations/agentic_evaluators/sample_groundedness.py) | Python API example |
 | [Structured Outputs](https://learn.microsoft.com/azure/ai-foundry/openai/how-to/structured-outputs) | JSON Schema output |
 | [Regions and limits](https://learn.microsoft.com/azure/foundry/concepts/evaluation-regions-limits-virtual-network) | Availability and networking |
+| [Search RBAC](https://learn.microsoft.com/azure/search/search-security-rbac) | Service/object management versus document read/write access |
+| [Agentic retrieval](https://learn.microsoft.com/azure/search/agentic-retrieval-overview) | GA minimal extraction versus preview LLM planning and conversation features |
+| [Search pricing models](https://learn.microsoft.com/azure/search/search-sku-tier) | Provisioned-capacity costs for Dedicated services such as Basic |
 
 Do not mix the new Foundry API with classic `azure-ai-evaluation` connection strings, authentication, mapping, or response contracts.

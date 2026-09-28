@@ -6,6 +6,8 @@
 
 This is an **optional extension, not a replacement for activities 0–6**. The core workshop supplies the full policy. Here, **only actually retrieved documents** reach the answer model and Groundedness judge. Evaluate retrieval and answer quality separately.
 
+**You do not need to finish the complete RAG path first.** This guide compares two retrieval routes using `rag_lab.py` and `optional-rag/prompt.txt`. Do not mix its results with `advanced_lab.py`'s V1/V2, calibration, freeze, or holdout workflow. Neither RAG CLI has a DEMO mode.
+
 Reuse the intended account, Foundry project, **`gpt-6-luna` / `eval-model`**, and **`swedencentral`**. Add an Azure AI Search service, index, and actual Foundry IQ Knowledge Source/Knowledge Base. **Retain all resources and evidence.**
 
 **Separate complete-path reference videos:** [English/Korean vector and LLM-planned RAG summaries](../media/complete-rag/README.md). These are not execution or validation records for this minimal `search`/`iq` exercise.
@@ -20,7 +22,7 @@ Reuse the intended account, Foundry project, **`gpt-6-luna` / `eval-model`**, an
 
 This is **not local search relabeled as Foundry IQ**. Real knowledge objects are created, and IQ `references`, `sourceData`, and `activity` are retained.
 
-The simple path uses **GA Search API `2026-04-01`, minimal/extractive retrieval**. It does not use vector embeddings, LLM query planning, answer synthesis, or Agent Service/MCP integration. `gpt-6-luna` generates and judges answers in the application; it is not a knowledge-base planner. Official Foundry IQ documentation supports custom applications calling this REST API directly.
+The simple path uses **GA Search API `2026-04-01`, pinned in the code, for minimal/extractive retrieval**. It does not use vector embeddings, LLM query planning, answer synthesis, or Agent Service/MCP integration. `gpt-6-luna` generates and judges answers in the application; it is not a knowledge-base planner. Official Foundry IQ documentation supports custom applications calling this REST API directly. Do not mix preview `messages` or planning settings from those articles into this GA request.
 
 ```text
 question ── search ──────────────────→ Search index
@@ -36,24 +38,28 @@ The two routes can return the same documents for a single-index query. This is n
 <a id="prerequisites"></a>
 ## 1. Prerequisites and cost
 
-Use the core virtual environment, `requirements.txt`, real `config.json`, project, and deployment. No agent server, Docker, Storage, or embedding deployment is added.
+Complete [README setup 1–7](../../README.md#prepare): the virtual environment, `requirements.txt`, real `config.json`, model deployment, and one-case generation/evaluation check. For an existing environment, use [existing-environment setup](setup.md#existing-environment). **Return to this section after shared setup; introductory activities 1–6 are not required first.** No agent server, Docker, Storage, or embedding deployment is added.
+
+Run each command from the repository root containing `rag_lab.py`, with the virtual environment activated. Commands create result directories.
 
 ```bash
 python lab.py doctor --live
 ```
 
-Confirm `LIVE 조회 OK` for `gpt-6-luna` / `eval-model`. Match the portal and CLI account, tenant, and subscription using the core guide.
+Confirm `LIVE 조회 OK` for `gpt-6-luna` / `eval-model`. This verifies deployment/evaluator lookup, not Search setup or answer quality. Match the portal and CLI account, tenant, and subscription using the core guide.
 
-The current recommended layout **reuses the shared Basic Search service from the complete lab**. Its text and vector/planned indexes coexist. Free semantic/knowledge-retrieval plans are separate from the service SKU: **Basic still has ongoing service charges**. Do not automatically create another Search service.
+**Reuse an authorized Basic-or-higher Search service if available.** It can be the complete lab's service, but that is not required; otherwise create just one in section 2. Share the service, not the two exercises' object names. Free semantic/knowledge-retrieval plans are separate from the service SKU: **Basic still has ongoing service charges**. Do not automatically create another Search service.
 
 The extension has **7 chunks, 4 questions × 2 routes = 8 answers and 16 judge metric items**. Retrieval and evaluator internals are separate requests. Model generation/judging costs money; free retrieval allowances can be exhausted. Retaining resources is not equivalent to free usage.
+
+**Before creation**, obtain the owner's approval for service creation/use, ongoing charges, and the two service-scoped roles below. Assigning roles requires `roleAssignments/write` at that scope; ordinary Contributor access alone is insufficient. Stop here if an authorized administrator cannot prepare the permissions.
 
 <a id="create-search"></a>
 ## 2. Search service and least-privilege access
 
 Replace all placeholders with real values. You can reuse the core dedicated group. The service name must be globally unique and use lowercase letters, digits, and dashes.
 
-**If the shared Basic service already exists, skip creation and use its endpoint/permissions.** Create below only when you do not yet have a service.
+**If an authorized Basic-or-higher service already exists, skip both commands below and use its endpoint/permissions.** `az search service create` can update an existing service, so do not run it against a name you intend to reuse. Create below only when you do not yet have a service.
 
 ```bash
 az search service check-name-availability --name "YOUR-SEARCH-NAME" --type searchServices --subscription "YOUR-SUBSCRIPTION-ID"
@@ -76,7 +82,7 @@ For both new and existing services, retrieve the actual resource ID:
 az search service show --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --query "{id:id,location:location,sku:sku.name,state:provisioningState,disableLocalAuth:disableLocalAuth,semanticSearch:semanticSearch}" --output json
 ```
 
-Confirm Succeeded/succeeded, Sweden Central, `basic`, and `disableLocalAuth: true`. Use the returned `id`, ending in `/providers/Microsoft.Search/searchServices/...`, as `YOUR-SEARCH-RESOURCE-ID`.
+Confirm `Succeeded/succeeded`, `swedencentral`, a Basic-or-higher SKU, and `disableLocalAuth: true`. `semanticSearch` must be `free` or an already approved `standard` plan. Do not change existing settings without the owner's approval. Use the returned `id`, ending in `/providers/Microsoft.Search/searchServices/...`, as `YOUR-SEARCH-RESOURCE-ID`.
 
 Look up the currently signed-in **user Object ID**. It is not the project identity recorded during portal setup:
 
@@ -84,7 +90,7 @@ Look up the currently signed-in **user Object ID**. It is not the project identi
 az ad signed-in-user show --query "{account:userPrincipalName,objectId:id}" --output json
 ```
 
-Verify that `account` identifies you in the intended tenant, then use **`objectId` as `YOUR-USER-OBJECT-ID`**. Do not substitute the project or Search managed identity. If directory lookup is restricted, ask the environment owner to verify your user ID in that tenant. Grant the following roles at the **Search service scope only**, and only if missing:
+Verify that `account` identifies you in the intended tenant, then use **`objectId` as `YOUR-USER-OBJECT-ID`**. Do not substitute the project or Search managed identity. If directory lookup is restricted, ask the environment owner to verify your user ID in that tenant. Check **Access control (IAM)** on Search, including inherited roles, then grant the following roles at the **Search service scope only**, and only if missing:
 
 ```bash
 az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "7ca78c08-252a-4471-8644-bb5ff32d4ba0" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
@@ -94,14 +100,16 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "8ebe5a00-799e-43f5-93ac-243d3dce84a7" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
 ```
 
-The roles are **Search Service Contributor** for index/knowledge-object management and **Search Index Data Contributor** for document upload/query. Do not grant subscription-wide roles. This custom-app path does not query using the project identity, so it does not need additional project-managed-identity assignments.
+The roles are **Search Service Contributor**, which permits service configuration and key retrieval as well as index/knowledge-object management, and **Search Index Data Contributor** for document upload/query and Knowledge Base retrieval. Do not grant subscription-wide roles. **These service-scoped roles also cover other participants' objects; distinct names are not a security boundary.** Use only the approved shared-workshop scope. This custom-app path does not query using the project identity, so it does not need additional project-managed-identity assignments.
+
+**Checkpoint:** verify both roles apply to your Object ID and allow propagation. A successful role assignment alone does not prove data access. If sections 3–4 return 401/403, check your identity, scope, network, and propagation, then repeat the same command. Do not repeatedly create roles or fall back to keys.
 
 **If the complete path sent you here only for this section, return to [Search identity model access](complete-lab.md#search-model-access).** The minimal-RAG index in section 3 is not a prerequisite for the complete path.
 
 <a id="index"></a>
 ## 3. Create the index and actual Foundry IQ knowledge objects
 
-Save [the example](../../optional-rag/config.example.json) as **`config.rag.json`** beside `lab.py`. Copy the actual service URL from Search Overview. Keep the original `config.json` unchanged.
+Save [the example](../../optional-rag/config.example.json) as **`config.rag.json`** beside `rag_lab.py` at the repository root, not inside `optional-rag/`. Copy the actual service URL from Search Overview. Keep the original `config.json` unchanged.
 
 ```json
 {
@@ -113,15 +121,21 @@ Save [the example](../../optional-rag/config.example.json) as **`config.rag.json
 }
 ```
 
+The three object names above are defaults. **Before running on a shared service**, choose authorized participant-specific `index_name`, `knowledge_source`, and `knowledge_base` values, such as `travel-rag-a7k3m9`, `travel-policy-ks-a7k3m9`, and `travel-policy-kb-a7k3m9`. Keep those names and `top_k: 3` when resuming the same experiment; do not target complete-path objects.
+
 ```bash
 python rag_lab.py setup
 ```
 
-**Checkpoint:** `SETUP OK: 7 chunks, 4 evaluation cases`. `results/rag-setup.json` contains actual index, Knowledge Source, and Knowledge Base definitions.
+The code first compares all three existing object definitions, then creates a missing index, uploads documents, and creates any missing Knowledge Source and Knowledge Base.
+
+**Checkpoint:** `SETUP OK: 7 chunks, 4 evaluation cases`. `results/rag-setup.json` contains actual index, Knowledge Source, and Knowledge Base definitions. Verify retrieval separately with both queries in the next section.
 
 The [corpus](../../optional-rag/documents.jsonl) divides the fictional policy into seven chunks: six official chunks and one unapproved draft. **`approved eq true`** excludes the draft; a `corpus_hash` filter fixes the corpus version. The index includes a Korean analyzer and semantic configuration. Both language guides use the same Korean inputs.
 
 Setup resumes incomplete uploads for the same corpus, but does not overwrite objects belonging to another corpus/source. Use new object names for changed experiments.
+
+**Mismatched declared settings stop setup before creation or upload.** Checks include the index analyzer/semantic configuration, source-data fields, and Knowledge Base source list; extra server-default properties are allowed. Reuse still requires the owner's permission, and search objects must remain unchanged during the experiment.
 
 **Security distinction:** service RBAC controls access. `approved` is a policy-status filter, not a per-user ACL. Document-level authorization, Purview, and user-specific access tests are outside this small lab.
 
@@ -138,7 +152,7 @@ python rag_lab.py query --mode iq --query "2026년 9월 국내 숙박비가 2200
 
 The question asks about a September domestic hotel expense of KRW 220000 without prior approval.
 
-**Checkpoint:** both print `RETRIEVAL OK`, selected chunk IDs, official source IDs, and scores. IQ also returns **searchIndex activity and original reference/source data**. The saved JSON comes from the real services.
+**Checkpoint:** both print `RETRIEVAL OK`, selected chunk IDs, official source IDs, and scores. IQ also returns **searchIndex activity and original reference/source data**. The saved JSON's `raw_response` is the actual service response; `documents` is the selection to be supplied to the model. These commands do not generate an answer or run a judge.
 
 | Identifier | Purpose |
 |---|---|
@@ -153,17 +167,19 @@ IQ uses `intents`. The app takes at most three returned approved chunks. **Empty
 
 The [four cases](../../optional-rag/cases.jsonl) reuse core dev D02/D03/D04/D08; they are not a new independent holdout. [Required-chunk labels](../../optional-rag/retrieval-labels.json) are evaluation-only and never enter the retrieval request, generation prompt, or judge.
 
+Keep questions, corpus, `optional-rag/prompt.txt`, configuration, answer/judge model versions, and search objects unchanged between runs. **Only the retrieval route changes**; differing contracts cause comparison to be rejected. If you need a change, preserve existing evidence and start both routes in new output folders as a separate experiment.
+
 ```bash
 python rag_lab.py run --mode search --out results/rag-search
 ```
 
-After four answers are saved:
+Confirm `LIVE RAG generation complete: 4 answers` and `status: complete` in `results/rag-search/run.json`, then judge. Generation completion does not mean the business checks passed.
 
 ```bash
 python lab.py judge results/rag-search
 ```
 
-Wait for **`평가 완료: 4개 답변 × 2개 지표`**. If still processing, repeat that exact command.
+Wait for **`평가 완료: 4개 답변 × 2개 지표`**. If still processing, repeat that exact command. For interruptions/errors, use the [resume table](#resume).
 
 ```bash
 python rag_lab.py run --mode iq --out results/rag-iq
@@ -173,7 +189,7 @@ python rag_lab.py run --mode iq --out results/rag-iq
 python lab.py judge results/rag-iq --like results/rag-search
 ```
 
-Confirm **`평가 완료: 4개 답변 × 2개 지표`**. `--like` preserves the judge model/evaluator contract.
+For IQ, also confirm four generated answers followed by **`평가 완료: 4개 답변 × 2개 지표`**. `--like` preserves the completed Search run's judge model/evaluator contract; it does not copy retrieved contexts or answers.
 
 ```bash
 python rag_lab.py compare results/rag-search results/rag-iq
@@ -194,9 +210,38 @@ Read the retrieved chunks, missing required chunks, answer, business checks, and
 | Relevance | Response to the question; appropriate abstention may still score poorly |
 | Citation IDs linked | Citation IDs occur in retrieved documents; not proof of semantic support |
 
-Read `results/rag-iq/rag-comparison.md`/`.json`, and each run's `rag-report.md` and `retrieval-metrics.json`. **REVIEW_REQUIRED is not release approval or proof IQ is superior.** A person must examine contexts and scoring reasons.
+Read `results/rag-iq/rag-comparison.md`/`.json`, and each run's `rag-report.md` and `retrieval-metrics.json`. Comparison exit code 0 means the files were produced; **the status is always `REVIEW_REQUIRED`**. Even an empty `issues` list is not release approval or proof IQ is superior. `issues` flags metrics below 80% and critical-case failures; the judge score threshold is 4/5. A person must examine contexts and scoring reasons.
 
 Core `lab.py compare/gate` is for fixed-context prompt experiments and rejects RAG input. Use this extension's comparison. Do not combine core and RAG results as a single before/after experiment.
+
+<a id="resume"></a>
+### Command status, interruption, and resumption
+
+<details>
+<summary>Open only for waiting, errors, or resuming later</summary>
+
+Restore the virtual environment and sign-in in a new terminal. Never use the same output folder concurrently in two terminals.
+
+| State | Next action |
+|---|---|
+| Connection failure/interruption during `setup` | Resolve the cause and repeat `setup` with the same configuration. It reuses matching objects and completes same-corpus uploads; mismatches are not overwritten |
+| Connection failure/interruption during `run` | Repeat the entire command with the same `--mode` and `--out`. Saved responses and searches in `pending_retrievals` are reused. A response interrupted before persistence can incur another charge |
+| `run.json` has `status: collecting` | Partial run. Read saved `rows`, `pending_retrievals`, and the error; do not use `judge`, `inspect`, or `compare` yet |
+| Judge pending / exit `3` | Repeat the same complete `python lab.py judge …` command, retaining IQ's `--like`. The default status-polling budget is **300 seconds**; total command time can be longer |
+| Generation/judging complete with low scores or failed checks | Do not resample saved answers. Finish judging both routes, then preserve failures with the dedicated comparison |
+| `ERROR:` / argument error | Resolve the cause, then resume the same command. If unable to finish, distinguish the last completed stage from unperformed work and preserve it in section 6 |
+
+| File | What to check |
+|---|---|
+| `results/rag-setup.json`, `results/rag-query-search.json`, `results/rag-query-iq.json` | Object definitions and the two retrieval probes |
+| `run.json` in each run folder | State, local correlation `run_id`, saved answers/contexts/raw retrieval, and pending retrievals |
+| `foundry-job.json` | Remote `eval_id`, `run_id`, and job state, distinct from the ID in `run.json` |
+| `judge.json`, `report.md` | Completed scores and per-case reasons. Remote `completed` alone is insufficient |
+| `rag-report.md`, `retrieval-metrics.json` | RAG evidence/retrieval metrics. `lab.py judge` updates `report.md`; `rag_lab.py compare`/`inspect` refresh the RAG report |
+
+For ambiguous remote creation, follow [ID recovery](reference.md#resume), without forcing a new submission. Do not delete files to resample answers or scores.
+
+</details>
 
 <a id="evidence"></a>
 ## 6. Portal evidence and retention
@@ -215,7 +260,7 @@ In the Foundry evaluation report URL, match a case's **question, answer, retriev
 <a id="observed-results"></a>
 ### Earlier minimal-RAG records and evidence scope
 
-Cleanup of the author's earlier Free service and its failure/validation records is complete. The [recorded complete-path result](complete-lab.md#results) belongs to a separate vector/planning/dialogue experiment; it does not revalidate this minimal `search`/`iq` comparison. Run this API exercise in its own index on the same Basic service, and use your own `rag-comparison.md` and each `rag-report.md` for your judgment.
+Cleanup of the author's earlier Free service/records is a historical migration record, not a learner deletion step or a current resource-state check. The [recorded complete-path result](complete-lab.md#results) belongs to a separate vector/planning/dialogue experiment; it does not revalidate this minimal `search`/`iq` comparison. Run this API exercise in its own index on an authorized Basic service, and use your own `rag-comparison.md` and each `rag-report.md` for your judgment.
 
 <a id="troubleshooting"></a>
 ## Troubleshooting
@@ -239,6 +284,7 @@ Cleanup of the author's earlier Free service and its failure/validation records 
 - [Foundry IQ and custom-application REST use](https://learn.microsoft.com/azure/foundry/agents/concepts/what-is-foundry-iq)
 - [Search-index knowledge source](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-search-index)
 - [Knowledge bases and GA/preview differences](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-create-knowledge-base)
+- [Search roles, assignment permissions, and service scope](https://learn.microsoft.com/azure/search/search-security-rbac)
 - [Retrieve API](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-retrieve)
 - [Region and Free support](https://learn.microsoft.com/azure/search/search-region-support)
 - [Knowledge retrieval billing](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-enable-disable)

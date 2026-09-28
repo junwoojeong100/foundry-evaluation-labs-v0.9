@@ -84,7 +84,7 @@ B가 적절합니다. 240000원은 **미승인 초안**의 금액입니다. A는
 
 **이미 허가받은 환경이 있다면** 아래 신규 생성 절차 대신 [기존 환경 준비](docs/setup.md#existing-environment)를 수행합니다. 입문 참가자는 그 뒤 [실습 1](#lab-1), 완결형 참가자는 [완결형 Search 준비](docs/complete-lab.md#search-setup)로 이어갑니다.
 
-**기본 경로의 시작 조건:** Microsoft Entra ID 계정, 활성 Azure 구독, 그 구독의 **활성 Owner 역할**. 직접 자원을 만들고 필요한 역할을 할당하기 위한 조건이며, 기존 환경 사용자의 최소 권한이라는 뜻은 아닙니다. API 키는 사용하지 않습니다.
+**기본 경로의 시작 조건:** Microsoft Entra ID 계정, 활성 Azure 구독, 그 구독의 **활성 Owner 역할**(적용되는 상속 역할 포함). 한 사람이 자원 생성과 역할 할당을 진행하도록 이 경로에서 선택한 조건입니다. Azure 자원 생성이 Owner만 가능한 것은 아니며 기존 환경 사용자에게 Owner가 필요한 것도 아닙니다. 다른 허가된 역할 조합은 [권한 계약](docs/reference.md#permissions-contract)을 참고합니다. API 키는 사용하지 않습니다.
 
 이번에는 **프로젝트 하나와 모델 배포 하나**만 사용합니다. 검색 서비스·에이전트 서버·Docker·Git·azd·Jupyter는 필요 없습니다. 실제 개인정보·기밀·비밀번호는 입력하지 않습니다.
 
@@ -140,20 +140,22 @@ python -m pip install -r requirements.txt
 python lab.py doctor
 ```
 
-**완료 확인:** `LOCAL OK: Python ... , dev 8개, holdout 4개`가 보입니다. 이는 로컬 파일 확인이며 아직 Azure 연결 성공을 뜻하지 않습니다. 이후 새 터미널을 열었다면 가상환경 활성화부터 다시 합니다. 설치부터 반복하지 않습니다.
+**완료 확인:** `LOCAL OK: Python ... , dev 8개, holdout 4개`가 보입니다. 이는 로컬 파일 확인이며 아직 Azure 연결 성공을 뜻하지 않습니다. 새 터미널에서는 이 폴더로 돌아와 macOS/Linux의 `source .venv/bin/activate` 또는 PowerShell의 `.\.venv\Scripts\Activate.ps1`만 다시 실행합니다. 활성화가 막히면 가상환경 Python 직접 실행 방식을 유지합니다. 가상환경 생성이나 패키지 설치부터 반복하지 않습니다.
 
 <a id="working-files"></a>
-**앞으로 직접 저장할 파일은 아래 세 개입니다. 지금 한꺼번에 만들지 않고 해당 단계에서 만듭니다.**
+**직접 편집할 로컬 작업 파일은 아래 세 개입니다. 해당 단계에서만 수정합니다.**
 
 이 표는 입문 경로 기준입니다. **완결형 참가자는 준비 6의 `config.json`만 만들고**, 이후 파일은 완결형 가이드에서 안내받습니다.
 
-| 시점 | 열 원본 | 다른 이름으로 저장할 위치 |
+| 시점 | 편집할 로컬 파일 | 시작 자료 |
 |---|---|---|
-| 준비 6 | `config.example.json` | `config.json` (`lab.py` 옆) |
-| 실습 4 | `prompts/v2.txt` | `prompts/my-v2.txt` |
-| 실습 6 | `data/my-case.example.jsonl` | `data/my-case.jsonl` |
+| 준비 6 | `config.json` (`lab.py` 옆) | `config.example.json`을 복사 |
+| 실습 4 | `prompts/my-v2.txt` | 포함된 예제 작업본. `prompts/v2.txt`와 차이를 확인 |
+| 실습 6 | `data/my-case.jsonl` | 포함된 N02 작업본. `data/my-case.example.jsonl`은 준비 단계의 N01 |
 
-`results/baseline` 같은 **결과 폴더와 보고서는 명령이 자동으로 만듭니다.** 미리 만들거나 내용을 직접 입력하지 않습니다. 생성된 JSON·보고서는 읽기용입니다. 원본 규정·질문·프롬프트는 유지하고, 복사본은 VS Code 기본 **UTF-8**로 저장합니다.
+**저장소에는 `prompts/my-v2.txt`와 `data/my-case.jsonl`이 이미 포함되어 있습니다.** 파일이 있다는 사실이 직접 수정하거나 실행했다는 뜻은 아닙니다. 해당 단계에서 먼저 열어 확인하고, 이전에 작성한 본인 작업은 덮어쓰지 않습니다.
+
+`results/baseline` 같은 **결과 폴더와 보고서는 명령이 자동으로 만듭니다.** 생성된 JSON·보고서는 미리 채우거나 직접 수정하지 않고 증거로 읽습니다. 원본 규정·질문·프롬프트는 유지하고, 작업 파일은 VS Code 기본 **UTF-8**로 저장합니다.
 
 <a id="setup-sign-in"></a>
 ### 준비 2. 사용할 구독으로 로그인
@@ -225,6 +227,8 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 ### 준비 4. 모델 호출과 평가 권한 확인
 
 **Owner만 있다고 모델 호출과 평가까지 되는 것은 아닙니다.** 내 터미널은 **본인 계정**, 클라우드 평가 작업은 **프로젝트 관리 ID**의 권한을 사용합니다. 관리 ID는 프로젝트가 Azure 서비스에 접근할 때 사용하는 신원입니다.
+
+아래 상위 리소스 역할 할당은 **본인 전용 실습 환경의 공통 시작 구성**이며, 모든 평가·기존 프로젝트의 유일한 최소 범위는 아닙니다. 권한은 하위 프로젝트에도 상속됩니다. 공유·기존 환경은 [권한 계약](docs/reference.md#permissions-contract)에 따라 소유자와 필요한 범위를 확인합니다.
 
 **먼저 프로젝트에서 ID 확인 → 다음 상위 리소스에서 역할 확인**, 두 대상을 구분합니다.
 
@@ -312,13 +316,16 @@ python lab.py doctor --live
 | `Judge: 아직 미평가` | 답변만 있고 AI 채점 전 | 해당 단계의 `judge` 실행 |
 | `Foundry 상태: completed`만 보임 | 원격 작업 종료. 로컬 결과 수집·검사가 남을 수 있음 | 터미널의 **`평가 완료`까지** 기다림. 이후 `ERROR:`가 나오면 문제 해결 |
 | `아직 처리 중입니다` / 종료 코드 `3` | 클라우드 평가가 아직 끝나지 않음 | **방금 실행한 `judge` 명령 전체를 그대로 재실행**. `--like`도 유지 |
+| `중단했습니다` / 종료 코드 `130` | 터미널에서 실행을 중단함 | 파일을 보존하고 [재개 표](docs/setup.md#resume-checkpoints) 확인 |
 | `ERROR:` / 종료 코드 `1` | 입력·환경·실행 오류 | 다음 단계로 가지 말고 [문제 해결](docs/reference.md#troubleshooting) |
 | `BLOCK` / 종료 코드 `2` | 최종 품질 기준에 따라 변경을 보류 | `gate.md`의 이유를 기록하고 실습 6으로 진행. 단, 점수·검토 누락은 먼저 보완 |
 | `usage:` / `error:`와 함께 종료 코드 `2` | 필수 인자 누락·잘못된 옵션 등 명령 인자 오류 | 명령을 고쳐 재실행. `BLOCK`과 구분 |
 
-`judge`의 기본 **상태 조회 대기 예산은 300초**입니다. 인증·제출·HTTP 응답·결과 수집 때문에 전체 명령은 더 걸릴 수 있습니다. **`아직 처리 중입니다`로 끝난 경우에만** 같은 명령을 재실행합니다. **저장된 원격 작업을 조회**하며 새 평가를 제출하지 않습니다. 새 터미널에서 동시에 실행하지 않습니다. `평가 완료`가 나오면 재실행하지 않고 다음 단계로 갑니다.
+`judge`의 기본 **상태 조회 대기 예산은 300초**입니다. 인증·제출·HTTP 응답·결과 수집 때문에 전체 명령은 더 걸릴 수 있습니다. `아직 처리 중입니다`로 끝나면 같은 명령을 재실행합니다. **저장된 원격 작업을 조회**하며 새 평가를 제출하지 않습니다. 새 터미널에서 동시에 실행하지 않습니다.
 
-**`평가 완료`는 점수·이유 검증과 `judge.json`·`report.md` 저장이 끝난 뒤에만 나옵니다.** JSON을 직접 세거나 수정할 필요 없이 **완료 건수 → `보고서:`에 나온 `report.md` → `사례별 근거`의 답변·점수 이유** 순서로 확인합니다. 오류나 점수 누락은 낮은 점수와 다릅니다. 중단 후에는 [결과 파일별 재개 표](docs/setup.md#resume-checkpoints)에서 다음 명령을 찾습니다.
+**오류·중단 뒤에는 원인을 해결하고 [결과 파일별 재개 표](docs/setup.md#resume-checkpoints)를 확인합니다.** 미완료 `run`은 같은 입력·같은 `--out`으로 재개하면 저장된 답변은 건너뜁니다. 다만 중단 전에 저장되지 않은 답변은 재호출 비용이 발생할 수 있습니다. 원격 작업이 처리 중이거나 completed이고 ID가 저장되어 있다면, `judge`도 연결·로컬 저장 오류 해결 후 조회·수집을 재개할 수 있습니다. 제출 직후 ID 저장 전에 끊겼거나 서비스 상태가 `failed`/`canceled`라면 무작정 재제출하지 말고 [원격 ID 복구](docs/reference.md#resume)를 따릅니다.
+
+**`평가 완료`는 점수·이유 검증과 `judge.json`·`report.md` 저장이 끝난 뒤에만 나옵니다.** JSON을 직접 세거나 수정할 필요 없이 **완료 건수 → `보고서:`에 나온 `report.md` → `사례별 근거`의 답변·점수 이유** 순서로 확인합니다. 오류나 점수 누락은 낮은 점수와 다릅니다. 완료 후에는 다음 단계로 갑니다. 완료된 `run`·`judge`를 반복해도 더 좋은 답을 만들지 않고 저장된 결과를 읽습니다.
 
 <a id="setup-smoke"></a>
 ### 준비 7. 답변 한 개로 연결 확인
@@ -335,7 +342,7 @@ python lab.py run --mode live --prompt v1 --data data/my-case.example.jsonl --ou
 python lab.py judge results/setup-smoke
 ```
 
-`아직 처리 중입니다`로 끝났을 때만 위 `judge`를 그대로 재실행합니다. **`평가 완료: 1개 답변 × 2개 지표`**가 나오면 답변 한 건을 엽니다.
+`아직 처리 중입니다`로 끝나면 위 `judge`를 그대로 재실행합니다. 오류·중단은 [명령 상태와 재개 안내](#command-status)를 따릅니다. **`평가 완료: 1개 답변 × 2개 지표`**가 나오면 답변 한 건을 엽니다.
 
 ```bash
 python lab.py inspect results/setup-smoke N01
@@ -440,7 +447,7 @@ python lab.py judge results/baseline
 
 **새 답변을 만드는 것이 아니라 저장한 8개를 채점**합니다. Groundedness는 질문·규정·답변, Relevance는 질문·답변을 봅니다. 둘 다 정답 설명인 `ground_truth`는 받지 않습니다.
 
-`아직 처리 중입니다`로 끝났을 때만 위 `judge` 명령을 그대로 다시 실행합니다. **`평가 완료: 8개 답변 × 2개 지표`**가 나와야 다음으로 갑니다. `results/baseline/judge.json`이 저장되고 `report.md`도 점수와 이유를 포함한 내용으로 갱신됩니다.
+`아직 처리 중입니다`로 끝나면 위 `judge` 명령을 그대로 다시 실행합니다. **`평가 완료: 8개 답변 × 2개 지표`**가 나와야 다음으로 갑니다. `results/baseline/judge.json`이 저장되고 `report.md`도 점수와 이유를 포함한 내용으로 갱신됩니다.
 
 **할 일 3 — 같은 D04를 대조:**
 
@@ -468,10 +475,10 @@ python lab.py inspect results/baseline D04
 **할 일 1 — 가설과 수정:** “___ 문제를 줄이려고 ___ 지침을 바꾼다”는 가설을 먼저 정합니다. 예: “모르는 한도를 만드는 문제를 줄이려고 규정에 없는 값은 추측하지 말라는 지침을 넣는다.” 실패가 없었다면 “변경 후에도 올바른 행동이 유지되는지 확인한다”를 가설로 삼습니다.
 
 1. VS Code에서 [V1 지침](prompts/v1.txt)과 [개선 예제 V2](prompts/v2.txt)를 열어 차이를 읽습니다.
-2. **V2 파일을 연 상태에서 File → Save As**로 같은 `prompts` 폴더에 **`my-v2.txt`**를 만듭니다. 원본 V1·V2는 수정하지 않습니다.
-3. 복사본에서 가설에 맞게 한두 문장을 수정하고 저장합니다. 막히면 **V2 내용을 그대로 복사해도 됩니다. 그 경우에도 파일명은 반드시 `prompts/my-v2.txt`**로 유지합니다. V1에서 이 지침으로 바꾸는 것이 이번 실험의 변경입니다.
+2. **`prompts/my-v2.txt`**를 엽니다. 포함된 예제 작업본은 V2에 “출장일 확인 전에는 날짜별 한도를 나열하지 않고 `SCOPE`만 인용한다”는 지침이 추가되어 있으므로 이 차이도 가설에 포함합니다. **작업본이 없을 때만** V2를 열어 **File → Save As**로 `prompts/my-v2.txt`를 만듭니다. 원본 V1·V2와 이전에 작성한 본인 수정은 덮어쓰지 않습니다.
+3. 작업본에서 가설에 맞게 한두 문장을 수정하고 저장합니다. 포함된 작업 예제나 V2 원문을 그대로 사용해도 되지만 어느 쪽을 썼는지 기록합니다. **파일명은 반드시 `prompts/my-v2.txt`**로 유지합니다. V1에서 이 지침으로 바꾸는 것이 이번 실험의 변경입니다.
 
-V2는 공식 규정과 날짜를 먼저 확인하고, 모르는 값이나 없는 승인을 만들지 않도록 안내합니다. **모델·규정·질문/정답·Judge·합격선은 그대로** 둡니다.
+V2는 공식 규정과 날짜를 먼저 확인하고, 모르는 값이나 없는 승인을 만들지 않도록 안내합니다. **모델·규정·질문/정답·Judge·합격선은 그대로** 둡니다. 후보 생성을 시작한 뒤에는 실습 6까지 이 작업본을 더 수정하지 않습니다. 이미 candidate 결과가 있다면 지침을 덮어쓰고 같은 폴더에 다시 실행하지 말고 [재개 안내](docs/setup.md#resume)를 따릅니다.
 
 **할 일 2 — 같은 dev 8개로 생성·평가·비교:** 각 명령의 완료를 확인하며 순서대로 실행합니다.
 
@@ -485,7 +492,7 @@ python lab.py run --mode live --prompt prompts/my-v2.txt --out results/candidate
 python lab.py judge results/candidate --like results/baseline
 ```
 
-`--like`는 변경 전과 **같은 Judge 모델·평가기 버전**을 사용합니다. `아직 처리 중입니다`로 끝났을 때만 `--like`까지 포함한 위 명령을 그대로 재실행합니다. **`평가 완료: 8개 답변 × 2개 지표`**와 `Judge 결과: results/candidate/judge.json`을 확인한 뒤 비교합니다.
+`--like`는 변경 전과 **같은 Judge 모델·평가기 버전**을 사용합니다. `아직 처리 중입니다`로 끝나면 `--like`까지 포함한 위 명령을 그대로 재실행합니다. **`평가 완료: 8개 답변 × 2개 지표`**와 `Judge 결과: results/candidate/judge.json`을 확인한 뒤 비교합니다.
 
 ```bash
 python lab.py compare results/baseline results/candidate
@@ -496,6 +503,8 @@ python lab.py compare results/baseline results/candidate
 Foundry의 **Build → Evaluations**에서 baseline의 **`straightforward-…` 평가 그룹 이름**을 엽니다. **Evaluation runs** 안에서 **`v1-dev-…`와 `my-v2-dev-…` 두 실행만** 선택하고 **Compare runs**를 누릅니다. 비교 화면의 **Baseline**도 반드시 `v1-dev-…`로 지정합니다. 처음 선택한 후보가 기준으로 잡힐 수 있습니다. Holdout·연결 확인·추가 사례는 전후 비교에 섞지 않습니다.
 
 포털 비교는 평균·통계 요약이며, **개별 답변·점수 이유와 합격선 4점 기준의 회귀**는 각 실행의 같은 질문과 로컬 `comparison.md`에서 대조합니다. **Too few samples / Inconclusive**가 나오면 작은 표본에서 개선을 확정할 수 없다는 뜻입니다. 비교 버튼이 없어도 두 실행의 같은 질문을 나란히 볼 수 있습니다. 점수 변화가 없다면 D06이 안전하게 유지됐는지 확인합니다.
+
+`comparison.md`, `reviews.json`의 사람 판정, `gate.md`는 **내 PC의 실습 기록**이며 별도의 Foundry 평가 실행이 아닙니다. 포털의 Pass가 이 기록을 대신하지 않습니다.
 
 **할 일 3 — 실제 답변 검토:**
 
@@ -537,7 +546,7 @@ python lab.py run --mode live --frozen results/candidate --split holdout --out r
 python lab.py judge results/holdout --like results/baseline
 ```
 
-`아직 처리 중입니다`로 끝났을 때만 `--like`까지 포함한 위 명령을 재실행합니다. **`평가 완료: 4개 답변 × 2개 지표`**와 `Judge 결과: results/holdout/judge.json`을 확인하면 H04를 읽고 판정합니다.
+`아직 처리 중입니다`로 끝나면 `--like`까지 포함한 위 명령을 재실행합니다. **`평가 완료: 4개 답변 × 2개 지표`**와 `Judge 결과: results/holdout/judge.json`을 확인하면 H04를 읽고 판정합니다.
 
 ```bash
 python lab.py review results/holdout H04
@@ -558,7 +567,7 @@ python lab.py gate results/baseline results/candidate results/holdout
 | **BLOCK** | `gate.md`의 실패 이유를 확인하고 보류합니다. **실습 6으로 계속 진행합니다.** 종료 코드 2는 의도한 품질 차단입니다. |
 | **READY_FOR_HUMAN_REVIEW** | 교육용 기준 충족. 채택 검토 의견을 남기고 실습 6으로 진행합니다. **자동 배포 승인은 아닙니다.** |
 
-**완료 확인:** `results/candidate/gate.md`를 근거로 **결과·내 판단·문제 사례**를 설명할 수 있습니다. 업무·Judge 점수 누락이나 사람 검토 미실행 때문에 차단됐다면 해당 단계를 먼저 완료합니다. 품질 실패라면 통과시키려고 판정을 바꾸지 않습니다.
+**완료 확인:** `results/candidate/gate.md`를 근거로 **결과·내 판단·문제 사례**를 설명할 수 있습니다. 점수 누락이나 사람 검토 미실행 때문에 차단됐다면 해당 단계를 완료한 뒤 **같은 `gate` 명령을 다시 실행**해 판단을 갱신합니다. 검토 저장만으로 `gate.md`가 바뀌지는 않습니다. 품질 실패라면 통과시키려고 판정을 바꾸지 않습니다. 자동 리허설에서는 실제 사람 검토 미완료를 그대로 기록합니다.
 
 Dev와 holdout은 질문이 달라 전후 점수처럼 비교하지 않습니다. Holdout을 보고 프롬프트를 수정한다면 **다음에는 새 holdout이 필요**합니다.
 
@@ -567,9 +576,9 @@ Dev와 holdout은 질문이 달라 전후 점수처럼 비교하지 않습니다
 <a id="lab-6"></a>
 ## 6. 내 질문 하나로 평가해 보기
 
-**할 일 1 — 파일 준비:** VS Code에서 [추가 사례 예제](data/my-case.example.jsonl)를 열고 **File → Save As**에서 **같은 `data` 폴더에 파일명을 `my-case.jsonl`**로 저장합니다. 최종 경로는 `data/my-case.jsonl`입니다. 원본은 바꾸지 않습니다.
+**할 일 1 — 작업본 확인:** 먼저 `data/my-case.jsonl`을 엽니다. 저장소에는 숙박비 **180000원**인 N02 예제가 이미 포함되어 있습니다. 그대로 사용하려면 아래 **할 일 3의 파일 확인**으로 가고 “제공 예제 그대로”라고 기록합니다. 이전 LIVE·DEMO에서 작성한 본인 질문이라면 보존하고 같은 파일 확인으로 가서 재사용했다고 기록합니다. `results/my-case`도 이미 있다면 질문을 교체하지 말고 [재개 표](docs/setup.md#resume-checkpoints)를 따릅니다.
 
-**복사본의 내용을 아래 한 줄 전체로 교체**합니다. 연결 확인용 N01이 아니라 새 사례 **N02**를 작성하는 것입니다.
+**직접 수정 연습을 하려면** 이 작업본을 사용합니다. 파일이 없을 때만 [추가 사례 예제](data/my-case.example.jsonl)를 열고 **File → Save As**로 `data/my-case.jsonl`을 만듭니다. 원본은 바꾸지 않습니다. **작업본의 내용을 아래 한 줄 전체로 교체**한 뒤 할 일 2의 두 값을 수정합니다. 연결 확인용 N01이 아니라 새 사례 **N02**를 작성하는 것입니다.
 
 ```jsonl
 {"id":"N02","category":"과거 출장의 한도 초과","critical":true,"query":"2026년 6월 15일 국내 출장 숙박비가 1박 170000원입니다. 9월에 정산하면 사전 승인 없이 처리해도 되나요?","expected_decision":"needs_approval","expected_limit_krw":160000,"expected_citations":["TRAVEL-PREVIOUS"],"ground_truth":"정산일이 아니라 출장일의 과거 한도 160000원을 적용한다. 170000원은 한도 초과이므로 재무팀 사전 승인이 필요하며 바로 정산할 수 있다고 안내하면 안 된다."}
@@ -584,7 +593,7 @@ Dev와 holdout은 질문이 달라 전후 점수처럼 비교하지 않습니다
 
 **나머지 값은 그대로 둡니다.** 출장일이 6월 15일이므로 적용 한도 `expected_limit_krw`는 여전히 **160000**입니다. 180000원도 이 한도를 초과하므로 결정 `needs_approval`과 출처 `TRAVEL-PREVIOUS`는 바뀌지 않습니다. **청구 금액과 규정 한도는 다른 값**입니다.
 
-마지막 요약에서 **예제 수정 / 직접 작성 / 예제 그대로** 중 사용한 방식을 구분합니다. 막히면 수정 전 예제로 진행하되 예제를 그대로 사용했다고 설명합니다.
+마지막 요약에서 **예제 수정 / 직접 작성 / 예제 그대로 / 이전 질문 재사용** 중 사용한 방식을 구분합니다. 막히면 수정 전 예제로 진행하되 예제를 그대로 사용했다고 설명합니다.
 
 <details>
 <summary>다른 질문을 직접 설계할 때만: 8개 필드의 의미</summary>
@@ -626,7 +635,7 @@ python lab.py run --mode live --prompt prompts/my-v2.txt --data data/my-case.jso
 python lab.py judge results/my-case --like results/baseline
 ```
 
-`아직 처리 중입니다`로 끝났을 때만 위 명령을 그대로 재실행합니다. **`평가 완료: 1개 답변 × 2개 지표`**와 `Judge 결과: results/my-case/judge.json`을 확인한 뒤 답변을 읽습니다.
+`아직 처리 중입니다`로 끝나면 `--like`까지 포함한 위 명령을 그대로 재실행합니다. **`평가 완료: 1개 답변 × 2개 지표`**와 `Judge 결과: results/my-case/judge.json`을 확인한 뒤 답변을 읽습니다.
 
 ```bash
 python lab.py inspect results/my-case N02
@@ -656,7 +665,7 @@ VS Code에서 다음 결과 파일을 확인합니다. **점수가 아니라 수
 - [ ] `results/candidate/comparison.md`에서 새 통과와 회귀를 확인했다. 변화가 없으면 그대로 기록했다.
 - [ ] `results/candidate/reviews.json`에 D06, `results/holdout/reviews.json`에 H04의 실제 사람 판정과 이유가 있다.
 - [ ] `results/candidate/gate.md`의 결과와 채택 검토/보류 이유를 설명할 수 있다. `BLOCK`이어도 완료할 수 있다.
-- [ ] `results/my-case/report.md`·`judge.json`에 N02의 답변과 두 점수가 있고, 예제 수정/직접 작성/예제 그대로 사용 여부를 기록했다.
+- [ ] `results/my-case/report.md`·`judge.json`에 N02의 답변과 두 점수가 있고, 예제 수정/직접 작성/예제 그대로/이전 질문 재사용 여부를 기록했다.
 - [ ] D04의 최초 판정과 Judge 점수를 대조했고, 전후 관찰과 최종 판단을 위 네 문장으로 설명할 수 있다.
 
 **자동 리허설에서는** 실행·AI 보조 검토·Gate 결과를 기록하되, 실제 사람이 하지 않은 검토 항목을 완료로 체크하지 않습니다. AI 보조 검토만 있는 경우의 사람 검토 미완료와 `BLOCK`을 그대로 보고합니다.

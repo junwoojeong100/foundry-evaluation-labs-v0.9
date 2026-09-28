@@ -8,7 +8,7 @@
 
 이 문서는 **필요한 준비 단계만 다시 찾거나, 기존 환경을 사용하거나, 중단한 실습을 재개할 때** 사용합니다. 같은 명령을 여기서 다시 실행할 필요는 없습니다.
 
-**이번 LIVE 설정은 `gpt-6-luna`·`swedencentral`·배포 이름 `eval-model`입니다.** 답변과 Judge에 같은 배포를 사용하고, 생성한 리소스는 실습 후에도 모두 보존합니다. 모델·지역을 임의 대체하지 않으며 마지막에는 [보존 상태와 비용](../README.ko.md#retain-resources)을 확인합니다.
+**입문 LIVE의 신규 설정은 `gpt-6-luna`·`swedencentral`·배포 이름 `eval-model`입니다.** 답변과 Judge에 같은 배포를 사용하고, 생성한 리소스는 실습 후에도 모두 보존합니다. 모델·지역을 임의 대체하지 않으며 마지막에는 [보존 상태와 비용](../README.ko.md#retain-resources)을 확인합니다. 기존 환경의 실제 배포 이름과 완결형의 추가 모델은 각각 해당 경로를 따릅니다.
 
 <a id="tools"></a>
 ## 준비 1. 코드와 도구 준비
@@ -28,7 +28,7 @@
 <a id="permissions"></a>
 ## 준비 4. 데이터 접근 권한 확인
 
-[준비 4: 모델 호출과 평가 권한](../README.ko.md#setup-permissions) — 본인과 프로젝트 관리 ID에 필요한 역할을 확인합니다. 목록에서 프로젝트 ID를 못 찾으면 [관리 ID 선택 도움말](reference.md#managed-identity-access)을 사용합니다.
+[준비 4: 모델 호출과 평가 권한](../README.ko.md#setup-permissions) — 전용 환경의 본인과 프로젝트 관리 ID에 상위 Foundry 리소스 범위의 Foundry User를 확인합니다. 생성 권한·평가 권한·기존 환경의 최소 범위는 [권한 계약](reference.md#permissions-contract)에서 구분합니다. 목록에서 프로젝트 ID를 못 찾으면 [관리 ID 선택 도움말](reference.md#managed-identity-access)을 사용합니다.
 
 <a id="deploy-model"></a>
 ## 준비 5. 모델 하나 배포
@@ -50,7 +50,7 @@
 <a id="cli-provision"></a>
 ## 선택: Azure CLI로 신규 환경 준비
 
-**README 준비 1–2를 완료한 뒤, 준비 3–5의 포털 조작 대신 사용하는 경로**입니다. Azure CLI **2.80.0 이상**과 생성·역할 할당 권한이 필요합니다. [공식 프로젝트 생성 문서](https://learn.microsoft.com/azure/foundry/how-to/create-projects)를 따르며 `azd`, 검색 서비스, 에이전트 서버는 추가하지 않습니다. 이미 프로젝트·모델을 만들었다면 다시 실행하지 않습니다.
+**README 준비 1–2를 완료한 뒤, 준비 3–5의 포털 조작 대신 사용하는 경로**입니다. Azure CLI **2.80.0 이상**과 생성·역할 할당 권한이 필요합니다. Owner는 두 작업을 수행하는 한 방법이지 모든 참가자의 최소 역할은 아닙니다. [공식 프로젝트 생성 문서](https://learn.microsoft.com/azure/foundry/how-to/create-projects)를 따르며 `azd`, 검색 서비스, 에이전트 서버는 추가하지 않습니다. 이미 프로젝트·모델을 만들었다면 다시 실행하지 않습니다.
 
 `YOUR-...`를 준비 2에서 확인한 구독 ID와 본인이 사용할 실제 값으로 바꿉니다. 그룹·Foundry 리소스 이름은 본인 고유 이름, 프로젝트는 `eval-workshop`, 배포는 `eval-model`을 사용합니다. 아래 명령은 macOS/Linux와 PowerShell에서 동일합니다.
 
@@ -104,19 +104,21 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 az role assignment create --assignee-object-id "YOUR-PROJECT-PRINCIPAL-ID" --assignee-principal-type ServicePrincipal --role "53ca6127-db72-4b80-b1b0-d745d6d5456d" --scope "YOUR-FOUNDRY-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
 ```
 
-두 역할 모두 **Foundry User**이고 범위는 `/accounts/실제리소스이름`까지입니다. 구독 전체나 다른 프로젝트에 할당하지 않습니다. 본인은 `User`, 프로젝트 관리 ID는 `ServicePrincipal`입니다.
+두 역할 모두 **Foundry User**이고 범위는 `/accounts/실제리소스이름`까지입니다. 구독 전체나 다른 리소스로 넓히지 않습니다. 이 상위 범위는 하위 프로젝트에도 상속되므로 **본인 전용 환경의 시작 구성**으로 사용합니다. 기존 공유 환경의 범위를 임의로 넓히지 않습니다. 본인은 `User`, 프로젝트 관리 ID는 `ServicePrincipal`이며 상위 계정의 관리 ID와는 별개입니다.
 
 ### 4. 모델·쿼터 확인 후 한 개 배포
 
 ```bash
-az cognitiveservices model list --location swedencentral --subscription "YOUR-SUBSCRIPTION-ID" --query "[?model.name=='gpt-6-luna'].model" --output json
+az cognitiveservices model list --location swedencentral --subscription "YOUR-SUBSCRIPTION-ID" --query "[?model.name=='gpt-6-luna']" --output json
 ```
 
 ```bash
 az cognitiveservices usage list --location swedencentral --subscription "YOUR-SUBSCRIPTION-ID" --query "[?name.value=='OpenAI.GlobalStandard.gpt-6-luna'].{name:name.value,current:currentValue,limit:limit}" --output json
 ```
 
-카탈로그에 모델·선택 버전·`GlobalStandard`가 있고, 해당 쿼터의 **`limit - current`가 60 이상**일 때 아래 60K TPM 예시를 사용합니다. 이 모델의 해당 SKU에서 CLI capacity 1은 1000 TPM입니다. 다른 모델의 용량 단위나 쿼터 이름을 이 예시로 추정하지 않습니다. 조회가 비거나 용량이 부족하면 [모델 가용성 도움말](reference.md#model-availability)을 따릅니다. 남은 쿼터가 있어도 지역의 실제 배포 용량까지 보장하지는 않습니다.
+첫 조회는 SKU 정보가 빠지지 않도록 해당 모델 항목 전체를 보여 줍니다. 모델·선택 버전·`GlobalStandard` 지원과 용량 단위를 확인합니다. 아래는 기록된 **60K TPM / capacity 60** 구성의 예시입니다. 현재 모델/SKU에서도 **capacity 1 = 1000 TPM**인지 확인하고, 해당 쿼터의 **`limit - current`가 60 이상**일 때만 사용합니다. 다른 모델의 단위나 쿼터 이름을 이 예시로 추정하지 않습니다.
+
+쿼터 조회에는 구독 범위의 조회 권한이 따로 필요합니다. 403이나 빈 목록을 “쿼터 0”으로 단정하지 말고 [권한·가용성 도움말](reference.md#model-availability)에서 계정·권한·제공 여부를 확인합니다. 남은 쿼터가 있어도 지역의 실제 배포 용량까지 보장하지는 않습니다.
 
 ```bash
 az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --deployment-name eval-model --model-name gpt-6-luna --model-version "YOUR-MODEL-VERSION" --model-format OpenAI --sku-name GlobalStandard --sku-capacity 60 --subscription "YOUR-SUBSCRIPTION-ID"
@@ -133,11 +135,15 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 
 **사용 가능한 환경:** 새 포털에서 사용하는 **Foundry 프로젝트**와 그 프로젝트에서 접근 가능한 모델 배포입니다. Project endpoint는 `https://리소스이름.services.ai.azure.com/api/projects/프로젝트이름` 형태입니다. 허브 기반 classic 프로젝트의 연결 문자열이나 Azure OpenAI 모델 주소만 있다면 이 실습의 설정으로 대신 사용할 수 없습니다.
 
+기존 환경도 이 실습의 **`gpt-6-luna`·`swedencentral` 조건**을 확인합니다. 실제 배포 이름이 달라도 되지만 모델·지역을 바꾼 실험으로 조용히 대체하지 않습니다. 모델명·배포명·모델 버전·API 버전은 [서로 다른 값](reference.md#model-endpoint-contract)입니다.
+
 **완결형 참가자는 아래 5번 대신 [완결형 Search 준비](complete-lab.md#search-setup)로 돌아갑니다.** 기존 배포도 완결형의 지정 이름·모델 버전 조건을 먼저 확인하며, 조건을 맞추려고 공유 배포를 임의 변경하지 않습니다.
+
+**Optional RAG 참가자는 아래 5번 대신 [Optional RAG 준비](optional-rag.md#prerequisites)로 돌아갑니다.** 완결형 실습 전체를 먼저 수행할 필요는 없습니다.
 
 1. 환경 소유자에게 아래 정보를 확인해 다음 단계의 로그인·설정에 사용합니다. API 키나 공유 비밀번호를 받지 않습니다.
 2. [준비 1](../README.ko.md#setup-tools)에서 로컬 도구를 준비하고, [준비 2](../README.ko.md#setup-sign-in)의 **로그인과 구독 확인**을 수행합니다. 자원을 만들지 않으므로 Owner 취득이나 공급자 등록은 요구하지 않습니다.
-3. [준비 4](../README.ko.md#setup-permissions)의 접근 권한을 확인합니다. 부족한 역할은 할당 권한이 있는 소유자에게 요청합니다.
+3. [준비 4](../README.ko.md#setup-permissions)와 [기존 환경의 권한 범위](reference.md#permissions-contract)를 대조합니다. 부족한 역할은 할당 권한이 있는 소유자에게 요청하며 공유 계정 전체에 임의로 추가하지 않습니다.
 4. 기존 배포가 **Chat Completions·Structured Outputs·Judge 평가**를 지원하는지 확인합니다. [준비 6](../README.ko.md#setup-config)의 설정에 실제 주소와 배포 이름을 넣고 [준비 7](../README.ko.md#setup-smoke)을 완료합니다.
 5. [실습 1](../README.ko.md#lab-1)로 이어갑니다. 마지막에는 소유자와 합의한 본인 작업만 정리합니다. **공유 프로젝트·모델·리소스 그룹은 일괄 삭제하지 않습니다.**
 
@@ -146,7 +152,7 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 | 테넌트 ID·구독 ID | 포털과 CLI를 같은 계정·구독에 연결 |
 | 리소스 그룹·Foundry 리소스·프로젝트 이름, 지역 | 준비 4의 대상 구분과 마지막 정리 범위 확인 |
 | Project endpoint·실제 모델 배포 이름 | `config.json`. 모델 이름이 아니라 배포 이름을 사용 |
-| 본인과 프로젝트 관리 ID의 Foundry User, 사용·비용·정리 허용 범위 | 호출·평가 권한 및 공유 환경 보호 |
+| 본인·프로젝트 관리 ID의 실제 역할과 범위, 사용·비용·정리 허용 범위 | 호출·평가 권한 및 공유 환경 보호 |
 
 본인 화면에서 프로젝트 관리 ID를 조회할 수 없으면 소유자에게 준비 4의 ID·역할 대조를 요청합니다. **`eval-workshop`·`eval-model`은 신규 생성 경로의 예시 이름**이므로 기존 자원의 이름을 바꾸지 않습니다. 두 모델 용도로 같은 배포를 쓰면 `config.json`의 `model_deployment`와 `judge_deployment`에 모두 그 이름을 넣습니다.
 
@@ -178,10 +184,14 @@ Azure 포털의 **Cost Management → Cost analysis**에서 해당 전용 그룹
 |---|---|
 | `run`이 일부 답변만 저장 | **같은 명령·같은 입력·같은 `--out`**으로 재실행. 저장된 행은 다시 생성하지 않음 |
 | `judge`가 처리 중 | **같은 `judge` 명령 전체** 재실행. `--like`도 유지하며 기존 원격 작업 조회 |
-| 명령이 이미 완료 | 다음 단계로 진행. 같은 명령은 저장 결과를 읽으며 새 실험이 아님 |
+| `judge` 수집·저장 중 `ERROR:` | 원인을 해결한 뒤 같은 명령 전체로 재개. 원격 생성 여부가 불명확하면 먼저 [ID 복구](reference.md#resume) 확인 |
+| `run`/`judge`가 이미 완료 | 다음 단계로 진행. 같은 입력으로 반복하면 저장 결과를 검증·재사용하며 새 실험이 아님 |
+| 누락된 사람 검토를 보완함 | 같은 `gate` 명령으로 최신 검토를 반영. 답변 생성·Judge를 다시 수행할 필요 없음 |
 | 프롬프트·데이터·설정을 바꿈 | 기존 결과를 덮어쓰지 않음. 별도 결과 이름으로 새 실험을 설계 |
 
 완료된 `run.json`·`judge.json`을 지워 재실행하지 않습니다. 응답 직후 저장 전에 끊긴 한 행은 재호출될 수 있으므로 추가 비용이 없다고 보장하지 않습니다. 폴더를 옮겼거나 원격 ID 저장 중 끊겼다면 [재개·복구 도움말](reference.md#resume)을 봅니다.
+
+`prompts/my-v2.txt`와 `data/my-case.jsonl`은 저장소에 포함된 예제 작업본입니다. 재개할 때 새 복사본으로 덮어쓰지 말고 기존 내용과 본인의 수정을 먼저 확인합니다. 예제 재사용과 직접 편집은 구분합니다.
 
 <a id="resume-checkpoints"></a>
 ### 마지막 단계가 기억나지 않는다면
@@ -191,10 +201,12 @@ Azure 포털의 **Cost Management → Cost analysis**에서 해당 전용 그룹
 | 저장된 상태 / 아직 없는 것 | LIVE에서 이어갈 위치 | DEMO에서 이어갈 위치 |
 |---|---|---|
 | `baseline/run.json`의 `status`가 `complete`, `judge.json`은 없음 | [실습 3](../README.ko.md#lab-3): D04 사람 판단부터, 그 뒤 Judge | [실습 3](offline.md#lab-3): 동일 순서 |
-| `baseline/judge.json`은 있음, candidate는 아직 없음 | [실습 4](../README.ko.md#lab-4): 가설·복사본 수정부터 | [실습 4](offline.md#lab-4): 가설·V2 예제부터 |
+| `baseline/judge.json`은 있음, candidate는 아직 없음 | [실습 4](../README.ko.md#lab-4): 가설·기존 작업본 확인부터 | [실습 4](offline.md#lab-4): 가설·V2 예제부터 |
 | `candidate/run.json`은 완료, `judge.json` 또는 `comparison.md`가 없음 | [실습 4](../README.ko.md#lab-4): 후보 Judge → 비교 중 빠진 단계 | [실습 4](offline.md#lab-4): 동일 순서 |
 | 후보 비교는 완료, D06의 `reviews.json` 기록이 없음 | [실습 4](../README.ko.md#lab-4)의 `review` | [실습 4](offline.md#lab-4)의 `review` |
 | 후보 검토는 완료, holdout 생성·Judge·H04 검토 또는 Gate가 남음 | [실습 5](../README.ko.md#lab-5)의 첫 미완료 단계 | [실습 5](offline.md#lab-5)의 첫 미완료 단계 |
 | `candidate/gate.md`와 판단 기록까지 있음 | [실습 6](../README.ko.md#lab-6): 추가 질문·보고 | [실습 6](offline.md#lab-6): 질문 검사·보고 |
 
 파일 유무는 위치를 찾는 단서일 뿐입니다. **`status`가 `collecting`이면 같은 `run`, 평가 처리 중이면 같은 `judge`를 먼저 재개**합니다. `judge.json`이 있어도 오류가 났다면 같은 `judge`로 유효성을 확인합니다. `--like`를 생략하거나 결과 파일을 수정하지 않습니다. 이미 적은 사람의 최초 판단은 지우지 않습니다.
+
+`gate.md`가 있어도 검토 누락이 남아 있다면 실제 사람의 검토를 추가하고 같은 `gate`를 다시 실행합니다. 점수 실패를 없애려고 답변이나 평가를 새로 뽑는 것과는 다릅니다.
