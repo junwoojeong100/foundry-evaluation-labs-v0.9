@@ -4,15 +4,11 @@
 
 ## Microsoft Foundry Evaluation — 처음부터 끝까지 따라 하는 실습
 
+**실습의 모티브:** 사티아 나델라(Satya Nadella)의 [프런티어 생태계에 관한 블로그 글](https://snscratchpad.com/posts/frontier-ecosystem/)에서 영감을 받았습니다. 외부 벤치마크만이 아니라 **우리 업무의 기준으로 AI를 평가하고, 사람의 판단을 바탕으로 개선을 반복하는 학습 루프**를 작은 실습으로 경험하도록 구성했습니다.
+
 **권장 완결형 경로:** [실패 → V2 개선 → 새 질문 검증](docs/complete-lab.md). 실제 검색과 답변 개선까지 배우려면 이 링크의 **1–8절**을 따릅니다. 아래 본문은 **검색 없이 평가부터 익히는 별도의 입문 LIVE 경로**입니다.
 
 가상의 **가온랩 출장비 도우미**가 규정에 맞게 답하는지 확인합니다. Evaluation은 **미리 정한 기준으로 AI 답변을 검사하는 일**입니다. 코드는 준비되어 있으므로 Python 코드를 작성할 필요는 없습니다.
-
-**아래 입문 LIVE를 선택하면 오답 판단 → 환경 준비 → 답변 생성 → 평가 → 지침 수정 → 비교 → 결과 정리 순서로 진행합니다.** 첫 판단 활동은 설치 없이 시작합니다. 파일을 열거나 짧은 내용을 수정하는 시점도 본문에서 안내합니다. 참고 문서를 먼저 읽을 필요는 없습니다.
-
-> **실습 완료와 AI 답변 합격은 다릅니다.** 점수가 낮거나 최종 결과가 `BLOCK`이어도, 원인을 설명하고 보류 판단을 남겼다면 실습을 완료한 것입니다.
-
-**이번 LIVE 실습 설정:** 모델은 **`gpt-6-luna`**, 지역은 **Sweden Central (`swedencentral`)**, 모델 배포 이름은 **`eval-model`**입니다. 답변 생성과 Judge에 같은 배포를 사용합니다. **생성한 Azure 리소스는 실습 후에도 모두 보존합니다.** 마지막에는 [보존 상태와 비용](#retain-resources)을 확인하며, 삭제는 별도로 결정한 경우에만 수행합니다.
 
 [경로별 실행 기록의 범위](docs/reference.md#live-verification)를 구분합니다. 현재 공개된 완결형 결과는 아래 입문 LIVE를 재검증한 기록이 아닙니다. 다른 실행의 점수를 예상 정답으로 사용하거나 같은 점수가 나올 때까지 반복하지 않습니다.
 
@@ -31,6 +27,10 @@
 **이미 허가받은 프로젝트와 모델이 있다면** 선택한 LIVE 경로에서 [기존 환경 준비](docs/setup.md#existing-environment)를 사용합니다. 환경 보유 여부 때문에 다른 실습 경로로 바꾸거나 자원을 중복 생성하지 않습니다.
 
 **아래는 LIVE 한 경로입니다.** 명령의 `live`만 `demo`로 바꿔 실행하지 않습니다. Azure 제약으로 계속할 수 없다면 [DEMO 전환 절차](docs/setup.md#switch-to-demo)에 따라 기존 기록을 보존하고 별도 경로로 진행합니다.
+
+**아래 입문 LIVE를 선택하면 오답 판단 → 환경 준비 → 답변 생성 → 평가 → 지침 수정 → 비교 → 결과 정리 순서로 진행합니다.** 첫 판단 활동은 설치 없이 시작합니다. 파일을 열거나 짧은 내용을 수정하는 시점도 본문에서 안내합니다. 참고 문서를 먼저 읽을 필요는 없습니다.
+
+> **실습 완료와 AI 답변 합격은 다릅니다.** 점수가 낮거나 최종 결과가 `BLOCK`이어도, 원인을 설명하고 보류 판단을 남겼다면 실습을 완료한 것입니다.
 
 **실습 0–6은 LIVE·DEMO에서 같은 번호**입니다. 환경 준비는 실습 번호와 별도입니다. 별도 기록 양식을 만들 필요 없이 본문의 **완료 확인**과 자동 생성된 보고서로 진행합니다. 개인 메모는 선택 사항이며, 사람 판정은 안내된 `review` 명령으로 저장합니다.
 
@@ -85,6 +85,8 @@ B가 적절합니다. 240000원은 **미승인 초안**의 금액입니다. A는
 
 **이미 허가받은 환경이 있다면** 아래 신규 생성 절차 대신 [기존 환경 준비](docs/setup.md#existing-environment)를 수행합니다. 입문 참가자는 그 뒤 [실습 1](#lab-1), RAG 참가자는 위에서 선택한 본인 가이드로 이어갑니다.
 
+**이번 LIVE 실습 설정:** 모델은 **`gpt-6-luna`**, 지역은 **Sweden Central (`swedencentral`)**, 모델 배포 이름은 **`eval-model`**입니다. 답변 생성과 Judge에 같은 배포를 사용합니다. **생성한 Azure 리소스는 실습 후에도 모두 보존합니다.** 마지막에는 [보존 상태와 비용](#retain-resources)을 확인하며, 삭제는 별도로 결정한 경우에만 수행합니다.
+
 **기본 경로의 시작 조건:** Microsoft Entra ID 계정, 활성 Azure 구독, 그 구독의 **활성 Owner 역할**(적용되는 상속 역할 포함). 한 사람이 자원 생성과 역할 할당을 진행하도록 이 경로에서 선택한 조건입니다. Azure 자원 생성이 Owner만 가능한 것은 아니며 기존 환경 사용자에게 Owner가 필요한 것도 아닙니다. 다른 허가된 역할 조합은 [권한 계약](docs/reference.md#permissions-contract)을 참고합니다. API 키는 사용하지 않습니다.
 
 이번에는 **프로젝트 하나와 모델 배포 하나**만 사용합니다. 검색 서비스·에이전트 서버·Docker·Git·azd·Jupyter는 필요 없습니다. 실제 개인정보·기밀·비밀번호는 입력하지 않습니다.
@@ -100,6 +102,8 @@ B가 적절합니다. 240000원은 **미승인 초안**의 금액입니다. A는
 2. 아래 도구를 설치합니다. 설치 후에는 새 터미널을 엽니다.
 3. VS Code에서 **File → Open Folder**로 **`lab.py`와 `requirements.txt`가 바로 보이는 폴더**를 엽니다. 압축을 푼 바깥 폴더가 아니라 실제 파일이 있는 폴더입니다.
 4. **Terminal → New Terminal**을 선택합니다. 이후 명령은 이 터미널에 입력합니다.
+
+**내 PC의 VS Code 터미널을 사용합니다.** Azure 포털의 **Azure Cloud Shell**이나 노트북 셀이 아닙니다. Windows는 **PowerShell**, macOS/Linux는 **zsh 또는 bash**를 사용합니다. Windows에서 다른 셸이 열렸다면 터미널의 `+` 옆 화살표 → **Select Default Profile → PowerShell**을 선택하고 새 터미널을 엽니다.
 
 브라우저는 가이드 읽기·Azure 화면 조작에, VS Code는 **내 PC의 파일 수정·명령 실행**에 사용합니다. 브라우저의 파일 링크를 읽었다고 로컬 파일이 수정되지는 않습니다. Python 파일의 실행 버튼이나 `>>>`가 표시된 Python 대화창에는 명령을 넣지 않습니다. `>>>`에 들어갔다면 `exit()` 후 같은 터미널에서 진행합니다.
 
@@ -127,7 +131,7 @@ py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-Windows에서 `Activate.ps1` 실행이 조직 정책으로 막히면 정책을 해제하지 않습니다. 패키지 설치부터 이후의 모든 `python`을 **`.\.venv\Scripts\python.exe`로 바꿔** 실행합니다.
+Windows에서 `Activate.ps1` 실행이 조직 정책으로 막히면 정책을 해제하지 않습니다. 패키지 설치부터 이후의 모든 `python`을 **`.\.venv\Scripts\python.exe`로 바꿔** 실행합니다. 예를 들어 `python lab.py doctor`는 `.\.venv\Scripts\python.exe lab.py doctor`가 됩니다. `az`로 시작하는 명령은 바꾸지 않습니다.
 
 이제 운영체제와 관계없이 패키지를 설치합니다. 위 활성화가 실패했다면 먼저 앞 문단의 대체 실행 방법을 적용합니다.
 
@@ -291,6 +295,8 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 2. VS Code에서 [config.example.json](config.example.json)을 엽니다. **File → Save As**로 **`lab.py` 옆에 `config.json`**을 만듭니다.
 3. 아래 `project_endpoint`의 예시 주소를 복사한 실제 주소로 바꾸고 저장합니다.
 
+**JSON 편집 요령:** 왼쪽 항목 이름은 그대로 두고, 안내한 오른쪽 값만 바꿉니다. 큰따옴표 `"`·쉼표·중괄호를 유지하고 마지막 항목 뒤에는 쉼표를 추가하지 않습니다. 아래 내용을 복사한다면 `{`부터 `}`까지만 파일에 넣으며 설명문이나 코드 블록의 테두리는 넣지 않습니다.
+
 ```json
 {
   "project_endpoint": "https://YOUR-ACCOUNT.services.ai.azure.com/api/projects/YOUR-PROJECT",
@@ -388,6 +394,8 @@ python lab.py inspect results/setup-smoke N01
 ```
 
 `decision`은 결정, `limit_krw`는 원 단위 한도, `citations`는 근거 문서 ID, `answer`는 직원에게 보여 줄 설명입니다. 결정 값은 `allowed`(허용), `needs_approval`(사전 승인 필요), `not_allowed`(금지), `unknown`(규정에 없음), `needs_info`(질문 정보 부족) 중 하나입니다.
+
+`limit_krw`는 청구 금액이 아닙니다. `null`이면 한도를 결정할 수 없거나 숙박 한도와 무관한 질문이며 0원이라는 뜻이 아닙니다. `unknown`·`needs_info`도 상황에 따라 올바른 답일 수 있고, 결정 값이 실제 정산이나 승인을 실행하지는 않습니다.
 
 ### 평가는 세 가지를 함께 봅니다
 

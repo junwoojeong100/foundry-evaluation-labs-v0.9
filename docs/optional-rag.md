@@ -125,6 +125,8 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 
 예제의 세 객체 이름은 기본값입니다. **공유 서비스에서는 실행 전에** `index_name`·`knowledge_source`·`knowledge_base`를 허가된 참가자별 이름(예: `travel-rag-a7k3m9`, `travel-policy-ks-a7k3m9`, `travel-policy-kb-a7k3m9`)으로 정합니다. 같은 실험을 재개할 때는 이름과 `top_k: 3`을 유지하며 완결형 객체를 지정하지 않습니다.
 
+**설정 구분:** `config.json`에는 공통 준비의 프로젝트 주소(`.services.ai.azure.com/api/projects/...`), `config.rag.json`에는 Search 주소(`.search.windows.net`)가 들어갑니다. 두 파일을 합치거나 같은 주소를 양쪽에 넣지 않습니다. [JSON 편집 요령](../README.ko.md#setup-config)처럼 안내한 값만 수정하고 저장합니다.
+
 ```bash
 python rag_lab.py setup
 ```
@@ -206,6 +208,10 @@ python rag_lab.py inspect results/rag-iq D04
 ```
 
 **읽는 순서:** 실제 검색 청크 → 기대 청크 누락 → 답변 JSON → 업무 검사 → Groundedness/Relevance 이유입니다. Judge에 전달되는 `context`는 **그 답변을 생성할 때 사용한 검색 문맥과 동일**합니다.
+
+**답변 JSON 읽기:** `decision`은 결정, `limit_krw`는 숙박 한도(청구 금액이 아님), `citations`는 공식 출처 ID 목록, `answer`는 직원에게 보여 줄 설명입니다. `null`은 한도를 결정할 수 없거나 숙박 한도와 무관하다는 뜻이며 0원이 아닙니다.
+
+결정은 `allowed`(허용), `needs_approval`(사전 승인 필요), `not_allowed`(금지), `unknown`(규정에 없음), `needs_info`(질문 정보 부족) 중 하나입니다. D04처럼 규정에 없는 한도에 `unknown`으로 답하는 것이 올바를 수도 있습니다. 이 값이 실제 정산이나 승인을 실행하지는 않습니다.
 
 | 지표 | 의미와 한계 |
 |---|---|

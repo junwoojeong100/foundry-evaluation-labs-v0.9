@@ -38,6 +38,7 @@ The policy inputs, example queries, and model answers remain **Korean** so both 
 | Knowledge Source / Knowledge Base | A connection specifying which index to read / a knowledge base that uses the connection to handle retrieval requests |
 | LLM query planning | AI turns a complex question into searches for evidence; this is a different role from answering the employee |
 | Judge / calibration | An AI grader / checking whether it distinguishes known correct and incorrect examples |
+| V1 / V2 | Instruction versions before/after improvement; V2 also completes necessary user follow-ups |
 | dev / holdout / freeze | Questions for checking improvements / fresh final-check questions / recording and locking prompt, model, retrieval, and judging conditions before fresh questions |
 
 Videos are optional. The [English/Korean summaries](../media/complete-rag/README.md) and [recorded results](#results) come from a **separate September 28, 2026 run**, not your completion signals or expected scores.
@@ -117,6 +118,8 @@ These are not billable API-request counts or spending caps. Account separately f
 ### 2-1. Prepare the shared environment
 
 Complete only [README setup 1–7](../../README.md#prepare). Verify the answer-model version in [setup 5](../../README.md#setup-model), create `config.json`, and finish the one-case generation/evaluation check. For authorized existing resources, use [existing-environment setup](setup.md#existing-environment). Introductory A/B and activities 1–6 are not required prerequisites. **Keep this page open and use a new tab for shared setup, then return directly below.**
+
+**When to return:** after setup 7 shows `평가 완료: 1개 답변 × 2개 지표` and you inspect N01's two scores/reasons, shared setup is complete. Continue to **[2-2 below](#search-setup), not README activity 1**. If already completed in the same environment, do not generate N01 again.
 
 <a id="search-setup"></a>
 ### 2-2. Check actual values and model availability
@@ -269,9 +272,12 @@ Keep the template's `top_k: 4`, 1536 embedding dimensions, and `low` planning ef
 
 | Setting | Where to find the actual value |
 |---|---|
-| `search_endpoint` | Azure portal → intended Search service → Overview URL |
-| `model_resource_endpoint` | The same parent Foundry resource's Keys and Endpoint page: use the **Azure OpenAI resource endpoint** ending in `.openai.azure.com`, not the project endpoint. Do not copy API keys |
+| `project_endpoint` in `config.json` | The **project endpoint** saved during shared setup, containing `.services.ai.azure.com/api/projects/PROJECT`. Do not replace it with either endpoint below |
+| `search_endpoint` in `config.advanced.json` | Azure portal → intended Search service → Overview URL, ending in `.search.windows.net` |
+| `model_resource_endpoint` in `config.advanced.json` | The same parent Foundry resource's Keys and Endpoint page: use the **Azure OpenAI resource endpoint** ending in `.openai.azure.com`, not the project endpoint. Do not copy API keys |
 | `index_name`, `knowledge_source`, `knowledge_base` | Authorized names unique to the participant/experiment, such as `travel-vector-a7k3m9`, `travel-vector-ks-a7k3m9`, `travel-planned-kb-a7k3m9` |
+
+**The three endpoints serve different purposes.** Do not paste one endpoint into every field or merge the two configuration files. Follow the shared [JSON editing guidance](../../README.md#setup-config), changing only the specified values and saving the files.
 
 **Sharing a service does not mean unconditionally sharing search objects or experiments.** Choose the three object names before the first run and keep them when resuming that experiment. Reuse objects only with the owner's permission and the same corpus, vector settings, model endpoint, deployments, and planning settings. `setup` stops rather than updating mismatched existing objects; use new object names for another experiment.
 
@@ -289,6 +295,8 @@ python advanced_lab.py setup
 
 <a id="resume"></a>
 ### Command status, interruption, and resumption
+
+Do not proceed after `ERROR:`. Use [shared troubleshooting](reference.md#troubleshooting) for installation, sign-in, or JSON syntax errors, and the table below for waiting, partial runs, and quality blocks.
 
 <details>
 <summary>Open only for waiting, errors, or resuming later</summary>
@@ -383,6 +391,8 @@ The acceptance criteria in [acceptance.json](../../advanced-rag/acceptance.json)
 - A real vector index/vectorizer and actual `modelQueryPlanning` activity are required.
 - At least eight fresh holdout cases must be registered after freezing the candidate.
 
+**Scores and pass rates are different.** `4/5` is the passing score for one answer, not 80% accuracy. A `100%` pass rate means every case in that stage must meet each required criterion.
+
 **Builtin Relevance remains a required metric.** The final answer must resolve the actual completed user interaction. A request for missing information is an intermediate step, not falsely labeled as a completed answer.
 
 V2 uses explicit, scripted user follow-ups from evaluation data: a missing-date case receives the user's actual travel date after asking; an unavailable overseas-limit case receives a user request for a Finance inquiry checklist rather than a fabricated number. The model does not invent those user facts. The final conversation is supplied to the judge, but **automated initial-response checks cover only JSON format, decision, amount, and citation fields**.
@@ -410,7 +420,21 @@ The resulting evaluator version, rubric, model, and acceptance criteria are fixe
 
 The [recorded V1 fixture](../../advanced-rag/fixtures/recorded-v1.json) contains **four actual earlier LIVE answers for D02, D03, D04, and D08**, not fabricated wrong answers. D02's extra citation is retained. Replaying it is not claimed as fresh generation.
 
-**`--stage` names the run to use.** `v1-recorded` contains earlier answers; `v2-replay` generates new V2 answers from the same initial contexts. First import the local record:
+<a id="run-stages"></a>
+### Understand the four stages
+
+**`--stage` names the run to use**, with results in the matching subfolder of `results/advanced/`. This table explains the flow; **execute commands in sections 5 → 6 → 7**, not from the table.
+
+| `--stage` value | Questions and retrieval inputs | What it checks |
+|---|---|---|
+| `v1-recorded` | Import four earlier dev answers and their retrieved contexts | How the current judge assesses the preserved V1 failure |
+| `v2-replay` | Generate V2 answers for the same four dev cases and initial contexts | Whether the prompt/dialogue workflow improves without differences in retrieval |
+| `planned-dev` | Run the same four dev cases again, starting with real retrieval | Whether V2 meets the criteria through the full retrieval-to-answer path |
+| `holdout` | Run eight fresh cases created after freezing, starting with real retrieval | Whether the frozen candidate meets the criteria on cases not used for improvement |
+
+After **both generation and judging** for `--stage v2-replay` finish, read `results/advanced/v2-replay/report.md`. The two V2 checks **separate a saved-context comparison from an integration check with real retrieval**; they are not retries to obtain better scores.
+
+First import the local V1 record:
 
 ```bash
 python advanced_lab.py baseline
@@ -435,6 +459,19 @@ python advanced_lab.py inspect --stage v1-recorded --case-id D02
 
 `inspect` **only reads results whose generation and judging are both complete**. Add `--context` to display the actual retrieved context supplied to the answer. You do not need to rerun `run` or `judge` to investigate a failure.
 
+**Start with the answer's four JSON fields.** JSON stores named values; the code saves these fields automatically. Do not fill them in or edit them yourself.
+
+| Answer field | Meaning |
+|---|---|
+| `decision` | The policy-based decision: one of the five values below |
+| `limit_krw` | The applicable lodging limit in KRW, not the claimed expense. `null` means the limit cannot be determined or lodging limits do not apply; **it does not mean zero** |
+| `citations` | Official source IDs used by the answer, such as `["TRAVEL-CURRENT"]` |
+| `answer` | The employee-facing explanation. Read it for contradictions even when the field checks pass |
+
+The `decision` values are `allowed`, `needs_approval` (prior approval required), `not_allowed`, `unknown` (absent from policy), and `needs_info` (missing user information). **Declining to guess an absent limit with `unknown`, or asking for the travel date with `needs_info`, can be correct initial behavior.** These values do not execute reimbursement or grant approval.
+
+Then compare expectations, retrieval, and scores for the same case:
+
 | Output | What to check |
 |---|---|
 | `Case result` | Whether this case meets the automated criteria. `FAIL` means answer/retrieval/score criteria were missed, not that the inspection command failed. `PASS` is not production approval |
@@ -454,7 +491,7 @@ python advanced_lab.py inspect --stage v1-recorded --case-id D02
 
 Compare [V1](../../advanced-rag/instructions.v1.txt) and [V2](../../advanced-rag/instructions.v2.txt). V2 distinguishes the minimum sufficient decision/amount evidence from merely retrieved or procedural sources, and completes necessary clarification/handoff interactions.
 
-[Development follow-ups](../../advanced-rag/dev-followups.json) are declared before generation. They are scripted evaluation-user turns, not real customer statements or human production approvals. They contain no desired score.
+[Development follow-ups](../../advanced-rag/dev-followups.json) are declared before generation. They are scripted evaluation-user turns, not real customer statements or human production approvals. They contain no desired score. **The code sends these follow-ups automatically; you do not need to type a travel date or another question into the terminal.**
 
 **Use the supplied V2 unchanged in this run.** Explain the differences without editing the instructions, then execute. Personal prompt changes belong to a [separate experiment](#resume) after preserving this run.
 

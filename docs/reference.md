@@ -227,11 +227,14 @@ AI 보조 검토는 `reviews.json`에 남지만 **사람 검토의 건수나 최
 | 공급자가 등록되지 않았다고 함 | 해당 구독의 Resource providers에서 Foundry는 `Microsoft.CognitiveServices`, Search 생성은 `Microsoft.Search`의 등록 상태 확인. 필요한 공급자만 권한 있는 담당자가 등록 |
 | `python` 또는 `lab.py`를 찾을 수 없음 | VS Code에서 `lab.py`가 있는 폴더를 열고 [준비 1](../README.ko.md#setup-tools)의 가상환경 활성화부터 확인. 새 터미널마다 활성화 필요 |
 | 명령 입력 후 `SyntaxError`, 화면에 `>>>`가 보임 | Python 대화창에 셸 명령을 입력한 상태. `exit()`로 나온 뒤 VS Code 터미널에 명령만 입력 |
+| Windows에서 `source`가 인식되지 않음 | macOS/Linux 블록을 실행했는지 확인. [준비 1](../README.ko.md#setup-tools)에서 PowerShell 프로필을 열고 Windows 블록만 사용 |
+| 명령 실행 전 `>>` 또는 `quote>`에서 계속 입력을 기다림 | 닫히지 않은 따옴표 등으로 셸이 다음 줄을 기다리는 상태. `Ctrl+C`로 미완성 입력만 취소한 뒤 `YOUR-...`를 바꾼 명령 한 줄 전체를 다시 붙여 넣음. 따옴표를 곡선 모양으로 바꾸지 않기 |
 | 파일을 수정했는데 실행에 반영되지 않음 | 브라우저가 아니라 VS Code의 로컬 복사본인지, File → Save로 저장했는지, 명령의 파일 경로가 맞는지 확인. 완료된 결과는 덮어쓰지 않기 |
 | Windows에서 `Activate.ps1` 실행이 차단됨 | 조직 정책을 해제하지 않고 설치 명령부터 모든 `python`을 `.\.venv\Scripts\python.exe`로 대체. [준비 1](../README.ko.md#setup-tools) 확인 |
 | 폴더 이동·이름 변경 후 가상환경이 실행되지 않음 | [이동한 폴더의 가상환경 복구](#moved-folder). 결과·설정은 유지하며 DEMO는 LIVE 패키지를 설치하지 않음 |
 | LIVE 패키지 없음/버전 불일치 | 가상환경 안에서 `python -m pip install -r requirements.txt`. 임의 최신 업그레이드 금지 |
 | config 예시 값 오류 | endpoint의 `YOUR-...`를 실제 프로젝트 주소로 교체. 두 배포 이름은 본인이 만든 `eval-model` 또는 실제 이름인지 확인 |
+| 설정 파일에서 `Expecting property name` / `Expecting ',' delimiter` / `Extra data` | 해당 JSON 파일에 설명문·코드 블록 테두리·마지막 항목 뒤 쉼표가 들어갔는지 확인. [JSON 편집 요령](../README.ko.md#setup-config)대로 큰따옴표·쉼표·중괄호를 복원하고 저장. 서로 다른 설정 파일을 한 파일에 붙이지 않기 |
 | classic 허브 연결 문자열이나 모델 주소만 있음 | 새 Foundry 프로젝트의 `/api/projects/...` 주소가 필요. [기존 환경 조건](setup.md#existing-environment)을 확인하고 새 환경 사용 또는 [DEMO로 분리 전환](setup.md#switch-to-demo) |
 | 저장했는데 config를 찾을 수 없음 | `lab.py` 옆의 `config.json`인지, `config.json.txt`로 저장되지 않았는지 확인 |
 | `prompts/my-v2.txt`를 찾을 수 없음 | 먼저 저장소 폴더·파일 경로·저장 여부 확인. 포함된 작업본이 정말 없을 때만 [실습 4](../README.ko.md#lab-4)에 따라 준비. 기존 개인 작업을 V2로 덮어쓰지 않기 |

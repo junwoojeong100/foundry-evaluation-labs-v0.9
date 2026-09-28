@@ -36,6 +36,7 @@
 | Knowledge Source / Knowledge Base | 어느 인덱스를 읽을지 정하는 연결 / 그 연결을 사용해 검색 요청을 처리하는 지식 기반 |
 | LLM 검색 계획 | AI가 복합 질문을 검색어로 나눠 근거를 찾는 과정. 직원에게 답하는 모델과 역할이 다름 |
 | Judge·교정 | Judge는 AI 채점자. 교정은 사람이 정한 정답·오답 예제를 올바르게 구분하는지 점검하는 일 |
+| V1·V2 | 개선 전·후의 지침 버전. V2에서는 필요한 사용자 후속 대화까지 완료 |
 | dev·holdout·고정(freeze) | dev는 개선 확인용 질문, holdout은 마지막 확인용 새 질문. 고정은 새 질문 전에 지침·모델·검색·채점 조건을 바꾸지 못하게 기록하는 일 |
 
 영상은 필수가 아닙니다. [국문·영문 요약 영상](media/complete-rag/README.md)과 [기록된 결과](#results)는 **2026-09-28의 별도 실행**이며 본인의 완료 신호나 예상 점수를 대신하지 않습니다.
@@ -115,6 +116,8 @@ Free 서비스에는 여기서 필요한 아웃바운드 관리 ID 제약이 있
 ### 2-1. 공통 환경 준비
 
 먼저 [README의 준비 1–7](../README.ko.md#prepare)만 완료합니다. [준비 5](../README.ko.md#setup-model)에서 위 답변 모델 버전을 확인하고, `config.json`과 한 건의 생성·평가까지 준비합니다. 기존 허가된 환경은 [기존 환경 준비](setup.md#existing-environment)를 사용합니다. 입문 A/B·실습 1–6은 이 경로의 필수 선행 활동이 아닙니다. **이 문서는 열린 채로 두고 공통 준비를 새 탭에서 읽으면 복귀하기 쉽습니다. 준비가 끝나면 바로 아래로 돌아옵니다.**
+
+**돌아올 시점:** 준비 7에서 `평가 완료: 1개 답변 × 2개 지표`와 N01의 두 점수·이유를 확인했다면 공통 준비는 끝입니다. README의 **실습 1이 아니라 [아래 2-2](#search-setup)**로 이어갑니다. 이미 같은 환경에서 완료했다면 N01을 다시 생성할 필요가 없습니다.
 
 <a id="search-setup"></a>
 ### 2-2. 실제 값과 모델 가용성 확인
@@ -267,9 +270,12 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 
 | 설정 | 실제 값을 확인할 곳 |
 |---|---|
-| `search_endpoint` | Azure 포털 → 사용할 Search 서비스 → Overview의 URL |
-| `model_resource_endpoint` | 같은 상위 Foundry 리소스의 Keys and Endpoint에서 **Azure OpenAI 리소스 주소** 확인. `.openai.azure.com`으로 끝나며 프로젝트 주소와 다름. API 키는 복사하지 않음 |
+| `config.json`의 `project_endpoint` | 공통 준비에서 저장한 **프로젝트 주소**. `.services.ai.azure.com/api/projects/프로젝트이름` 포함. 아래 두 주소로 교체하지 않음 |
+| `config.advanced.json`의 `search_endpoint` | Azure 포털 → 사용할 Search 서비스 → Overview의 URL. `.search.windows.net`으로 끝남 |
+| `config.advanced.json`의 `model_resource_endpoint` | 같은 상위 Foundry 리소스의 Keys and Endpoint에서 **Azure OpenAI 리소스 주소** 확인. `.openai.azure.com`으로 끝나며 프로젝트 주소와 다름. API 키는 복사하지 않음 |
 | `index_name`, `knowledge_source`, `knowledge_base` | 참가자·실험별로 허가된 고유 이름. 예: `travel-vector-a7k3m9`, `travel-vector-ks-a7k3m9`, `travel-planned-kb-a7k3m9` |
+
+**주소 세 개는 서로 다른 용도입니다.** 하나의 주소를 모든 항목에 붙여 넣거나 두 설정 파일의 내용을 합치지 않습니다. [JSON 편집 요령](../README.ko.md#setup-config)처럼 안내한 값만 바꾸고 저장합니다.
 
 **서비스 공유는 검색 객체·실험의 무조건적인 공유가 아닙니다.** 처음 실행하기 전에 세 객체 이름을 정하고, 같은 실험을 재개할 때는 유지합니다. 기존 객체는 소유자의 허가와 동일 코퍼스·벡터 설정·모델 주소·배포·계획 설정을 확인한 경우에만 재사용합니다. `setup`은 불일치하는 기존 객체를 갱신하지 않고 중단하므로, 다른 실험은 새 객체 이름으로 구분합니다.
 
@@ -287,6 +293,8 @@ python advanced_lab.py setup
 
 <a id="resume"></a>
 ### 명령 상태·중단·재개
+
+`ERROR:`가 나오면 다음 단계로 가지 않습니다. 설치·로그인·JSON 문법 오류는 [공통 문제 해결](reference.md#troubleshooting), 대기·부분 실행·품질 차단은 아래 표에서 찾습니다.
 
 <details>
 <summary>대기·오류가 나거나 나중에 재개할 때만 펼치기</summary>
@@ -381,6 +389,8 @@ python advanced_lab.py query --mode planned --query "2026년 6월 30일과 7월 
 - 실제 벡터 인덱스·vectorizer와 `modelQueryPlanning` 활동이 있어야 함.
 - 후보를 고정한 뒤 새 holdout을 최소 8개 생성·등록해야 함.
 
+**점수와 통과율은 다릅니다.** `4/5`는 한 답변에 매긴 점수의 합격선이지 정확도 80%가 아닙니다. 통과율 `100%`는 해당 단계의 모든 사례가 각 필수 기준을 통과해야 한다는 뜻입니다.
+
 **기본 Relevance도 필수 합격 지표로 유지합니다.** 최종 답변은 실제 완료된 사용자 요청을 해결해야 합니다. 추가 정보 질문은 중간 단계이지 완료 답변으로 표시하지 않습니다.
 
 V2는 평가 데이터에 미리 정한 사용자 후속 응답을 사용합니다. 날짜 누락 사례는 질문 후 사용자의 실제 출장일을 받고, 해외 한도 부재 사례는 금액을 꾸미는 대신 사용자가 재무팀 문의 체크리스트를 요청하는 단계를 거칩니다. 사용자 정보를 모델이 만들어 내지 않습니다. 최종 대화를 Judge에 전달하되, **초기 응답의 자동 검사는 JSON 형식·결정·금액·출처 필드에 한정**됩니다.
@@ -408,7 +418,21 @@ python advanced_lab.py calibrate
 
 [V1 기록](../advanced-rag/fixtures/recorded-v1.json)은 **D02·D03·D04·D08의 실제 이전 LIVE 답변 4개**입니다. 억지로 만든 오답이 아니며, D02의 불필요한 출처를 그대로 보존했습니다. 이를 다시 읽는 일을 새로운 생성이라고 표현하지 않습니다.
 
-**`--stage`는 사용할 실행 묶음의 이름**입니다. `v1-recorded`는 이전 답변, `v2-replay`는 같은 초기 문맥에서 새로 만드는 V2 답변입니다. 먼저 로컬 기록을 가져옵니다.
+<a id="run-stages"></a>
+### 네 실행 묶음의 차이
+
+**`--stage`는 사용할 실행 묶음의 이름**이며, 같은 이름의 `results/advanced/` 하위 폴더에 결과가 저장됩니다. 아래 표는 흐름을 이해하기 위한 것이며 **명령은 이어지는 5 → 6 → 7절 순서**로 실행합니다.
+
+| `--stage` 값 | 질문과 검색 입력 | 확인할 것 |
+|---|---|---|
+| `v1-recorded` | 이전 dev 4개의 답변·검색 문맥을 가져옴 | 보존된 V1 실패를 현재 Judge도 어떻게 평가하는가 |
+| `v2-replay` | 같은 dev 4개·같은 초기 검색 문맥으로 V2 답변을 새로 생성 | 검색 차이를 제외하고 지침·대화 완료 절차를 개선했는가 |
+| `planned-dev` | 같은 dev 4개를 실제 검색부터 다시 실행 | V2가 검색을 포함한 전체 흐름에서도 기준을 충족하는가 |
+| `holdout` | 후보 고정 후 만든 새 질문 8개를 실제 검색부터 실행 | 개선에 쓰지 않은 새 사례에서도 고정한 후보가 기준을 충족하는가 |
+
+예를 들어 `--stage v2-replay`의 **생성·채점이 모두 끝나면** `results/advanced/v2-replay/report.md`에서 보고서를 읽습니다. V2를 두 번 확인하는 것은 점수를 다시 뽑는 일이 아니라 **저장된 문맥에서의 비교와 실제 검색을 포함한 확인을 분리**하는 것입니다.
+
+먼저 로컬 V1 기록을 가져옵니다.
 
 ```bash
 python advanced_lab.py baseline
@@ -433,6 +457,19 @@ python advanced_lab.py inspect --stage v1-recorded --case-id D02
 
 `inspect`는 **생성·채점이 모두 완료된 결과를 읽기만** 합니다. `--context`를 붙이면 답변에 제공한 실제 검색 문맥도 출력합니다. 실패를 확인하려고 `run`·`judge`를 다시 실행할 필요는 없습니다.
 
+**답변 JSON의 네 항목부터 읽습니다.** JSON은 이름과 값을 짝지어 저장하는 형식이며, 아래 항목은 코드가 자동으로 저장합니다. 직접 채우거나 고치지 않습니다.
+
+| 답변 항목 | 뜻 |
+|---|---|
+| `decision` | 규정에 따른 결정. 아래 다섯 값 중 하나 |
+| `limit_krw` | 적용할 숙박 한도(원). 청구 금액이 아님. `null`이면 한도를 결정할 수 없거나 숙박 한도와 무관한 질문이며 **0원이라는 뜻이 아님** |
+| `citations` | 답변에 사용한 공식 출처 ID 목록. 예: `["TRAVEL-CURRENT"]` |
+| `answer` | 직원에게 보여 주는 설명. 필드 검사가 맞아도 이 문장에 모순이 있는지 직접 읽음 |
+
+`decision`의 값은 `allowed`(허용), `needs_approval`(사전 승인 필요), `not_allowed`(금지), `unknown`(규정에 없음), `needs_info`(사용자 정보가 부족함)입니다. **규정에 없는 금액을 추측하지 않는 `unknown`, 출장일을 먼저 묻는 `needs_info`도 올바른 초기 행동일 수 있습니다.** 이 값이 실제 정산이나 승인을 실행하지는 않습니다.
+
+이제 같은 사례의 기대값·검색·점수를 대조합니다.
+
 | 출력 | 확인할 것 |
 |---|---|
 | `Case result` | 이 사례의 자동 기준 통과 여부. `FAIL`은 답변/검색/점수의 기준 미달이며 명령 실패가 아님. `PASS`도 운영 승인이 아님 |
@@ -452,7 +489,7 @@ python advanced_lab.py inspect --stage v1-recorded --case-id D02
 
 [V1](../advanced-rag/instructions.v1.txt)과 [V2](../advanced-rag/instructions.v2.txt)를 비교합니다. V2는 최소 충분한 근거를 선택하고, 필요한 추가 정보 요청·업무 이관 대화까지 마무리합니다.
 
-[개발용 후속 응답](../advanced-rag/dev-followups.json)은 생성 전에 정합니다. 실제 고객의 발언이나 사람의 운영 승인이 아니라 명시적인 평가용 사용자 대화 데이터이며, 원하는 점수는 포함하지 않습니다.
+[개발용 후속 응답](../advanced-rag/dev-followups.json)은 생성 전에 정합니다. 실제 고객의 발언이나 사람의 운영 승인이 아니라 명시적인 평가용 사용자 대화 데이터이며, 원하는 점수는 포함하지 않습니다. **코드가 이 후속 응답을 자동으로 전달하므로 참가자가 터미널에 출장일이나 추가 질문을 입력할 필요는 없습니다.**
 
 **이번에는 제공된 V2를 그대로 사용합니다.** 지침 파일을 직접 수정하지 않고 차이를 설명한 뒤 실행합니다. 개인 지침 변경은 이 실행을 보존한 다음 [별도 실험](#resume)으로 구분합니다.
 

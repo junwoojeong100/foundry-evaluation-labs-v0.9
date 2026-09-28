@@ -125,6 +125,8 @@ The roles are **Search Service Contributor**, which permits service configuratio
 
 The three object names above are defaults. **Before running on a shared service**, choose authorized participant-specific `index_name`, `knowledge_source`, and `knowledge_base` values, such as `travel-rag-a7k3m9`, `travel-policy-ks-a7k3m9`, and `travel-policy-kb-a7k3m9`. Keep those names and `top_k: 3` when resuming the same experiment; do not target complete-path objects.
 
+**Keep the configurations distinct:** `config.json` holds the shared-setup project endpoint (`.services.ai.azure.com/api/projects/...`); `config.rag.json` holds the Search endpoint (`.search.windows.net`). Do not merge the files or put the same endpoint in both. Follow the shared [JSON editing guidance](../../README.md#setup-config), changing only the specified values and saving the file.
+
 ```bash
 python rag_lab.py setup
 ```
@@ -208,6 +210,10 @@ python rag_lab.py inspect results/rag-iq D04
 ```
 
 Read the retrieved chunks, missing required chunks, answer, business checks, and judge reasons—in that order. **Groundedness receives exactly the per-case context used to generate that answer**, not the original full corpus.
+
+**Read the answer JSON:** `decision` is the policy decision, `limit_krw` is the lodging limit (not the claimed expense), `citations` lists official source IDs, and `answer` is the employee-facing explanation. `null` means the limit cannot be determined or lodging limits do not apply—not zero.
+
+Decisions are `allowed`, `needs_approval` (prior approval required), `not_allowed`, `unknown` (absent from policy), or `needs_info` (missing question information). D04 can correctly use `unknown` for an unspecified limit. These values do not execute reimbursement or grant approval.
 
 | Metric | Meaning and limit |
 |---|---|

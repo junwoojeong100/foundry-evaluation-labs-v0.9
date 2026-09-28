@@ -200,11 +200,14 @@ Portal Overall score/Pass may use threshold 3. Portal **100%** can therefore coe
 | Provider not registered | In the intended subscription's Resource providers, check `Microsoft.CognitiveServices` for Foundry or `Microsoft.Search` for Search creation. An authorized administrator registers only the provider you need. |
 | Cannot find `python` or `lab.py` | Open the correct folder and reactivate `.venv`. |
 | `SyntaxError` at `>>>` | Exit the Python REPL; use a shell terminal. |
+| Windows does not recognize `source` | Check whether you copied the macOS/Linux block. Open a PowerShell profile using [setup 1](../../README.md#setup-tools) and use only the Windows block. |
+| `>>` or `quote>` waits for another line before execution | The shell is waiting for incomplete input, such as an unclosed quote. Use `Ctrl+C` to cancel that unfinished input, then paste the entire one-line command after replacing `YOUR-...`. Keep straight rather than curly quotes. |
 | Edits are not reflected | Edit/save the local copy, check paths, and do not overwrite completed results. |
 | PowerShell activation blocked | Use `.venv\Scripts\python.exe`; do not change organizational policy. |
 | Moving/renaming the folder broke the virtual environment | [Repair the moved environment](#moved-folder), keeping results/configuration. DEMO still needs no LIVE packages. |
 | Missing/mismatched LIVE packages | Install the pinned `requirements.txt` in `.venv`; do not arbitrarily upgrade. |
 | Example config rejected | Replace the project endpoint and use actual deployment names; do not use model names. |
+| Config reports `Expecting property name` / `Expecting ',' delimiter` / `Extra data` | Check for explanatory text, code-block fences, or a trailing comma in the JSON file. Follow the [JSON editing guidance](../../README.md#setup-config), restore straight quotes/commas/braces, and save. Do not paste separate configurations into one file. |
 | Only a classic connection string/model endpoint exists | A new Foundry project endpoint is required. |
 | `config.json` not found | Check its folder and `.json.txt` extensions. |
 | `prompts/my-v2.txt` missing | Check the repository folder, path, and saved file first. Follow [activity 4](../../README.md#lab-4) only if the included working file is genuinely missing; do not overwrite personal work with V2. |

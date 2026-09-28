@@ -4,15 +4,11 @@
 
 ## Microsoft Foundry Evaluation: an end-to-end, self-guided workshop
 
+**Inspiration:** this workshop was inspired by [Satya Nadella's post on building a frontier ecosystem](https://snscratchpad.com/posts/frontier-ecosystem/). It puts **business-specific evaluations and human-guided learning loops** into practice: judge AI against your own work's criteria, improve it, and evaluate again—not just compare external benchmarks.
+
 **Recommended complete path:** [Failure → V2 improvement → fresh-question validation](docs/en/complete-lab.md). Follow **sections 1–8 there** to learn real retrieval and answer improvement. The rest of this page is a **separate introductory LIVE path for learning evaluation without retrieval**.
 
 Find out whether the fictional **Gaon Lab travel-expense assistant** follows policy. Evaluation means **checking AI answers against criteria chosen in advance**. The code is provided; you do not need to write Python.
-
-**If you choose introductory LIVE below, follow this sequence: identify a wrong answer, prepare your environment, generate answers, evaluate them, change the instructions, compare, and record your decision.** The first activity needs no installation. Open or edit files only when a step asks you to; you do not need to read all the reference material first.
-
-> **Completing the workshop is not the same as passing the quality gate.** Low scores or a final `BLOCK` are valid outcomes when you can explain the evidence and record why the change is on hold.
-
-**LIVE configuration:** **`gpt-6-luna`**, **Sweden Central (`swedencentral`)**, deployment name **`eval-model`**. Use the same deployment for generation and judging. **Retain all Azure resources after the workshop.** At the end, [verify retention and costs](#retain-resources). Delete resources only after a separate decision to do so.
 
 **Language scope:** this guide and the supporting English documents are in English. The controlled policy, questions, prompts, and CLI output remain **Korean** so both language guides run the same experiment. This page translates the concepts and explains the exact Korean completion messages. Use the [English policy translation](docs/en/policies.md) for reading; do not substitute it into a partially completed experiment.
 
@@ -33,6 +29,10 @@ Keep [evidence scopes separate](docs/en/reference.md#live-verification): the pub
 **Already have an authorized project and deployment?** Use [existing-environment setup](docs/en/setup.md#existing-environment) within your chosen LIVE path. Having resources does not require switching learning paths or creating duplicates.
 
 **The rest of this page is one LIVE path.** Do not simply change `live` to `demo` in its commands. If Azure prevents progress, [switch to DEMO explicitly](docs/en/setup.md#switch-to-demo), preserving the LIVE records.
+
+**If you choose introductory LIVE below, follow this sequence: identify a wrong answer, prepare your environment, generate answers, evaluate them, change the instructions, compare, and record your decision.** The first activity needs no installation. Open or edit files only when a step asks you to; you do not need to read all the reference material first.
+
+> **Completing the workshop is not the same as passing the quality gate.** Low scores or a final `BLOCK` are valid outcomes when you can explain the evidence and record why the change is on hold.
 
 **Activities 0–6 use the same numbers in LIVE and DEMO.** Setup is separate. Follow the inline **Checkpoints** and generated reports without creating a separate record form. Personal notes are optional; save human verdicts using the documented `review` commands.
 
@@ -87,6 +87,8 @@ B is appropriate. KRW 240000 appears in an **unapproved draft**. A sounds helpfu
 
 If you already have an authorized environment, use [existing-environment setup](docs/en/setup.md#existing-environment) instead of creating another one. Introductory participants then continue to [activity 1](#lab-1); RAG participants return to their chosen guide above.
 
+**LIVE configuration:** **`gpt-6-luna`**, **Sweden Central (`swedencentral`)**, deployment name **`eval-model`**. Use the same deployment for generation and judging. **Retain all Azure resources after the workshop.** At the end, [verify retention and costs](#retain-resources). Delete resources only after a separate decision to do so.
+
 **Starting requirements for the new-environment path:** a Microsoft Entra ID account, an active Azure subscription, and an **active Owner role** on that subscription, including an applicable inherited role. This workshop chooses Owner so one person can create resources and assign roles; Azure does not require Owner for every provisioning path, and existing-environment users do not need it. See the [permission contract](docs/en/reference.md#permissions-contract) for other authorized role combinations. No API keys are used.
 
 You need **one project and one model deployment**. You do not need a search service, agent server, Docker, Git, azd, or Jupyter. Do not enter real personal data, confidential information, or passwords.
@@ -102,6 +104,8 @@ The introductory LIVE path generates **22 responses and evaluates 44 metric item
 2. Install the tools below, then open a new terminal.
 3. In VS Code, choose **File → Open Folder** and open the folder that directly contains **`lab.py` and `requirements.txt`**, not an outer ZIP extraction directory.
 4. Choose **Terminal → New Terminal**. Enter subsequent commands there.
+
+**Use VS Code's terminal on your own computer**, not **Azure Cloud Shell** in the portal or a notebook cell. Use **PowerShell on Windows**, or **zsh/bash on macOS/Linux**. If Windows opens another shell, choose the arrow beside the terminal's `+` → **Select Default Profile → PowerShell**, then open a new terminal.
 
 Use the browser to read the guide and operate Azure, and VS Code to edit local files and run commands. Reading a GitHub file does not change your local copy. Do not use a Python file's Run button or enter shell commands at the Python `>>>` prompt. If you see `>>>`, type `exit()` first.
 
@@ -129,7 +133,7 @@ py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-If organizational policy blocks `Activate.ps1`, do not relax the policy. Replace every subsequent `python`, including the installation command, with **`.\.venv\Scripts\python.exe`**.
+If organizational policy blocks `Activate.ps1`, do not relax the policy. Replace every subsequent `python`, including the installation command, with **`.\.venv\Scripts\python.exe`**. For example, `python lab.py doctor` becomes `.\.venv\Scripts\python.exe lab.py doctor`. Leave commands starting with `az` unchanged.
 
 Install the packages:
 
@@ -285,6 +289,8 @@ One deployment serves both generation and judging, but these are separate calls.
 2. In VS Code, open [config.example.json](config.example.json) and **Save As `config.json`**, beside `lab.py`.
 3. Replace the example `project_endpoint` and save.
 
+**Editing JSON:** keep the field names on the left; change only the values specified on the right. Preserve straight double quotes `"`, commas, and braces, with no comma after the last field. If copying the example, copy only from `{` through `}` into the file—not explanatory text or code-block fences.
+
 ```json
 {
   "project_endpoint": "https://YOUR-ACCOUNT.services.ai.azure.com/api/projects/YOUR-PROJECT",
@@ -382,6 +388,8 @@ The answer has four fields. This is an **English explanation of the expected D02
 ```
 
 `decision` is one of `allowed`, `needs_approval`, `not_allowed`, `unknown`, or `needs_info`. `limit_krw` is an integer limit in KRW or `null`; `citations` contains supporting document IDs; `answer` is the employee-facing explanation.
+
+`limit_krw` is not the claimed expense. `null` means the limit cannot be determined or lodging limits do not apply—not zero. `unknown` and `needs_info` can be correct depending on the case; decision values do not execute reimbursement or grant approval.
 
 ### Use three complementary checks
 

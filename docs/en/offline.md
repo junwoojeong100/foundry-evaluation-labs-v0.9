@@ -38,6 +38,8 @@ B is appropriate. KRW 240000 is an unapproved draft proposal. Exceeding the offi
 3. Open the folder containing `lab.py` and choose **Terminal → New Terminal**.
 4. Use only your operating system's block. If a virtual environment already exists, activate rather than recreate it.
 
+**Use your computer's terminal, not Azure Cloud Shell.** Use **PowerShell on Windows**, or **zsh/bash on macOS/Linux**. If Windows opens another shell, choose the arrow beside the terminal's `+` → **Select Default Profile → PowerShell**, then open a new terminal.
+
 Open local files with **Ctrl+P / macOS Cmd+P** and save with **File → Save**. Browser links do not edit local files. Use Markdown preview for reading and the source tab for editing. Enter commands in the terminal, not at Python's `>>>` prompt; type `exit()` first if necessary.
 
 macOS / Linux:
@@ -54,7 +56,7 @@ py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-If activation is prohibited, use `.\.venv\Scripts\python.exe` in place of `python`; do not weaken organizational policy. **Azure CLI and the packages in `requirements.txt` are unnecessary for DEMO.**
+If activation is prohibited, use `.\.venv\Scripts\python.exe` in place of `python`; do not weaken organizational policy. For example, `python lab.py doctor` becomes `.\.venv\Scripts\python.exe lab.py doctor`. **Azure CLI and the packages in `requirements.txt` are unnecessary for DEMO.**
 
 ```bash
 python lab.py doctor
@@ -106,7 +108,11 @@ This replays authored answers and runs code checks.
 python lab.py inspect results/demo-baseline D04
 ```
 
-Read the question, expectation, and actual authored answer. `unknown` means absent from policy; `needs_info` means missing question information. **Before seeing judge scores**, decide pass/fail and your reason. `Judge: 아직 미평가` is expected.
+Read the question, expectation, and actual authored answer. The answer's `decision` is the policy decision, `limit_krw` is the lodging limit (not the claimed expense), `citations` lists source IDs, and `answer` is the explanation. `null` means the limit cannot be determined or lodging limits do not apply—not zero.
+
+Decisions are `allowed`, `needs_approval` (prior approval required), `not_allowed`, `unknown` (absent from policy), or `needs_info` (missing question information). `unknown` and `needs_info` can be correct depending on the case; none of these values executes reimbursement or grants approval.
+
+**Before seeing judge scores**, decide pass/fail and your reason. `Judge: 아직 미평가` is expected.
 
 ```bash
 python lab.py judge results/demo-baseline
@@ -128,6 +134,8 @@ Choose a hypothesis. Read [V1](../../prompts/v1.txt) and [V2](../../prompts/v2.t
 ```bash
 python lab.py run --mode demo --prompt v2 --out results/demo-candidate
 ```
+
+**Checkpoint:** `8/8  D08 저장` and business **8/8 (100%)**. These are code-check results for the authored V2 answers; judge scores are not loaded yet. Read the score examples next:
 
 ```bash
 python lab.py judge results/demo-candidate --like results/demo-baseline

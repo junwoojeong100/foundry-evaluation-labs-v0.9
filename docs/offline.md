@@ -38,6 +38,8 @@ B가 적절합니다. 240000원은 미승인 초안의 금액이며, 공식 한�
 3. VS Code의 **File → Open Folder**에서 `lab.py`가 바로 보이는 폴더를 열고 **Terminal → New Terminal**을 선택합니다.
 4. 아래에서 본인 운영체제의 블록만 실행합니다. 이미 LIVE 준비에서 가상환경을 만들었다면 생성은 생략하고 활성화만 합니다.
 
+**내 PC의 터미널을 사용하며 Azure Cloud Shell은 열지 않습니다.** Windows는 **PowerShell**, macOS/Linux는 **zsh 또는 bash**입니다. Windows에서 다른 셸이 열렸다면 터미널의 `+` 옆 화살표 → **Select Default Profile → PowerShell**을 선택하고 새 터미널을 엽니다.
+
 **브라우저의 파일 링크는 읽기용입니다.** 수정은 VS Code의 로컬 파일에서 합니다. **Ctrl+P / macOS Cmd+P**에 파일 경로를 입력해 열고 **File → Save**로 저장합니다. 검색되지 않으면 왼쪽 탐색기에서 해당 폴더를 펼쳐 파일을 엽니다. `.md`는 **View → Command Palette → Markdown: Open Preview to the Side**로 읽되, 수정은 원본 텍스트 탭에서 합니다.
 
 명령은 아래 코드 블록 안의 내용만 복사해 **VS Code 터미널**에 붙여 넣고 Enter를 누릅니다. Python 파일의 실행 버튼이나 `>>>` 대화창을 사용하지 않습니다. `>>>`가 보이면 `exit()`로 먼저 나옵니다.
@@ -56,7 +58,7 @@ py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-Windows에서 활성화가 조직 정책으로 막히면 정책을 해제하지 않고, 이후 모든 `python`을 `.\.venv\Scripts\python.exe`로 바꿉니다. **Azure CLI와 `requirements.txt`의 패키지는 설치하지 않아도 됩니다.**
+Windows에서 활성화가 조직 정책으로 막히면 정책을 해제하지 않고, 이후 모든 `python`을 `.\.venv\Scripts\python.exe`로 바꿉니다. 예를 들어 `python lab.py doctor`는 `.\.venv\Scripts\python.exe lab.py doctor`가 됩니다. **Azure CLI와 `requirements.txt`의 패키지는 설치하지 않아도 됩니다.**
 
 이제 같은 터미널에서 실행합니다.
 
@@ -116,7 +118,9 @@ python lab.py run --mode demo --prompt v1 --out results/demo-baseline
 python lab.py inspect results/demo-baseline D04
 ```
 
-질문·기대 행동·실제 답변이 출력됩니다. 답변의 `decision`은 결정, `limit_krw`는 숙박 한도, `citations`는 근거 문서 ID, `answer`는 설명입니다. `unknown`은 규정에 없음, `needs_info`는 질문 정보 부족을 뜻합니다.
+질문·기대 행동·실제 답변이 출력됩니다. 답변의 `decision`은 결정, `limit_krw`는 숙박 한도(청구 금액이 아님), `citations`는 근거 문서 ID 목록, `answer`는 설명입니다. `null`은 한도를 결정할 수 없거나 숙박 한도와 무관하다는 뜻이며 0원이 아닙니다.
+
+결정은 `allowed`(허용), `needs_approval`(사전 승인 필요), `not_allowed`(금지), `unknown`(규정에 없음), `needs_info`(질문 정보 부족) 중 하나입니다. `unknown`·`needs_info`도 상황에 따라 올바른 답이며, 값이 실제 정산이나 승인을 실행하지는 않습니다.
 
 **Judge 점수를 보기 전에** 규정과 답변을 대조하고 내 `pass`/`fail`과 이유를 정합니다. `Judge: 아직 미평가`가 정상입니다.
 
@@ -142,6 +146,8 @@ python lab.py inspect results/demo-baseline D04
 ```bash
 python lab.py run --mode demo --prompt v2 --out results/demo-candidate
 ```
+
+**완료 확인:** `8/8  D08 저장`과 업무 통과 **8/8, 100%**가 보입니다. 이는 작성된 V2 답변의 코드 검사 결과이며 아직 Judge 점수는 없습니다. 이어서 점수 예제를 읽습니다.
 
 ```bash
 python lab.py judge results/demo-candidate --like results/demo-baseline

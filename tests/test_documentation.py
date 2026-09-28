@@ -18,7 +18,7 @@ import advanced_lab
 import advanced_retrieval
 import lab
 import rag_lab
-from evaluation import ROOT, read_cases, read_json
+from evaluation import ANSWER_SCHEMA, DECISIONS, ROOT, read_cases, read_json
 
 DOCUMENTS = sorted([*ROOT.glob("*.md"), *(ROOT / "docs").rglob("*.md")])
 SHELL_BLOCKS = re.compile(r"```(?:bash|powershell)\n(.*?)```", re.DOTALL)
@@ -38,6 +38,103 @@ def lab_commands(document: Path, script: str = "lab.py") -> list[list[str]]:
 
 
 class DocumentationTests(unittest.TestCase):
+    def test_readme_openings_credit_the_original_workshop_inspiration(self):
+        source = "https://snscratchpad.com/posts/frontier-ecosystem/"
+        for relative in ("README.ko.md", "README.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            opening = text.split('<a id="choose-path"></a>')[0]
+            with self.subTest(guide=relative):
+                self.assertIn("Satya Nadella", opening)
+                self.assertIn(f"]({source})", opening)
+                self.assertEqual(text.count(source), 1)
+
+    def test_setup_identifies_the_local_shell_and_shows_the_activation_fallback(self):
+        for relative in ("README.ko.md", "README.md", "docs/offline.md", "docs/en/offline.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            preparation = text.split('<a id="prepare"></a>')[1].split('<a id="working-files"></a>')[0]
+            with self.subTest(guide=relative):
+                for required in (
+                    "Azure Cloud Shell", "PowerShell", "Select Default Profile",
+                    "zsh", "bash", r"`.\.venv\Scripts\python.exe lab.py doctor`",
+                ):
+                    self.assertIn(required, preparation)
+
+    def test_each_learning_path_explains_the_answer_contract_without_another_path(self):
+        paths = [
+            ("README.ko.md", "lab-1", "lab-2"),
+            ("README.md", "lab-1", "lab-2"),
+        ]
+        for language in ("", "en/"):
+            paths.extend((
+                (f"docs/{language}complete-lab.md", "read-case", "dialogue-check"),
+                (f"docs/{language}offline.md", "lab-3", "lab-4"),
+                (f"docs/{language}optional-rag.md", "evaluate", "resume"),
+            ))
+        for relative, start, end in paths:
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            explanation = text.split(f'<a id="{start}"></a>')[1].split(f'<a id="{end}"></a>')[0]
+            with self.subTest(guide=relative):
+                for field in ANSWER_SCHEMA["required"]:
+                    self.assertIn(f"`{field}`", explanation)
+                for decision in DECISIONS:
+                    self.assertIn(f"`{decision}`", explanation)
+                self.assertIn("`null`", explanation)
+
+    def test_complete_stage_map_matches_the_documented_execution_order(self):
+        for relative in ("docs/complete-lab.md", "docs/en/complete-lab.md"):
+            document = ROOT / relative
+            text = document.read_text(encoding="utf-8")
+            stage_map = text.split('<a id="run-stages"></a>')[1].split("```bash", 1)[0]
+            described = re.findall(r"^\| `([^`]+)` \|", stage_map, re.MULTILINE)
+            stages = [
+                advanced_lab.parser().parse_args(argv).stage
+                for argv in lab_commands(document, "advanced_lab.py")
+                if argv[0] in ("run", "judge")
+            ]
+            with self.subTest(guide=relative):
+                self.assertEqual(described, list(dict.fromkeys(stages)))
+                self.assertEqual(len(described), 4)
+                self.assertIn("results/advanced/v2-replay/report.md", stage_map)
+                shared = text.split('<a id="common-setup"></a>')[1].split('<a id="search-setup"></a>')[0]
+                self.assertIn("평가 완료: 1개 답변 × 2개 지표", shared)
+                self.assertIn("(#search-setup)", shared)
+
+    def test_complete_endpoint_table_keeps_all_three_addresses_distinct(self):
+        endpoints = (
+            ("config.json", "project_endpoint", ".services.ai.azure.com/api/projects/"),
+            ("config.advanced.json", "search_endpoint", ".search.windows.net"),
+            ("config.advanced.json", "model_resource_endpoint", ".openai.azure.com"),
+        )
+        for relative in ("docs/complete-lab.md", "docs/en/complete-lab.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            configuration = text.split('<a id="configure"></a>')[1].split('<a id="resume"></a>')[0]
+            for filename, field, address in endpoints:
+                rows = [
+                    line for line in configuration.splitlines()
+                    if line.startswith("|") and f"`{filename}`" in line and f"`{field}`" in line
+                ]
+                with self.subTest(guide=relative, field=field):
+                    self.assertEqual(len(rows), 1)
+                    self.assertIn(address, rows[0])
+
+    def test_demo_candidate_generation_has_a_checkpoint_before_judging(self):
+        cases = read_cases(ROOT / "data/dev.jsonl")
+        signal = f"{len(cases)}/{len(cases)}  {cases[-1]['id']} 저장"
+        for relative in ("docs/offline.md", "docs/en/offline.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            blocks = list(SHELL_BLOCKS.finditer(text))
+            index = next(
+                index for index, block in enumerate(blocks)
+                if block.group(1).strip() == "python lab.py run --mode demo --prompt v2 --out results/demo-candidate"
+            )
+            checkpoint = text[blocks[index].end():blocks[index + 1].start()]
+            with self.subTest(guide=relative):
+                self.assertIn(signal, checkpoint)
+                self.assertEqual(
+                    blocks[index + 1].group(1).strip(),
+                    "python lab.py judge results/demo-candidate --like results/demo-baseline",
+                )
+
     def test_all_local_links_and_explicit_anchors_exist(self):
         for document in DOCUMENTS:
             text = document.read_text(encoding="utf-8")
