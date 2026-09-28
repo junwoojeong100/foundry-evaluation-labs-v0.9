@@ -4,38 +4,59 @@
 
 [Repository home](../../README.md)
 
-[English/Korean recorded summaries](../media/complete-rag/README.md) show the **September 28, 2026 rerun starting with a new resource group**. Verify your own current results through the steps below.
+**This recommended lab checks whether the fictional Gaon Lab travel-expense assistant can find policy and answer correctly.** Finding evidence before answering from it is called **RAG (retrieval-augmented generation)**. Use **one Basic-or-higher Azure AI Search service** for vector/hybrid retrieval and Foundry IQ's LLM query planning.
 
-This is the recommended complete learning path. It uses **one Basic-or-higher Azure AI Search service** for **vector/hybrid + LLM-planned Foundry IQ retrieval**. The separate optional minimal text-RAG exercise can reuse that service too.
+**You do not write Python code.** Prepare two configuration files, run the provided commands, and read actual answers and reports. Read and compare **`advanced-rag/instructions.v1.txt` and `instructions.v2.txt`**; do not edit or substitute the introductory `prompts/v1.txt`/`v2.txt` files.
 
-The original `prompts/v1.txt`/`v2.txt` and earlier examples are historical introductory material. This path uses the explicitly versioned **`advanced-rag/instructions.v1.txt` and `instructions.v2.txt`**.
+The policy inputs, example queries, and model answers remain **Korean** so both language guides run the same experiment. Section 1 links an English policy translation for reading; do not replace the experiment's source data.
 
 **Route:** follow sections 1–8 below. Neither introductory activities 0–6 nor the full Optional RAG exercise is a prerequisite. Section 2 borrows only shared environment setup, then returns here. Run one command at a time from the folder containing `advanced_lab.py`, with the virtual environment activated. Commands create result directories.
+
+| Step | Your action | Check before continuing |
+|---|---|---|
+| [1. Policy and components](#architecture) | Decide what a correct answer means | A policy-based reason |
+| [2. Setup](#setup) | Shared setup → return here → Search, extra models, configuration | `VECTOR SETUP OK` |
+| [3. Real retrieval](#retrieval-proof) | Check vector retrieval and LLM planning separately | Two `RETRIEVAL OK` messages and retrieval evidence |
+| [4. Check the judge](#calibration) | Test the judge against known correct/incorrect answers | `CALIBRATION PASSED: 10 controls` |
+| [5. V1 → V2](#improve) | Compare an earlier failure with V2's behavior | Four answers and three metrics in each run |
+| [6. Integration and freeze](#freeze) | Check V2 with real retrieval, then lock changes | `FROZEN` |
+| [7. Fresh questions](#holdout) | Create and evaluate eight new cases after freezing | Your own `acceptance-report.md` |
+| [8. Finish](#retention) | Interpret and retain results; check costs | Completion checklist or interruption record |
+
+**Do not run the next command until you see the current step's completion signal.** Distinguish execution errors, waiting, and quality blocks using the [status/resume table](#resume). `text` blocks show example output; do not enter them in the terminal.
 
 `advanced_lab.py` has no DEMO mode. Importing `baseline`, freezing, creating/registering holdout, inspecting, and accepting are local operations; setup, retrieval, generation, calibration, and judging use real Azure services.
 
 **Follow each checkpoint and the automatically generated results under `results/advanced/`.** No separate record form is needed; personal notes are optional. Do not apply the introductory 80% gate or D06/H04 review workflow here. **Completing the lab is not the same as automated acceptance.** Preserve low scores and stopped runs honestly; do not describe unperformed stages as complete.
 
-## What “passed” means
+**Terms you will meet**
 
-The acceptance criteria in [acceptance.json](../../advanced-rag/acceptance.json) are fixed before the fresh holdout:
+| Term | Meaning in this lab |
+|---|---|
+| Chunk / index | A chunk is a policy fragment; an index stores fragments so they can be searched |
+| Vector / hybrid retrieval | Find similar meanings using numeric representations of text / combine that with text search |
+| Knowledge Source / Knowledge Base | A connection specifying which index to read / a knowledge base that uses the connection to handle retrieval requests |
+| LLM query planning | AI turns a complex question into searches for evidence; this is a different role from answering the employee |
+| Judge / calibration | An AI grader / checking whether it distinguishes known correct and incorrect examples |
+| dev / holdout / freeze | Questions for checking improvements / fresh final-check questions / recording and locking prompt, model, retrieval, and judging conditions before fresh questions |
 
-- **Every final V2 case** must pass business checks, required-evidence retrieval, Groundedness, **builtin Relevance**, and policy task success: **100%**, not an average that hides a failed case.
-- Each required judge score must be at least **4/5**, with **zero critical-case failures**.
-- The policy judge must correctly classify **all ten positive/negative calibration controls**.
-- A real vector index/vectorizer and actual `modelQueryPlanning` activity are required.
-- At least eight fresh holdout cases must be registered after freezing the candidate.
-
-**Builtin Relevance remains a required metric.** The final answer must resolve the actual completed user interaction. A request for missing information is an intermediate step, not falsely labeled as a completed answer.
-
-V2 uses explicit, scripted user follow-ups from evaluation data: a missing-date case receives the user's actual travel date after asking; an unavailable overseas-limit case receives a user request for a Finance inquiry checklist rather than a fabricated number. The model does not invent those user facts. The final conversation is supplied to the judge, but **automated initial-response checks cover only JSON format, decision, amount, and citation fields**.
-
-The result field `intermediate_safe` means those field checks passed, **not that the initial prose received a separate semantic or safety evaluation**. Correct `unknown`, `null`, and `SCOPE` fields can coexist with a fabricated overseas limit in the explanation. Read the initial prose using `inspect --dialogue` in sections 5 and 7, and record your judgment.
-
-`inspect` only prints saved evidence; it does not persist a review or approval. Keep separate review records in your organization's approval process, without editing automated results to mark approval. `LAB_ACCEPTANCE_PASSED` means the declared educational criteria passed; `human_production_approval` remains `PENDING`. **Human production approval remains separate and pending.**
+Videos are optional. The [English/Korean summaries](../media/complete-rag/README.md) and [recorded results](#results) come from a **separate September 28, 2026 run**, not your completion signals or expected scores.
 
 <a id="architecture"></a>
-## 1. One shared Search service
+## 1. Read the policy and understand the components
+
+**Before installing anything:** read the [English policy translation](policies.md), or the [Korean source](../../data/policies.md), and answer:
+
+> A domestic business-trip hotel costs KRW 220000 per night in September 2026, without prior approval. Can the employee claim it immediately?
+
+<details>
+<summary>Read the explanation after deciding</summary>
+
+The current official limit is KRW 200000. KRW 220000 exceeds it, so prior Finance approval is required. Do not apply the unapproved draft's KRW 240000 limit. For earlier trips, apply the policy for the **actual travel date**, not the submission date. Do not guess missing dates or an overseas limit absent from the policy.
+
+</details>
+
+**Checkpoint:** explain the decision and policy-based reason in one sentence. For the components below, understand their roles only. HNSW names a vector-search algorithm; you do not need to implement it or change its settings.
 
 | Component | Purpose |
 |---|---|
@@ -61,12 +82,49 @@ The code compares the name, model, version, and `type: ModelDeployment` in [V1's
 - Also [check model availability](reference.md#model-availability) for the embedding/planning models below and **GlobalStandard capacities 40/60** in the same Foundry account before proceeding. These are deployment capacity settings, not spending caps.
 - Obtain the owner's approval to create/use Search and models and to assign roles at the **Search and Foundry resource scopes**. An authorized administrator must prepare missing roles if you cannot assign them. Confirm ongoing Basic charges, usage charges, preview permission, and network access first.
 
-Complete only [README setup 1–7](../../README.md#prepare). Verify the answer-model version in [setup 5](../../README.md#setup-model), create `config.json`, and finish the one-case generation/evaluation check. For authorized existing resources, use [existing-environment setup](setup.md#existing-environment). Introductory A/B and activities 1–6 are not required prerequisites. **Return to Search setup below when ready.**
+Complete only [README setup 1–7](../../README.md#prepare). Verify the answer-model version in [setup 5](../../README.md#setup-model), create `config.json`, and finish the one-case generation/evaluation check. For authorized existing resources, use [existing-environment setup](setup.md#existing-environment). Introductory A/B and activities 1–6 are not required prerequisites. **Keep this page open and use a new tab for shared setup, then return directly below.**
 
 <a id="search-setup"></a>
+### Check actual values after shared setup
+
+You should now have `config.json` and one generated, evaluated N01 answer. Replace each `YOUR-...` with **your actual value**, retaining the quotation marks. Names, IDs, and endpoints are not interchangeable.
+
+| Placeholder | Actual value |
+|---|---|
+| `YOUR-SUBSCRIPTION-ID` | Subscription ID used for shared-setup sign-in |
+| `YOUR-LAB-RESOURCE-GROUP` | Actual group containing the command's target resource. If existing Search is in another group, use **that group only for Search commands** |
+| `YOUR-FOUNDRY-ACCOUNT` | Parent Foundry resource name, not the project name `eval-workshop` |
+| `YOUR-SHARED-SEARCH` | Authorized existing Search name, or a new unique name such as `feval-search-a7k3m9` |
+| `YOUR-FOUNDRY-RESOURCE-ID` | Full `id` from the parent Foundry resource's **Overview → JSON View**, ending in `/accounts/ACTUAL-NAME` |
+| `YOUR-SEARCH-PRINCIPAL-ID` | `identity.principalId` from the Search lookup below, not the user or project ID |
+
+First, read the **already deployed answer model** without changing it:
+
+```bash
+az cognitiveservices account deployment show --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --deployment-name eval-model --subscription "YOUR-SUBSCRIPTION-ID" --query "{name:name,state:properties.provisioningState,model:properties.model.name,version:properties.model.version}" --output json
+```
+
+**Checkpoint:** `name: eval-model`, `state: Succeeded`, `model: gpt-6-luna`, and `version: 2026-09-22`. If different, return to the path-selection guidance above without creating more resources.
+
+**If reusing both embedding and planner deployments too**, verify their models/versions with the owner and under Foundry **Build → Models**, then skip both queries below. Participants not creating deployments do not need new quota allocations or subscription quota-read permission.
+
+**Only when creating additional deployments**, use these two read-only queries for versions and quota. They neither create resources nor invoke models.
+
+```bash
+az cognitiveservices model list --location swedencentral --subscription "YOUR-SUBSCRIPTION-ID" --query "[?model.name=='text-embedding-3-small' || model.name=='gpt-5.4-mini']" --output json
+```
+
+```bash
+az cognitiveservices usage list --location swedencentral --subscription "YOUR-SUBSCRIPTION-ID" --query "[?name.value=='OpenAI.GlobalStandard.text-embedding-3-small' || name.value=='OpenAI.GlobalStandard.gpt-5.4-mini'].{name:name.value,current:currentValue,limit:limit}" --output json
+```
+
+In the first result, check **`model.version` and `GlobalStandard` support** for each `model.name`. Use the chosen versions as **`YOUR-EMBEDDING-VERSION` and `YOUR-PLANNER-VERSION`** in the later deployment commands. The second result's remaining quota (`limit - current`) must accommodate capacity **40** for a new embedding deployment and **60** for a new planner. Do not allocate an existing deployment's quota a second time when reusing it. Check model/SKU-specific quota and capacity units; an empty result or 403 does not mean zero quota. Use [availability and permission help](reference.md#model-availability) if blocked.
+
 ### Prepare the Search service
 
 **If reusing an authorized Basic-or-higher service, or if you already created it, skip both creation-preparation commands below.** Use a unique name only when a new service is needed. `az search service create` can also update an existing service, changing settings such as replicas or authentication. Do not create another Free Search service for this path.
+
+**Before creating a new service:** in Azure portal, open **Subscriptions → intended subscription → Resource providers** and check **`Microsoft.Search`**. If unregistered, an authorized administrator selects **Register** and confirms `Registered`. This is separate from shared setup's `Microsoft.CognitiveServices`; introductory/DEMO participants not creating Search do not need this additional registration. Follow [official provider-registration guidance](https://learn.microsoft.com/azure/azure-resource-manager/management/resource-providers-and-types); do not bypass missing permission.
 
 ```bash
 az search service check-name-availability --name "YOUR-SHARED-SEARCH" --type searchServices --subscription "YOUR-SUBSCRIPTION-ID"
@@ -97,7 +155,7 @@ az role assignment create --assignee-object-id "YOUR-SEARCH-PRINCIPAL-ID" --assi
 
 **Official guidance has different scopes:** the [vectorizer article](https://learn.microsoft.com/azure/search/vector-search-vectorizer-azure-open-ai) specifies OpenAI User as above, while the [Knowledge Base article](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-create-knowledge-base) specifies broader Cognitive Services User access for planning. Distinguish these from this code's Azure OpenAI endpoint/API version. If only planning is denied, verify the target API's permissions with the owner rather than speculatively adding a broader role.
 
-### Additional models and configuration
+### Deploy the additional models
 
 Replace `YOUR-EMBEDDING-VERSION`/`YOUR-PLANNER-VERSION` with the versions verified earlier, then deploy the models **sequentially**. Confirm the first deployment is `Succeeded` before running the next command. Concurrent writes to the same Foundry account can conflict. If an authorized deployment already exists, verify its model/version and skip its creation command. Do not silently update shared deployments.
 
@@ -109,9 +167,33 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --deployment-name rag-planner --model-name gpt-5.4-mini --model-version "YOUR-PLANNER-VERSION" --model-format OpenAI --sku-name GlobalStandard --sku-capacity 60 --subscription "YOUR-SUBSCRIPTION-ID"
 ```
 
-**Checkpoint:** in Foundry Models + endpoints, confirm both `rag-embedding` and `rag-planner` succeeded with the intended models/versions. The recorded additional-model versions were embedding `1` and planner `2026-03-17`. You can select currently supported versions for these two models, but must keep them unchanged after `setup` within this experiment. Keep the answer model at the recorded V1 version verified earlier.
+**Checkpoint:** in Foundry **Build → Models**, confirm both `rag-embedding` and `rag-planner` succeeded with the intended models/versions. The recorded additional-model versions were embedding `1` and planner `2026-03-17`. You can select currently supported versions for these two models, but must keep them unchanged after `setup` within this experiment. Keep the answer model at the recorded V1 version verified earlier.
 
-Save [the configuration template](../../advanced-rag/config.example.json) as **`config.advanced.json` beside `advanced_lab.py`**, not inside `advanced-rag/`. Keep the existing `config.json`.
+<a id="configure"></a>
+### Write the configuration and create search objects
+
+**In VS Code**, open `advanced-rag/config.example.json`, then use **File → Save As** to create **`config.advanced.json` beside `advanced_lab.py`**. Do not save it inside `advanced-rag/` or as `config.advanced.json.txt`. If your configuration already exists, check its actual values rather than overwriting it.
+
+The two files have different purposes: **`config.json` connects the project, answer model, and judge**; **`config.advanced.json` connects Search, embeddings, and query planning**. Keep both.
+
+The complete [configuration template](../../advanced-rag/config.example.json) follows. **Replace both endpoints and the three search-object names with your values, then save.** If reusing differently named deployments, also update `embedding_deployment`/`planner_deployment` to match their actual names.
+
+```json
+{
+  "search_endpoint": "https://YOUR-SHARED-SEARCH.search.windows.net",
+  "index_name": "travel-vector-index",
+  "knowledge_source": "travel-vector-ks",
+  "knowledge_base": "travel-planned-kb",
+  "top_k": 4,
+  "model_resource_endpoint": "https://YOUR-ACCOUNT.openai.azure.com",
+  "embedding_deployment": "rag-embedding",
+  "embedding_model": "text-embedding-3-small",
+  "embedding_dimensions": 1536,
+  "planner_deployment": "rag-planner",
+  "planner_model": "gpt-5.4-mini",
+  "retrieval_reasoning_effort": "low"
+}
+```
 
 Keep the template's `top_k: 4`, 1536 embedding dimensions, and `low` planning effort. Do not confuse these with Optional RAG's `config.rag.json` or `top_k: 3`. Deployment names must match the actual deployments just verified.
 
@@ -124,6 +206,8 @@ Keep the template's `top_k: 4`, 1536 embedding dimensions, and `low` planning ef
 **Sharing a service does not mean unconditionally sharing search objects or experiments.** Choose the three object names before the first run and keep them when resuming that experiment. Reuse objects only with the owner's permission and the same corpus, vector settings, model endpoint, deployments, and planning settings. `setup` stops rather than updating mismatched existing objects; use new object names for another experiment.
 
 Embeddings use the account's `/openai/v1/embeddings` endpoint with Entra authentication. The author's earlier project gateway returned 404 for embeddings; this is not a universal limitation of every Foundry endpoint. Use the `.openai.azure.com` endpoint required by this code, without API keys.
+
+**Before running:** save both files, remove every endpoint placeholder `YOUR-...`, and verify the user, project, and Search identities' roles separately. Keep the provided instructions, questions, labels, and settings unchanged during this experiment.
 
 ```bash
 python advanced_lab.py setup
@@ -183,20 +267,49 @@ Calibration/judging has a default **300-second status-polling budget**. Authenti
 <a id="retrieval-proof"></a>
 ## 3. Prove vectors and LLM planning are actually used
 
+**This step tests retrieval only; it does not yet produce an employee-facing answer.** The first command finds semantically similar policy chunks using vectors.
+
 ```bash
 python advanced_lab.py query --mode vector --query "해외 출장 호텔 숙박비 상한을 확인하고 싶습니다." --out results/advanced/vector-query.json
 ```
 
-**Checkpoint:** 1536 query dimensions, `content_vector`, `text_query: false`, and real retrieved chunks.
+**Checkpoint:** `RETRIEVAL OK: vector`, `query_vector_dimensions: 1536`, `vector_fields: content_vector`, `text_query: false`, and actual chunk IDs. Results are saved in `results/advanced/vector-query.json`.
+
+The second command sends a multi-part question to the query-planning model.
 
 ```bash
 python advanced_lab.py query --mode planned --query "2026년 6월 30일과 7월 1일 국내 출장 숙박 한도를 비교하고, 한도를 초과할 때 필요한 절차와 해외 숙박 한도가 있는지도 알려주세요." --out results/advanced/planned-query.json
 ```
 
-**Checkpoint:** `llm_query_planning: true`, actual generated search queries, and `modelQueryPlanning`/`searchIndex` activity. The author's recorded request produced three subqueries, but their count and wording are not fixed outputs. The code rejects a response without planning evidence rather than calling ordinary search “planned retrieval.”
+**Checkpoint:** `RETRIEVAL OK: planned`, `llm_query_planning: true`, actual `planned_queries`, and `modelQueryPlanning`/`searchIndex` activity. Results are saved in `results/advanced/planned-query.json`. The author's recorded request produced three subqueries, but their count and wording are not fixed outputs. The code rejects a response without planning evidence rather than calling ordinary search “planned retrieval.”
 
 <a id="calibration"></a>
 ## 4. Calibrate and freeze the judge
+
+**Check the grader before grading answers.** Calibration does not retrain a model; it tests whether the judge distinguishes predefined correct and incorrect answers.
+
+<a id="acceptance-criteria"></a>
+### What “passed” means
+
+The acceptance criteria in [acceptance.json](../../advanced-rag/acceptance.json) are fixed before the fresh holdout:
+
+**Business checks** compare answer format, decision, amount, and citations with expectations; **retrieval checks** verify that required policy chunks were found. **Groundedness** measures support from evidence, **Relevance** measures relevance to the question, and **`policy_task_success`** checks whether the user's task was resolved according to policy. The answer model does not receive expected answers. Code checks use them; the task-success judge also receives expected behavior for evaluation.
+
+- **Every final V2 case** must pass business checks, required-evidence retrieval, Groundedness, **builtin Relevance**, and policy task success: **100%**, not an average that hides a failed case.
+- Each required judge score must be at least **4/5**, with **zero critical-case failures**.
+- The policy judge must correctly classify **all ten positive/negative calibration controls**.
+- A real vector index/vectorizer and actual `modelQueryPlanning` activity are required.
+- At least eight fresh holdout cases must be registered after freezing the candidate.
+
+**Builtin Relevance remains a required metric.** The final answer must resolve the actual completed user interaction. A request for missing information is an intermediate step, not falsely labeled as a completed answer.
+
+V2 uses explicit, scripted user follow-ups from evaluation data: a missing-date case receives the user's actual travel date after asking; an unavailable overseas-limit case receives a user request for a Finance inquiry checklist rather than a fabricated number. The model does not invent those user facts. The final conversation is supplied to the judge, but **automated initial-response checks cover only JSON format, decision, amount, and citation fields**.
+
+The result field `intermediate_safe` means those field checks passed, **not that the initial prose received a separate semantic or safety evaluation**. Correct `unknown`, `null`, and `SCOPE` fields can coexist with a fabricated overseas limit in the explanation. Read the initial prose using `inspect --dialogue` in sections 5 and 7, and record your judgment.
+
+`inspect` only prints saved evidence; it does not persist a review or approval. Keep separate review records in your organization's approval process, without editing automated results to mark approval. `LAB_ACCEPTANCE_PASSED` means the declared educational criteria passed; `human_production_approval` remains `PENDING`. **Human production approval remains separate and pending.**
+
+### Run calibration
 
 Read [the policy task-success rubric](../../advanced-rag/policy-task-success.txt). It treats correct missing-date questions and appropriate “policy does not specify” answers as **valid initial behavior**, while rejecting invented limits/approvals and contradictory answers. Correct initial behavior alone does not complete the final dialogue.
 
@@ -215,37 +328,50 @@ The resulting evaluator version, rubric, model, and acceptance criteria are fixe
 
 The [recorded V1 fixture](../../advanced-rag/fixtures/recorded-v1.json) contains four sanitized **actual earlier LIVE answers**, not fabricated wrong answers. D02's extra citation is retained. Replaying it is not claimed as fresh generation.
 
+**`--stage` names the run to use.** `v1-recorded` contains earlier answers; `v2-replay` generates new V2 answers from the same initial contexts. First import the local record:
+
 ```bash
 python advanced_lab.py baseline
 ```
+
+**Checkpoint:** `Imported four genuine recorded V1 answers.`. The next `judge` command is a **paid LIVE evaluation using the currently fixed judge**, not a copy of historical scores.
 
 ```bash
 python advanced_lab.py judge --stage v1-recorded
 ```
 
+**Checkpoint:** wait for `Evaluation complete: 4 cases × 3 metrics` before `inspect` below. If still processing, repeat the identical `judge --stage v1-recorded` command.
+
 ```bash
 python advanced_lab.py inspect --stage v1-recorded --case-id D02
 ```
 
-**Checkpoint:** four imported answers and `Evaluation complete: 4 cases × 3 metrics`. Use `inspect` for D02's failed `citations` business check and scores; read scoring reasons in `results/advanced/v1-recorded/report.md`. `baseline` imports a local record, but `judge` above is a **paid LIVE evaluation with the currently fixed judge**, not a copy of historical scores.
+**Checkpoint:** find D02's `citations: false` under `Business checks`, then read `Scores`. Expected citations are `["TRAVEL-CURRENT"]`, but recorded V1 cites `["TRAVEL-CURRENT", "SCOPE"]`, failing the exact citation-set check. **A source being retrieved does not mean it is necessary to cite in the answer.** Read the judge's reasons in `results/advanced/v1-recorded/report.md`.
 
 Compare [V1](../../advanced-rag/instructions.v1.txt) and [V2](../../advanced-rag/instructions.v2.txt). V2 distinguishes the minimum sufficient decision/amount evidence from merely retrieved or procedural sources, and completes necessary clarification/handoff interactions.
 
 [Development follow-ups](../../advanced-rag/dev-followups.json) are declared before generation. They are scripted evaluation-user turns, not real customer statements or human production approvals. They contain no desired score.
 
+**Use the supplied V2 unchanged in this run.** Explain the differences without editing the instructions, then execute. Personal prompt changes belong to a [separate experiment](#resume) after preserving this run.
+
 ```bash
 python advanced_lab.py run --stage v2-replay
 ```
+
+**Checkpoint:** `GENERATION COMPLETE: v2-replay; 4 answers.`. This counts **four final answers** after necessary follow-ups, not every intermediate model call.
 
 ```bash
 python advanced_lab.py judge --stage v2-replay
 ```
 
+**Checkpoint:** `Evaluation complete: 4 cases × 3 metrics`. If pending, repeat the same judging command; only then compare D02 with V1.
+
 ```bash
 python advanced_lab.py inspect --stage v2-replay --case-id D02
 ```
 
-Read the initial prose for contradictions, using any problematic sentence as evidence for your judgment:
+<a id="dialogue-check"></a>
+**Read the entire D04 and D08 dialogues.** Check initial prose for contradictions, using any problematic sentence as evidence for your judgment:
 
 ```bash
 python advanced_lab.py inspect --stage v2-replay --case-id D04 --dialogue
@@ -255,20 +381,31 @@ python advanced_lab.py inspect --stage v2-replay --case-id D04 --dialogue
 python advanced_lab.py inspect --stage v2-replay --case-id D08 --dialogue
 ```
 
-**Checkpoint:** confirm `GENERATION COMPLETE: v2-replay; 4 answers.` and completed judging of 4 cases × 3 metrics. V1 and V2 start from identical saved contexts and use the same answer model/settings/judge, with explicit user follow-ups completed where needed. This is a **prompt-and-dialogue workflow improvement**, not a claim that prompt wording alone explains the result. Keep the V1 failure; do not weaken V1 or reroll it.
+| Output label | How to read it |
+|---|---|
+| `User` → `Assistant` | Initial question → initial answer; check for fabricated limits or approvals |
+| `Evaluation-user follow-up` | A scripted user turn from evaluation data, not something you just typed |
+| `Final answer` → `Final scores` | Answer completing the follow-up request → its three final-response scores |
+| `Initial field checks (not prose evaluation)` | Initial field checks only, not a semantic pass for initial prose |
+
+**Checkpoint:** explain how D02's citations changed and how D04/D08 finish after a follow-up. V1 and V2 start from identical saved contexts and use the same answer model/settings/judge, with explicit user follow-ups completed where needed. This is a **prompt-and-dialogue workflow improvement**, not a claim that prompt wording alone explains the result. Keep the V1 failure; do not weaken V1 or reroll it.
 
 <a id="freeze"></a>
 ## 6. Validate the full pipeline, then freeze
+
+**This is not a repeat of the same run.** Section 5 checked V2 against saved initial retrieval contexts; `planned-dev` now checks the path from real vector/LLM-planned retrieval through the final answer.
 
 ```bash
 python advanced_lab.py run --stage planned-dev
 ```
 
+**Checkpoint:** `GENERATION COMPLETE: planned-dev; 4 answers.` before judging.
+
 ```bash
 python advanced_lab.py judge --stage planned-dev
 ```
 
-This is a separate integration check using actual vector/LLM-planned retrieval. Both initial questions and necessary follow-up turns use the declared retrieval workflow. **Confirm four final answers and completed judging of 4 cases × 3 metrics** before freezing. Judge exit code 0 alone does not mean dev acceptance.
+**Checkpoint:** `Evaluation complete: 4 cases × 3 metrics`. If pending, repeat the same judging command. Both initial questions and necessary follow-up turns use the declared retrieval workflow. Judge exit code 0 alone does not mean dev acceptance.
 
 **Do not change V2 instructions, follow-ups, models, or settings between sections 5 and 6.** Both dev validations must use the same candidate and input contract. If a change is needed, preserve existing results and perform both validations in a [new experiment](#resume).
 
@@ -276,7 +413,7 @@ This is a separate integration check using actual vector/LLM-planned retrieval. 
 python advanced_lab.py freeze
 ```
 
-**Checkpoint:** `FROZEN` and a contract hash. V1 must contain a real failure; V2 replay and planned dev must meet the required criteria. The prompt, judge, model versions, retrieval configuration, source definitions, and corpus are fixed before fresh cases are created.
+**Checkpoint:** `FROZEN` and a contract hash. The hash is a fingerprint for detecting changed experiment conditions; you do not copy it into another command. V1 must contain a real failure; V2 replay and planned dev must meet the required criteria. The prompt, judge, model versions, retrieval configuration, source definitions, and corpus are fixed before fresh cases are created. If blocked, do not continue to holdout; preserve the cause and unperformed stages using the [resume table](#resume).
 
 <a id="holdout"></a>
 ## 7. Generate fresh questions only after freeze
@@ -293,11 +430,13 @@ A new random seed **fills in new dates, cities, and amounts in eight predefined 
 python advanced_lab.py run --stage holdout
 ```
 
+**Checkpoint:** `GENERATION COMPLETE: holdout; 8 answers.` before judging.
+
 ```bash
 python advanced_lab.py judge --stage holdout
 ```
 
-Read both completed follow-up dialogues, including the initial prose and final answer, and record your judgment:
+**Checkpoint:** `Evaluation complete: 8 cases × 3 metrics`. If pending, repeat the same judging command. Read both completed follow-up dialogues using the [output labels explained earlier](#dialogue-check), including initial prose and final answers, and record your judgment:
 
 ```bash
 python advanced_lab.py inspect --stage holdout --case-id N05 --dialogue
@@ -311,12 +450,51 @@ python advanced_lab.py inspect --stage holdout --case-id N06 --dialogue
 python advanced_lab.py accept
 ```
 
-**Checkpoint:** `results/advanced/acceptance-report.md` and `acceptance-result.json` retain your run's decision, metrics, and per-case checks. Read scoring reasons in `holdout/report.md`. `LAB_ACCEPTANCE_PASSED` requires all eight fresh scenarios to pass **every final-answer metric, including Relevance, plus the initial field checks**. `LAB_ACCEPTANCE_BLOCKED` is also a valid evaluation result to preserve.
+**Checkpoint:** `results/advanced/acceptance-report.md` and `acceptance-result.json` are saved. Read **your own run** in this order:
+
+| File, relative to `results/advanced/` | What to check |
+|---|---|
+| `acceptance-report.md` | Decision in the title → pass rates by stage |
+| `acceptance-result.json` | N01–N08 under `rows` → `business_checks`, `required_chunks_found`, `scores`, `passed`; also `intermediate_safe` for multi-turn cases |
+| `holdout/report.md` | Actual answer and reasons for each judge score, matched by case ID |
+
+`LAB_ACCEPTANCE_PASSED` requires all eight fresh scenarios to pass **every final-answer metric, including Relevance, plus the initial field checks**. `LAB_ACCEPTANCE_BLOCKED` with exit code `2` is a quality hold, not a mistyped command. Resolve `ERROR:`/`usage:` separately; do not mark those runs complete.
 
 If blocked, record the failure and hold recommendation, then go to section 8. Even with an automated pass, record any contradiction you find in the initial prose and withhold production adoption. Do not edit the frozen prompt/rubric or select only passing cases. A subsequent improvement uses a [new experiment in a separate working copy](#resume) with new held-out cases.
 
+<a id="retention"></a>
+## 8. Preserve results and resources
+
+Keep the shared Basic Search service, embedding/planning/answer deployments, and every calibration, V1/V2, freeze, and fresh-question result you actually produced, **including failures**. Use generated reports to identify the last completed stage, pass/hold reasons, and unperformed work; establish the resource owner and next cost-review point. Basic service charges continue.
+
+### Your run's completion checklist
+
+**Check completion status and counts, not just file existence.** If blocked earlier, leave later items unchecked and record the **last completed stage, error or quality failure, and unperformed stages**. Do not call it a completed end-to-end run.
+
+- [ ] `setup.json` and both query JSON files show real vector and query-planning evidence.
+- [ ] `calibration-result.json` shows `passed: true` for ten controls, and `judge-contract.json` is present.
+- [ ] `v1-recorded` has four imported answers; `v2-replay` and `planned-dev` each have four new answers, all with three scores and reasons.
+- [ ] Eight fresh questions were registered after `frozen.json`, and holdout generation/judging completed.
+- [ ] I read the initial N05/N06 prose and can explain my `acceptance-report.md` decision and reasons.
+- [ ] I retained the full results folder, verified the actual Azure resources, and recorded costs and the next review condition.
+
+**Opening the report:** in VS Code, press Ctrl+P / macOS Cmd+P and enter `results/advanced/acceptance-report.md`. Read the summary in Markdown preview, then match a failing case ID using the section 7 file table. Do not edit automated result files to mark review or approval.
+
+**Cost check:** in Azure portal, scope **Cost Management → Cost analysis** to your group. If reusing Search in another group, check that cost with its owner too. Zero before costs are posted does not mean free usage. Follow only the [retention procedure](cleanup.md#retain-resources); skip deletion unless separately authorized.
+
+**Checkpoint:** use your result files and actual dialogues to explain V1's failure, V2's changes, and fresh-question results and limitations. If an earlier stage stopped, state that later stages were not run, and verify the retained resources and cost status.
+
+Finish with your own evidence: **“V1 had ___ problem. V2 changed ___. Fresh questions showed ___, so my decision is ___.”** Completed evaluation and an evidence-based hold are valid even with low scores. Automated acceptance is not production approval.
+
+Keep your actual `config.json`/`config.advanced.json`, raw recordings, and `results/` outside Git. Preserve versioned instructions and the sanitized V1 teaching fixture.
+
 <a id="results"></a>
-## Result interpretation
+## Reference: the author's recorded run
+
+**You do not need to reproduce this record to finish your own lab.**
+
+<details>
+<summary>Expand September 28, 2026 observations and environment-retention records</summary>
 
 **The table below records one September 28, 2026 fresh-environment complete-path run, not a reproduction guarantee.** A new group, Foundry resource, models, and Basic Search were provisioned; an isolated working copy ran the shared N01 setup smoke through final validation. Use your own acceptance files for your decision. Neither this table nor its videos revalidates the entire separate introductory LIVE path or minimal-RAG `search`/`iq` comparison in the current environment.
 
@@ -333,20 +511,13 @@ All recorded V2 dev/holdout final judge scores are at least 4/5; the threshold w
 
 Intermediate clarification is retained as evidence, and user follow-up data is explicit. This is not a separate automated semantic pass for the initial prose. Production approval remains a separate human responsibility.
 
-<a id="retention"></a>
-## 8. Preserve results and resources
-
-Keep the shared Basic Search service, embedding/planning/answer deployments, and every calibration, V1/V2, freeze, and fresh-question result you actually produced, **including failures**. Use generated reports to identify the last completed stage, pass/hold reasons, and unperformed work; establish the resource owner and next cost-review point. Basic service charges continue.
-
-**Checkpoint:** use your result files and actual dialogues to explain V1's failure, V2's changes, and fresh-question results and limitations. If an earlier stage stopped, state that later stages were not run, and verify the retained resources and cost status.
-
 **The following is the author's historical migration record, not a learner deletion step.** Do not delete resources without a separate decision. Never delete the resource group or shared Foundry account to clean one Search service. Do not rewrite Git history or platform audit logs, or disable organizational policies.
 
 **September 28, 2026 rebuild record:** the owner explicitly requested deletion of the previous dedicated workshop group. Its deletion was verified before the rerun in a new group. Previous local results and raw recordings were preserved. Retain the new Basic service, Foundry resource, three model deployments, and current calibration/V1/V2/holdout evidence **until a separate request**. No other groups or organizational policies were changed.
 
 **Cost checkpoint:** a MonthToDate Cost Management query scoped to the new group returned no cost rows yet. This is pending cost reporting, not proof of free usage; Basic capacity and model usage can continue to incur charges. Recheck after usage is posted or when a separate cleanup decision is made.
 
-Local `config*.json`, raw recordings, and `results/` remain outside Git. The versioned prompts and sanitized teaching fixture are source material for the new lesson.
+</details>
 
 ## Official references
 

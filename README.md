@@ -4,11 +4,11 @@
 
 ## Microsoft Foundry Evaluation: an end-to-end, self-guided workshop
 
-**Recommended complete path:** [Failure → V2 improvement → fresh-question validation](docs/en/complete-lab.md). It uses one shared Basic Search service, real vector/hybrid retrieval and LLM query planning. **In the September 28, 2026 fresh-environment run**, every final V2 holdout case passed Groundedness, Relevance, policy task success, business, and retrieval checks. This does not guarantee acceptance for your run; the material below is a separate introductory path.
+**Recommended complete path:** [Failure → V2 improvement → fresh-question validation](docs/en/complete-lab.md). Follow **sections 1–8 there** to learn real retrieval and answer improvement. The rest of this page is a **separate introductory LIVE path for learning evaluation without retrieval**.
 
 Find out whether the fictional **Gaon Lab travel-expense assistant** follows policy. Evaluation means **checking AI answers against criteria chosen in advance**. The code is provided; you do not need to write Python.
 
-**Follow this page from top to bottom: identify a wrong answer, prepare your environment, generate answers, evaluate them, change the instructions, compare, and record your decision.** The first activity needs no installation. Open or edit files only when a step asks you to; you do not need to read all the reference material first.
+**If you choose introductory LIVE below, follow this sequence: identify a wrong answer, prepare your environment, generate answers, evaluate them, change the instructions, compare, and record your decision.** The first activity needs no installation. Open or edit files only when a step asks you to; you do not need to read all the reference material first.
 
 > **Completing the workshop is not the same as passing the quality gate.** Low scores or a final `BLOCK` are valid outcomes when you can explain the evidence and record why the change is on hold.
 
@@ -20,14 +20,19 @@ Find out whether the fictional **Gaon Lab travel-expense assistant** follows pol
 
 **Optional RAG extension:** [Azure AI Search + Foundry IQ and evaluation](docs/en/optional-rag.md) adds a real search index and knowledge base, evaluates retrieval separately from answers, and uses only retrieved context. It is separate from the core fixed-policy workshop below.
 
+<a id="choose-path"></a>
 ### Choose your path
+
+**Choose one path at a time.** These links are not a sequence of exercises you must all complete. If Azure or terminals are new to you, you can learn the workflow with free DEMO first. For real retrieval, start with the recommended complete path and borrow only the shared setup it links to.
 
 | Your situation | Start here |
 |---|---|
 | You want real retrieval, dialogue improvement, and fresh-question validation | **[Recommended complete RAG path](docs/en/complete-lab.md)**. Check the fixed answer-model version, Basic Search, additional models, permissions, and costs first. The full introduction is not a prerequisite. |
 | You want to learn answer evaluation and prompt improvement without retrieval | **Introductory LIVE: start at [0. Spot the mistake](#lab-0)**. Setup later requires an active Azure subscription and permission to create resources and assign roles. Calls incur charges. |
 | You do not have Azure access, permissions, or an available model | Follow only the [DEMO guide](docs/en/offline.md). It uses Python but does not measure a real model. |
-| You already have an authorized project and deployment | Complete [activity 0](#lab-0), then follow [existing-environment setup](docs/en/setup.md#existing-environment). |
+| You only want to compare direct Search with Knowledge Base retrieval, rather than improve answers | Use [Optional RAG](docs/en/optional-rag.md): shared setup followed by a `search`/`iq` comparison. |
+
+**Already have an authorized project and deployment?** Use [existing-environment setup](docs/en/setup.md#existing-environment) within your chosen LIVE path. Having resources does not require switching learning paths or creating duplicates.
 
 **The rest of this page is one LIVE path.** Do not simply change `live` to `demo` in its commands. If Azure prevents progress, [switch to DEMO explicitly](docs/en/setup.md#switch-to-demo), preserving the LIVE records.
 
@@ -80,9 +85,9 @@ B is appropriate. KRW 240000 appears in an **unapproved draft**. A sounds helpfu
 <a id="prepare"></a>
 ## Setup. Connect your computer to Azure
 
-**If you came from complete RAG for setup only:** perform setup 1–7, then return to [complete-path Search setup](docs/en/complete-lab.md#search-setup). The one-model/22-response description and activities 0–6 below describe the introduction, not the complete path's total resources or call volume.
+**If you came from a RAG guide for setup only:** perform setup 1–7, then return to your chosen [complete-path Search setup](docs/en/complete-lab.md#search-setup) or [Optional RAG prerequisites](docs/en/optional-rag.md#prerequisites). The one-model/22-response description and activities 0–6 below describe the introduction, not the RAG paths' total resources or call volume.
 
-If you already have an authorized environment, use [existing-environment setup](docs/en/setup.md#existing-environment) instead of creating another one. Introductory participants then continue to [activity 1](#lab-1); complete-RAG participants return to [complete-path Search setup](docs/en/complete-lab.md#search-setup).
+If you already have an authorized environment, use [existing-environment setup](docs/en/setup.md#existing-environment) instead of creating another one. Introductory participants then continue to [activity 1](#lab-1); RAG participants return to their chosen guide above.
 
 **Starting requirements for the new-environment path:** a Microsoft Entra ID account, an active Azure subscription, and an **active Owner role** on that subscription, including an applicable inherited role. This workshop chooses Owner so one person can create resources and assign roles; Azure does not require Owner for every provisioning path, and existing-environment users do not need it. See the [permission contract](docs/en/reference.md#permissions-contract) for other authorized role combinations. No API keys are used.
 
@@ -145,7 +150,7 @@ python lab.py doctor
 <a id="working-files"></a>
 **Edit only these three local working files, when their steps ask for them.**
 
-This table belongs to the introduction. **Complete-RAG participants create only `config.json` in setup 6**; their own guide introduces later files.
+This table belongs to the introduction. **Complete and Optional RAG participants create only `config.json` in setup 6**; their chosen RAG guide introduces later files.
 
 | When | Local working file | Starting material |
 |---|---|---|
@@ -344,7 +349,12 @@ A low score does not invalidate connectivity. Authentication failures, truncated
 
 **A judge can give 5 while `citations` fails.** An answer may correctly reject the draft but also include `FAQ-DRAFT` in its citations array. That fails the exact citation-set contract. With valid JSON and complete scores/reasons, the smoke check still verifies connectivity; record the disagreement as an evaluation finding.
 
-**Setup complete. Introductory participants continue to activity 1. Complete-RAG participants return to [complete-path Search setup](docs/en/complete-lab.md#search-setup).**
+**Setup complete. Introductory participants continue to activity 1 below.** RAG participants who borrowed setup return to **only their chosen path**:
+
+| Chosen path | Continue here |
+|---|---|
+| Complete RAG | [Check setup values and prepare Search](docs/en/complete-lab.md#search-setup) |
+| Optional RAG | [Optional RAG prerequisites](docs/en/optional-rag.md#prerequisites) |
 
 ---
 

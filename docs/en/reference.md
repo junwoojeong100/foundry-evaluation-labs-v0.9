@@ -197,7 +197,7 @@ Portal Overall score/Pass may use threshold 3. Portal **100%** can therefore coe
 | Private repository inaccessible | GitHub access is separate from Azure Owner; obtain authorized access/ZIP. |
 | Subscription missing | Check account and tenant, including guest-directory sign-in. |
 | Owner cannot create/assign | Check active scope/PIM, policies, deny assignments, and conditional access; do not bypass controls. |
-| Provider not registered | Register `Microsoft.CognitiveServices` in the intended subscription and wait. |
+| Provider not registered | In the intended subscription's Resource providers, check `Microsoft.CognitiveServices` for Foundry or `Microsoft.Search` for Search creation. An authorized administrator registers only the provider you need. |
 | Cannot find `python` or `lab.py` | Open the correct folder and reactivate `.venv`. |
 | `SyntaxError` at `>>>` | Exit the Python REPL; use a shell terminal. |
 | Edits are not reflected | Edit/save the local copy, check paths, and do not overwrite completed results. |

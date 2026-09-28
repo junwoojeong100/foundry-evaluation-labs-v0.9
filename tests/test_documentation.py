@@ -15,6 +15,7 @@ from urllib.parse import unquote, urlsplit
 from xml.etree import ElementTree
 
 import advanced_lab
+import advanced_retrieval
 import lab
 import rag_lab
 from evaluation import ROOT, read_cases, read_json
@@ -81,7 +82,7 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn("(docs/setup.md)", text)
         self.assertIn("(docs/cleanup.md)", text)
         for anchor in (
-            "prepare", "setup-tools", "setup-sign-in", "setup-project",
+            "choose-path", "prepare", "setup-tools", "setup-sign-in", "setup-project",
             "setup-permissions", "setup-model", "setup-config", "setup-smoke",
             "command-status", "finish",
         ):
@@ -155,7 +156,7 @@ class DocumentationTests(unittest.TestCase):
                 )
 
     def test_supporting_guides_have_matching_anchors_and_language_navigation(self):
-        for name in ("setup", "reference", "offline", "cleanup", "facilitator"):
+        for name in ("setup", "reference", "offline", "cleanup", "facilitator", "complete-lab", "optional-rag"):
             korean = (ROOT / "docs" / f"{name}.md").read_text(encoding="utf-8")
             english = (ROOT / "docs" / "en" / f"{name}.md").read_text(encoding="utf-8")
             with self.subTest(guide=name):
@@ -165,7 +166,8 @@ class DocumentationTests(unittest.TestCase):
                     set(re.findall(r'<a id="([^"]+)"></a>', korean)),
                     set(re.findall(r'<a id="([^"]+)"></a>', english)),
                 )
-                self.assertNotIn("(../README.md", korean)
+                without_translation_link = korean.replace("[영문 기본 가이드](../README.md)", "")
+                self.assertNotIn("(../README.md", without_translation_link)
         english = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("not an actual portal screenshot", english)
         svg = ElementTree.parse(ROOT / "docs" / "images" / "foundry-permissions.en.svg").getroot()
@@ -192,7 +194,12 @@ class DocumentationTests(unittest.TestCase):
                 main = (ROOT / readme).read_text(encoding="utf-8")
                 preparation = main.split('<a id="prepare"></a>')[1].split('<a id="lab-1"></a>')[0]
                 self.assertIn(f"({guide}#search-setup)", preparation)
+                smoke = preparation.split('<a id="setup-smoke"></a>')[1]
+                optional_guide = guide.replace("complete-lab.md", "optional-rag.md")
+                self.assertIn(f"({guide}#search-setup)", smoke)
+                self.assertIn(f"({optional_guide}#prerequisites)", smoke)
                 self.assertIn("(complete-lab.md#search-setup)", (ROOT / setup).read_text(encoding="utf-8"))
+                self.assertIn("(optional-rag.md#prerequisites)", (ROOT / setup).read_text(encoding="utf-8"))
                 complete = (ROOT / guide).read_text(encoding="utf-8")
                 for required in ("100%", "4/5", "CALIBRATION PASSED: 10 controls", "intermediate_safe", "D04", "D08", "N05", "N06"):
                     self.assertIn(required, complete)
@@ -217,9 +224,93 @@ class DocumentationTests(unittest.TestCase):
                 creation = text.index("az search service create --name")
                 for field in ("name", "model_name", "model_version"):
                     self.assertLess(text.index(fixture["model_snapshot"][field]), creation)
+                for command in (
+                    "az cognitiveservices account deployment show",
+                    "az cognitiveservices model list",
+                    "az cognitiveservices usage list",
+                ):
+                    self.assertLess(text.index(command), creation)
                 self.assertLess(text.index("az search service check-name-availability"), creation)
                 self.assertIn("(optional-rag.md#search-access)", text)
                 self.assertIn("config.advanced.json", text[:text.index("python advanced_lab.py setup")])
+
+    def test_search_provider_is_checked_before_creating_either_search_path(self):
+        for name in ("complete-lab", "optional-rag"):
+            for language in ("", "en/"):
+                relative = f"docs/{language}{name}.md"
+                text = (ROOT / relative).read_text(encoding="utf-8")
+                with self.subTest(guide=relative):
+                    before_creation = text[:text.index("az search service create --name")]
+                    self.assertIn("Resource providers", before_creation)
+                    self.assertIn("**`Microsoft.Search`**", before_creation)
+                    self.assertIn("`Registered`", before_creation)
+                    self.assertIn("management/resource-providers-and-types", before_creation)
+
+    def test_complete_generation_and_judging_have_checkpoints_before_the_next_command(self):
+        dev_count = len(advanced_lab.baseline()["cases"])
+        counts = {
+            "v1-recorded": dev_count,
+            "v2-replay": dev_count,
+            "planned-dev": dev_count,
+            "holdout": 8,
+        }
+        expected = {("judge", stage) for stage in counts}
+        expected.update(("run", stage) for stage in counts if stage != "v1-recorded")
+        for relative in ("docs/complete-lab.md", "docs/en/complete-lab.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            blocks = list(SHELL_BLOCKS.finditer(text))
+            checked = set()
+            for index, block in enumerate(blocks):
+                command = shlex.split(block.group(1), comments=True)
+                if command[:2] != ["python", "advanced_lab.py"]:
+                    continue
+                args = advanced_lab.parser().parse_args(command[2:])
+                if args.command not in ("run", "judge"):
+                    continue
+                checkpoint_end = blocks[index + 1].start() if index + 1 < len(blocks) else len(text)
+                checkpoint = text[block.end():checkpoint_end]
+                count = counts[args.stage]
+                signal = (
+                    f"GENERATION COMPLETE: {args.stage}; {count} answers."
+                    if args.command == "run" else f"Evaluation complete: {count} cases × 3 metrics"
+                )
+                with self.subTest(guide=relative, command=command):
+                    self.assertIn(signal, checkpoint)
+                checked.add((args.command, args.stage))
+            self.assertEqual(checked, expected)
+
+    def test_complete_learner_finish_precedes_optional_historical_results(self):
+        for relative in ("docs/complete-lab.md", "docs/en/complete-lab.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(guide=relative):
+                self.assertEqual(re.findall(r"^## (\d+)\.", text, re.MULTILINE), list("12345678"))
+                introduction = text.split('<a id="architecture"></a>')[1].split('<a id="setup"></a>')[0]
+                self.assertIn("data/policies.md", introduction)
+                self.assertFalse(SHELL_BLOCKS.search(introduction))
+                finish = text.split('<a id="retention"></a>')[1].split('<a id="results"></a>')[0]
+                for required in (
+                    "- [ ]", "acceptance-report.md", "calibration-result.json",
+                    "judge-contract.json", "frozen.json", "N05", "N06",
+                    "(cleanup.md#retain-resources)",
+                ):
+                    self.assertIn(required, finish)
+                historical = text.split('<a id="results"></a>')[1]
+                self.assertIn("<details>", historical)
+                self.assertIn("</details>", historical)
+
+    def test_complete_baseline_explanation_matches_the_recorded_citation_failure(self):
+        fixture = advanced_lab.baseline()
+        case = next(case for case in fixture["cases"] if case["id"] == "D02")
+        row = next(row for row in fixture["rows"] if row["case_id"] == "D02")
+        expected = case["expected_citations"]
+        actual = row["response"]["citations"]
+        self.assertNotEqual(actual, expected)
+        for relative in ("docs/complete-lab.md", "docs/en/complete-lab.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(guide=relative):
+                section = text.split('<a id="improve"></a>')[1].split('<a id="freeze"></a>')[0]
+                self.assertIn(json.dumps(expected), section)
+                self.assertIn(json.dumps(actual), section)
 
     def test_search_roles_have_user_lookup_and_a_complete_path_return(self):
         for relative in ("docs/optional-rag.md", "docs/en/optional-rag.md"):
@@ -334,6 +425,31 @@ class DocumentationTests(unittest.TestCase):
             configs = [config for config in configs if "search_endpoint" in config]
             with self.subTest(guide=relative):
                 self.assertEqual(configs, [expected])
+
+    def test_complete_configuration_examples_match_template_and_validate_after_substitution(self):
+        expected = read_json(ROOT / "advanced-rag/config.example.json")
+        for relative in ("docs/complete-lab.md", "docs/en/complete-lab.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            configs = [
+                json.loads(block) for block in re.findall(r"```json\n(.*?)```", text, re.DOTALL)
+            ]
+            with self.subTest(guide=relative), tempfile.TemporaryDirectory() as directory:
+                self.assertEqual(configs, [expected])
+                config = {
+                    **configs[0],
+                    "search_endpoint": "https://feval-search-a7k3m9.search.windows.net",
+                    "model_resource_endpoint": "https://feval-a7k3m9.openai.azure.com",
+                    "index_name": "travel-vector-a7k3m9",
+                    "knowledge_source": "travel-vector-ks-a7k3m9",
+                    "knowledge_base": "travel-planned-kb-a7k3m9",
+                }
+                path = Path(directory) / "config.advanced.json"
+                path.write_text(json.dumps(config), encoding="utf-8")
+                self.assertEqual(advanced_retrieval.read_config(path), config)
+                self.assertEqual(
+                    advanced_lab.parser().parse_args(["setup"]).config,
+                    Path("config.advanced.json"),
+                )
 
     def test_live_guides_keep_requested_model_region_and_deployment_distinct(self):
         for relative in (

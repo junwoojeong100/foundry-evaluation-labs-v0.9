@@ -4,7 +4,9 @@
 
 [기본 실습](../README.ko.md) · [영문 기본 가이드](../README.md)
 
-**기본 실습 0–6을 대체하지 않는 선택 실습**입니다. 기본 경로는 전체 규정을 직접 전달합니다. 여기서는 **실제 검색된 문서만** 모델과 Groundedness 평가기에 전달하고, **검색이 맞았는지와 답변이 맞았는지**를 따로 봅니다.
+**직접 Search와 Knowledge Base 검색을 비교하는 선택 실습**입니다. 기본 입문 경로는 전체 규정을 직접 전달합니다. 여기서는 **실제 검색된 문서만** 모델과 Groundedness 평가기에 전달하고, **검색이 맞았는지와 답변이 맞았는지**를 따로 봅니다.
+
+**RAG는 자료를 검색한 뒤 그 근거로 답하는 방식**입니다. **청크**는 검색할 규정 조각, **인덱스**는 그 조각을 찾도록 저장한 검색 대상입니다. Knowledge Source는 인덱스 연결이고 Knowledge Base는 그 연결로 검색 요청을 처리합니다. 코드를 작성하지 않고 설정 파일 작성 → 검색 두 번 확인 → 각 경로의 답변 생성·평가 → 비교 순서로 진행합니다.
 
 **완결형 RAG를 먼저 끝낼 필요는 없습니다.** 이 문서는 `rag_lab.py`·`optional-rag/prompt.txt`로 두 검색 경로만 비교합니다. `advanced_lab.py`의 V1/V2·교정·동결·holdout 절차와 결과를 섞지 않습니다. 두 RAG CLI 모두 DEMO 모드는 없습니다.
 
@@ -60,6 +62,8 @@ python lab.py doctor --live
 아래 `YOUR-...`를 실제 값으로 바꿉니다. 기본 실습의 전용 그룹을 사용해도 됩니다. 서비스 이름은 전역에서 고유한 소문자·숫자·하이픈이어야 합니다.
 
 **허가된 Basic 이상 서비스가 이미 있으면 아래 두 명령을 건너뛰고 그 서비스의 URL·권한을 사용합니다.** `az search service create`는 기존 서비스를 갱신할 수도 있으므로 재사용할 이름으로 실행하지 않습니다. 아래 생성은 아직 서비스가 없는 경우에만 수행합니다.
+
+**신규 생성 전에:** Azure 포털 → **Subscriptions → 사용할 구독 → Resource providers**에서 **`Microsoft.Search`**를 확인합니다. 미등록이면 권한 있는 담당자가 **Register** 후 `Registered`를 확인합니다. 공통 준비의 `Microsoft.CognitiveServices` 등록만으로 대신할 수 없습니다. [공급자 등록 공식 안내](https://learn.microsoft.com/azure/azure-resource-manager/management/resource-providers-and-types)에 따라 필요한 공급자만 등록합니다. 기존 Search가 다른 그룹에 있다면 아래 `YOUR-LAB-RESOURCE-GROUP`에는 그 서비스의 실제 그룹을 넣습니다.
 
 ```bash
 az search service check-name-availability --name "YOUR-SEARCH-NAME" --type searchServices --subscription "YOUR-SUBSCRIPTION-ID"
@@ -183,6 +187,8 @@ python lab.py judge results/rag-search
 python rag_lab.py run --mode iq --out results/rag-iq
 ```
 
+**`LIVE RAG generation complete: 4 answers`**가 나온 뒤에만 아래 채점 명령으로 갑니다.
+
 ```bash
 python lab.py judge results/rag-iq --like results/rag-search
 ```
@@ -244,6 +250,13 @@ python rag_lab.py inspect results/rag-iq D04
 <a id="evidence"></a>
 ## 6. 포털·원본 증거·보존
 
+**완료 체크리스트:** 본인의 결과로 아래 항목을 확인합니다. 검색 경로의 점수가 같거나 낮아도 비교는 유효하며, 실행 오류나 누락은 먼저 해결합니다.
+
+- [ ] `results/rag-search`·`results/rag-iq` 각각 답변 4개와 두 Judge 점수·이유가 있다.
+- [ ] `results/rag-iq/rag-comparison.md`에서 검색 지표와 답변 지표를 구분해 읽었다.
+- [ ] D04의 실제 검색 문맥·답변·점수 이유를 대조했고 `REVIEW_REQUIRED`가 출시 승인이 아님을 이해했다.
+- [ ] 본인 결과 폴더와 실제 자원을 보존하고 [비용 확인](cleanup.md#retain-resources)을 마쳤다.
+
 Azure 포털의 해당 Search 서비스에서 **Indexes**, **Knowledge sources**, **Knowledge bases**를 확인합니다. 포털 메뉴/미리 보기 기능은 API와 다를 수 있으므로 생성·조회 확인의 기준은 저장한 서비스 응답입니다.
 
 Foundry의 Judge 보고서 URL에서는 같은 사례의 **질문·답변·검색 문맥·두 점수·이유**를 대조합니다. 기본 실습처럼 전체 규정이 `context`에 들어가 있으면 잘못 연결한 것입니다.
@@ -265,7 +278,7 @@ Foundry의 Judge 보고서 URL에서는 같은 사례의 **질문·답변·검�
 
 | 증상 | 조치 |
 |---|---|
-| Basic 서비스 생성 불가 | 허가된 기존 서비스부터 확인하고, 지역 용량·구독 제한·조직 정책을 점검. 다른 서비스를 삭제하거나 Free로 임의 대체하지 않기 |
+| Basic 서비스 생성 불가 | `Microsoft.Search` 등록, 허가된 기존 서비스, 지역 용량·구독 제한·조직 정책을 점검. 다른 서비스를 삭제하거나 Free로 임의 대체하지 않기 |
 | 401/403 | 실제 CLI 계정·테넌트, Search 두 역할과 범위·전파 확인. API 키로 우회하지 않기 |
 | MCP 도구만 `invalid_token` | MCP와 CLI 인증이 다를 수 있음. 이 실습의 명시적 `AzureCliCredential` 경로를 확인하고 도구 인증은 별도 점검 |
 | `queryLanguage`가 유효하지 않음 | 이 API 버전의 요청에는 넣지 않음. 제공된 코드와 한국어 인덱스 분석기 사용 |

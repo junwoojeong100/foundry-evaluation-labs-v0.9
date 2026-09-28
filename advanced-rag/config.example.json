@@ -1,5 +1,5 @@
 {
-  "search_endpoint": "https://YOUR-ADVANCED-SEARCH.search.windows.net",
+  "search_endpoint": "https://YOUR-SHARED-SEARCH.search.windows.net",
   "index_name": "travel-vector-index",
   "knowledge_source": "travel-vector-ks",
   "knowledge_base": "travel-planned-kb",

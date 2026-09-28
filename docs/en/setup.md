@@ -4,7 +4,9 @@
 
 [Main workshop](../../README.md) · [Troubleshooting](reference.md#troubleshooting)
 
-Start a new workshop with [activity 0](../../README.md#lab-0), before installing anything. The main page contains the complete setup, execution, and retention sequence. Use this page only to find a checkpoint, use existing resources, or resume work.
+Start a new introductory LIVE workshop with [activity 0](../../README.md#lab-0), before installing anything. The main page contains the complete setup, execution, and retention sequence. Use this page only to find a checkpoint, use existing resources, or resume work.
+
+**If a RAG guide sent you here for setup only**, return to your original [complete-path Search setup](complete-lab.md#search-setup) or [Optional RAG prerequisites](optional-rag.md#prerequisites), not the introductory activities.
 
 The new introductory LIVE target is **`gpt-6-luna`**, **`swedencentral`**, deployment **`eval-model`**, used for generation and judging. **Retain resources** after the workshop. Do not silently substitute another model or region. Use the relevant path for existing deployment names or the complete path's additional models.
 

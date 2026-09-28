@@ -4,7 +4,9 @@
 
 [Core workshop](../../README.md) · [Korean core guide](../../README.ko.md)
 
-This is an **optional extension, not a replacement for activities 0–6**. The core workshop supplies the full policy. Here, **only actually retrieved documents** reach the answer model and Groundedness judge. Evaluate retrieval and answer quality separately.
+**This optional path compares direct Search with Knowledge Base retrieval.** The introductory workshop supplies the full policy. Here, **only actually retrieved documents** reach the answer model and Groundedness judge. Evaluate retrieval and answer quality separately.
+
+**RAG means searching for material, then answering from that evidence.** A **chunk** is a policy fragment; an **index** stores fragments for search. A Knowledge Source connects to the index, and a Knowledge Base uses that connection to handle retrieval requests. Without writing code, prepare configuration → check both retrieval routes → generate and judge each route's answers → compare.
 
 **You do not need to finish the complete RAG path first.** This guide compares two retrieval routes using `rag_lab.py` and `optional-rag/prompt.txt`. Do not mix its results with `advanced_lab.py`'s V1/V2, calibration, freeze, or holdout workflow. Neither RAG CLI has a DEMO mode.
 
@@ -60,6 +62,8 @@ The extension has **7 chunks, 4 questions × 2 routes = 8 answers and 16 judge m
 Replace all placeholders with real values. You can reuse the core dedicated group. The service name must be globally unique and use lowercase letters, digits, and dashes.
 
 **If an authorized Basic-or-higher service already exists, skip both commands below and use its endpoint/permissions.** `az search service create` can update an existing service, so do not run it against a name you intend to reuse. Create below only when you do not yet have a service.
+
+**Before creating a new service:** in Azure portal, open **Subscriptions → intended subscription → Resource providers** and check **`Microsoft.Search`**. If unregistered, an authorized administrator selects **Register** and confirms `Registered`. Shared setup's `Microsoft.CognitiveServices` registration does not replace this. Follow [official provider-registration guidance](https://learn.microsoft.com/azure/azure-resource-manager/management/resource-providers-and-types) for the provider you need. If existing Search is in another group, use that service's actual group for `YOUR-LAB-RESOURCE-GROUP` below.
 
 ```bash
 az search service check-name-availability --name "YOUR-SEARCH-NAME" --type searchServices --subscription "YOUR-SUBSCRIPTION-ID"
@@ -185,6 +189,8 @@ Wait for **`평가 완료: 4개 답변 × 2개 지표`**. If still processing, r
 python rag_lab.py run --mode iq --out results/rag-iq
 ```
 
+Wait for **`LIVE RAG generation complete: 4 answers`** before running the judge below.
+
 ```bash
 python lab.py judge results/rag-iq --like results/rag-search
 ```
@@ -246,6 +252,13 @@ For ambiguous remote creation, follow [ID recovery](reference.md#resume), withou
 <a id="evidence"></a>
 ## 6. Portal evidence and retention
 
+**Completion checklist:** verify these against your own results. Identical or low scores are valid comparison outcomes; execution errors and missing evidence must be resolved first.
+
+- [ ] `results/rag-search` and `results/rag-iq` each contain four answers and both judge scores with reasons.
+- [ ] I read `results/rag-iq/rag-comparison.md`, distinguishing retrieval metrics from answer metrics.
+- [ ] I compared D04's actual context, answer, and scoring reasons, and understand that `REVIEW_REQUIRED` is not release approval.
+- [ ] I retained my result folders and actual resources, and completed the [cost check](cleanup.md#retain-resources).
+
 In the Search service's Azure portal view, inspect **Indexes**, **Knowledge sources**, and **Knowledge bases**. Portal/preview UI may differ from GA API behavior; saved service definitions/responses are the setup and retrieval evidence.
 
 In the Foundry evaluation report URL, match a case's **question, answer, retrieved context, scores, and reasons**. Supplying the entire policy as `context` would be incorrect for this extension.
@@ -267,7 +280,7 @@ Cleanup of the author's earlier Free service/records is a historical migration r
 
 | Symptom | Action |
 |---|---|
-| Basic service cannot be created | First check for an authorized existing service, then regional capacity, subscription limits, and organizational policy. Do not delete another service or silently substitute Free. |
+| Basic service cannot be created | Check `Microsoft.Search` registration, authorized existing service, regional capacity, subscription limits, and organizational policy. Do not delete another service or silently substitute Free. |
 | 401/403 | Verify CLI identity/tenant and both service-scoped Search roles; allow propagation. Do not fall back to keys. |
 | Only an MCP tool reports `invalid_token` | MCP and CLI authentication can differ. Verify the lab's explicit AzureCliCredential path; investigate tool authentication separately. |
 | `queryLanguage` is rejected | Do not send it with this API version. Use the provided request and Korean index analyzer. |

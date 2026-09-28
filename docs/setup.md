@@ -4,7 +4,9 @@
 
 [메인 실습](../README.ko.md) · [문제 해결](reference.md#troubleshooting)
 
-**처음 시작한다면 [README의 실습 0](../README.ko.md#lab-0)에서 설치 없이 오답을 먼저 판단합니다.** 이어지는 [준비](../README.ko.md#prepare)에 설치·로그인·자원 생성·권한·설정·연결 확인 명령이 모두 있습니다. 준비가 끝나면 같은 문서의 실습 1부터 정리까지 이어집니다.
+**입문 LIVE를 처음 시작한다면 [README의 실습 0](../README.ko.md#lab-0)에서 설치 없이 오답을 먼저 판단합니다.** 이어지는 [준비](../README.ko.md#prepare)에 설치·로그인·자원 생성·권한·설정·연결 확인 명령이 모두 있습니다. 준비가 끝나면 같은 문서의 실습 1부터 정리까지 이어집니다.
+
+**RAG에서 준비만 참고했다면** 입문 실습으로 넘어가지 않고 [완결형 Search 준비](complete-lab.md#search-setup) 또는 [Optional RAG 준비](optional-rag.md#prerequisites) 중 원래 경로로 돌아갑니다.
 
 이 문서는 **필요한 준비 단계만 다시 찾거나, 기존 환경을 사용하거나, 중단한 실습을 재개할 때** 사용합니다. 같은 명령을 여기서 다시 실행할 필요는 없습니다.
 

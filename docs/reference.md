@@ -224,7 +224,7 @@ AI 보조 검토는 `reviews.json`에 남지만 **사람 검토의 건수나 최
 | 비공개 GitHub 저장소에 접근할 수 없음 | Azure Owner와 GitHub 접근 권한은 별개. 저장소 접근 권한 또는 소유자가 승인한 ZIP 배포 필요 |
 | 구독이 목록에 없음 | 포털·CLI의 계정과 테넌트 확인. 다른 디렉터리의 게스트 계정이라면 사용할 구독의 테넌트로 로그인 |
 | Owner인데 역할 할당/생성이 안 됨 | 구독 범위의 역할인지, PIM에서 활성인지 확인. 관리 그룹 정책·deny assignment·조건부 액세스는 Owner로 우회하지 않기 |
-| 공급자가 등록되지 않았다고 함 | 해당 구독의 Resource providers에서 `Microsoft.CognitiveServices`를 등록하고 `Registered` 확인 |
+| 공급자가 등록되지 않았다고 함 | 해당 구독의 Resource providers에서 Foundry는 `Microsoft.CognitiveServices`, Search 생성은 `Microsoft.Search`의 등록 상태 확인. 필요한 공급자만 권한 있는 담당자가 등록 |
 | `python` 또는 `lab.py`를 찾을 수 없음 | VS Code에서 `lab.py`가 있는 폴더를 열고 [준비 1](../README.ko.md#setup-tools)의 가상환경 활성화부터 확인. 새 터미널마다 활성화 필요 |
 | 명령 입력 후 `SyntaxError`, 화면에 `>>>`가 보임 | Python 대화창에 셸 명령을 입력한 상태. `exit()`로 나온 뒤 VS Code 터미널에 명령만 입력 |
 | 파일을 수정했는데 실행에 반영되지 않음 | 브라우저가 아니라 VS Code의 로컬 복사본인지, File → Save로 저장했는지, 명령의 파일 경로가 맞는지 확인. 완료된 결과는 덮어쓰지 않기 |
