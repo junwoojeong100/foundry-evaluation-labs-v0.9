@@ -61,7 +61,6 @@ The current official limit is KRW 200000. KRW 220000 exceeds it, so prior Financ
 | Component | Purpose |
 |---|---|
 | Basic Search service in `swedencentral` | Hosts every index and knowledge base for this path |
-| `travel-rag-index` / `travel-policy-kb` | Created separately only if you choose the Optional RAG exercise |
 | `travel-vector-index` | Real 1536-dimensional HNSW vectors plus searchable policy text |
 | `travel-vector-ks` / `travel-planned-kb` | Foundry IQ source/base with an LLM planning model |
 | `rag-embedding` | `text-embedding-3-small`, used for document and query vectors |
@@ -77,15 +76,50 @@ Free Search does not provide the outbound managed identity needed here. Reuse an
 
 **Check before creating additional paid resources:** the recorded V1 comparison requires answer deployment **`eval-model` / `gpt-6-luna` / version `2026-09-22`**, in `swedencentral`. A historical run does not guarantee current version availability or quota in your subscription. If you cannot meet this condition, choose the [fixed-policy introductory LIVE path](../../README.md#lab-0) or [DEMO](offline.md) before creating Search or additional models. Do not compare a different model version with recorded V1.
 
-The code compares the name, model, version, and `type: ModelDeployment` in [V1's `model_snapshot`](../../advanced-rag/fixtures/recorded-v1.json). **Matching only the model name is insufficient.** Do not edit the fixture or a shared deployment to force a match.
+**Matching only the model name is insufficient.** The deployment name and model version must also match [V1's saved model information (`model_snapshot`)](../../advanced-rag/fixtures/recorded-v1.json). Do not edit the recorded evidence or a shared deployment to force a match.
 
 - Also [check model availability](reference.md#model-availability) for the embedding/planning models below and **GlobalStandard capacities 40/60** in the same Foundry account before proceeding. These are deployment capacity settings, not spending caps.
 - Obtain the owner's approval to create/use Search and models and to assign roles at the **Search and Foundry resource scopes**. An authorized administrator must prepare missing roles if you cannot assign them. Confirm ongoing Basic charges, usage charges, preview permission, and network access first.
 
+**Setup has six steps below.** After returning from shared setup once, **continue on this page without visiting Optional RAG**. When reusing resources, skip their creation commands but still perform the lookups and permission checks.
+
+| Setup step | Action |
+|---|---|
+| [2-1. Shared environment](#common-setup) | Python, sign-in, Foundry, answer model, and one-case evaluation |
+| [2-2. Actual values](#search-setup) | Distinguish names/IDs; check answer version and extra-model availability |
+| [2-3. Search](#search-service) | Prepare one service; retrieve its resource and managed-identity IDs |
+| [2-4. Permissions](#search-access) | Check user → Search and Search identity → model access |
+| [2-5. Extra models](#extra-models) | Deploy embedding and query-planning models |
+| [2-6. Configuration](#configure) | Save `config.advanced.json` and create search objects |
+
+The complete configuration uses **three model deployments and one Search service**. Shared setup's single model is the answer/judge deployment within that total. The number of new resources depends on reuse.
+
+<details>
+<summary>See workload counts for cost planning</summary>
+
+These counts cover one uninterrupted completion starting with shared setup. **New responses include intermediate dialogue turns**; evaluation items count per-answer metrics.
+
+| Stage | Newly generated responses | Evaluation items |
+|---|---|---|
+| `setup-smoke` | 1 | 2 |
+| `calibration` | 0 — use 10 authored control answers | 10 |
+| `v1-recorded` | 0 — import 4 earlier answers | 12 |
+| `v2-replay` | 6 — 4 final + 2 initial | 12 |
+| `planned-dev` | 6 — 4 final + 2 initial | 12 |
+| `holdout` | 10 — 8 final + 2 initial | 24 |
+| Total | **23** | **72** |
+
+These are not billable API-request counts or spending caps. Account separately for ongoing Search charges, embeddings, query planning, evaluator internals, and retries. Interruptions and reuse of saved results also affect actual calls.
+
+</details>
+
+<a id="common-setup"></a>
+### 2-1. Prepare the shared environment
+
 Complete only [README setup 1–7](../../README.md#prepare). Verify the answer-model version in [setup 5](../../README.md#setup-model), create `config.json`, and finish the one-case generation/evaluation check. For authorized existing resources, use [existing-environment setup](setup.md#existing-environment). Introductory A/B and activities 1–6 are not required prerequisites. **Keep this page open and use a new tab for shared setup, then return directly below.**
 
 <a id="search-setup"></a>
-### Check actual values after shared setup
+### 2-2. Check actual values and model availability
 
 You should now have `config.json` and one generated, evaluated N01 answer. Replace each `YOUR-...` with **your actual value**, retaining the quotation marks. Names, IDs, and endpoints are not interchangeable.
 
@@ -96,7 +130,9 @@ You should now have `config.json` and one generated, evaluated N01 answer. Repla
 | `YOUR-FOUNDRY-ACCOUNT` | Parent Foundry resource name, not the project name `eval-workshop` |
 | `YOUR-SHARED-SEARCH` | Authorized existing Search name, or a new unique name such as `feval-search-a7k3m9` |
 | `YOUR-FOUNDRY-RESOURCE-ID` | Full `id` from the parent Foundry resource's **Overview → JSON View**, ending in `/accounts/ACTUAL-NAME` |
+| `YOUR-SEARCH-RESOURCE-ID` | Full `id` from the Search lookup in 2-3; the scope for role assignments |
 | `YOUR-SEARCH-PRINCIPAL-ID` | `identity.principalId` from the Search lookup below, not the user or project ID |
+| `YOUR-USER-OBJECT-ID` | Your account's `objectId` from the user lookup in 2-4 |
 
 First, read the **already deployed answer model** without changing it:
 
@@ -120,7 +156,8 @@ az cognitiveservices usage list --location swedencentral --subscription "YOUR-SU
 
 In the first result, check **`model.version` and `GlobalStandard` support** for each `model.name`. Use the chosen versions as **`YOUR-EMBEDDING-VERSION` and `YOUR-PLANNER-VERSION`** in the later deployment commands. The second result's remaining quota (`limit - current`) must accommodate capacity **40** for a new embedding deployment and **60** for a new planner. Do not allocate an existing deployment's quota a second time when reusing it. Check model/SKU-specific quota and capacity units; an empty result or 403 does not mean zero quota. Use [availability and permission help](reference.md#model-availability) if blocked.
 
-### Prepare the Search service
+<a id="search-service"></a>
+### 2-3. Prepare the Search service
 
 **If reusing an authorized Basic-or-higher service, or if you already created it, skip both creation-preparation commands below.** Use a unique name only when a new service is needed. `az search service create` can also update an existing service, changing settings such as replicas or authentication. Do not create another Free Search service for this path.
 
@@ -142,10 +179,33 @@ For both new and existing services, inspect the actual ID, region, SKU, authenti
 az search service show --name "YOUR-SHARED-SEARCH" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --query "{id:id,identity:identity,location:location,sku:sku.name,state:provisioningState,disableLocalAuth:disableLocalAuth,semanticSearch:semanticSearch}" -o json
 ```
 
-Confirm `Succeeded/succeeded`, `swedencentral`, Basic-or-higher SKU, `disableLocalAuth: true`, and `identity.principalId`. `semanticSearch` must be `free` or an already approved `standard` plan. Follow only [user ID lookup and Search role setup](optional-rag.md#search-access) for **Search Service Contributor** and **Search Index Data Contributor**, then return here. Its `YOUR-SEARCH-NAME` is the service above; do not continue into Optional RAG section 3.
+**Checkpoint:** confirm `Succeeded/succeeded`, `swedencentral`, Basic-or-higher SKU, `disableLocalAuth: true`, and `identity.principalId`. `semanticSearch` must be `free` or an already approved `standard` plan. In the next step, use **the full `id` as `YOUR-SEARCH-RESOURCE-ID`** and **`identity.principalId` as `YOUR-SEARCH-PRINCIPAL-ID`**. The first identifies the resource receiving permissions; the second identifies Search as a caller.
+
+<a id="search-access"></a>
+### 2-4. Set user and Search-identity permissions
+
+First prepare **user → Search** access. Retrieve the currently signed-in user's ID:
+
+```bash
+az ad signed-in-user show --query "{account:userPrincipalName,objectId:id}" --output json
+```
+
+Verify that `account` identifies you in the intended tenant, then use **`objectId` as `YOUR-USER-OBJECT-ID`**. Do not substitute the project or Search identity. If directory lookup is restricted, ask the environment owner to verify your user ID in that tenant.
+
+In Search **Access control (IAM) → Role assignments**, check inherited roles too. An authorized role assigner grants **only missing roles**, at the **Search service scope**. Skip both commands if both roles already apply.
+
+```bash
+az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "7ca78c08-252a-4471-8644-bb5ff32d4ba0" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
+```
+
+```bash
+az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "8ebe5a00-799e-43f5-93ac-243d3dce84a7" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
+```
+
+The first role is **Search Service Contributor**, covering search-object/service management and key retrieval. The second is **Search Index Data Contributor**, for document upload and retrieval. **These permissions also cover other participants' objects on the service**: use only the approved shared-workshop scope. Distinct object names are not a security boundary; do not assign subscription-wide roles.
 
 <a id="search-model-access"></a>
-Now check IAM for **Cognitive Services OpenAI User** on the parent Foundry account for the **Search identity from `identity.principalId`**, and assign it only if missing. `YOUR-FOUNDRY-RESOURCE-ID` ends at `/accounts/ACTUAL-ACCOUNT`, without `/projects/...`. Do not substitute the project or user identity:
+Next prepare **Search identity → model** access. Check IAM for **Cognitive Services OpenAI User** on the parent Foundry account for the **Search identity from `identity.principalId`**, and assign it only if missing. `YOUR-FOUNDRY-RESOURCE-ID` ends at `/accounts/ACTUAL-ACCOUNT`, without `/projects/...`. Do not substitute the project or user identity:
 
 ```bash
 az role assignment create --assignee-object-id "YOUR-SEARCH-PRINCIPAL-ID" --assignee-principal-type ServicePrincipal --role "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd" --scope "YOUR-FOUNDRY-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
@@ -153,15 +213,25 @@ az role assignment create --assignee-object-id "YOUR-SEARCH-PRINCIPAL-ID" --assi
 
 **Distinguish the callers.** Document embeddings and `vector`/`hybrid` query embeddings use **your terminal's `AzureCliCredential`**; service-side vectorization/planning uses the **Search identity**; cloud evaluation uses the **project identity** from shared setup. Retain the existing Foundry User access for your user and project. A successful role assignment does not mean calls work immediately. For 401/403, verify the principal, scope, propagation, and network, then resume the same stage—without duplicate roles or API-key fallback.
 
+**Checkpoint:** verify the two Search roles for your user and the Foundry model-access role for Search in IAM, including **principal IDs and scopes**. Actual data access is checked by `setup` and the queries in section 3.
+
+<details>
+<summary>Open only if official articles show different role names</summary>
+
 **Official guidance has different scopes:** the [vectorizer article](https://learn.microsoft.com/azure/search/vector-search-vectorizer-azure-open-ai) specifies OpenAI User as above, while the [Knowledge Base article](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-create-knowledge-base) specifies broader Cognitive Services User access for planning. Distinguish these from this code's Azure OpenAI endpoint/API version. If only planning is denied, verify the target API's permissions with the owner rather than speculatively adding a broader role.
 
-### Deploy the additional models
+</details>
 
-Replace `YOUR-EMBEDDING-VERSION`/`YOUR-PLANNER-VERSION` with the versions verified earlier, then deploy the models **sequentially**. Confirm the first deployment is `Succeeded` before running the next command. Concurrent writes to the same Foundry account can conflict. If an authorized deployment already exists, verify its model/version and skip its creation command. Do not silently update shared deployments.
+<a id="extra-models"></a>
+### 2-5. Deploy the additional models
+
+Replace `YOUR-EMBEDDING-VERSION`/`YOUR-PLANNER-VERSION` with the versions verified earlier, then deploy the models **sequentially**. Concurrent writes to the same Foundry account can conflict. If an authorized deployment already exists, verify its model/version and skip its creation command. Do not silently update shared deployments.
 
 ```bash
 az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --deployment-name rag-embedding --model-name text-embedding-3-small --model-version "YOUR-EMBEDDING-VERSION" --model-format OpenAI --sku-name GlobalStandard --sku-capacity 40 --subscription "YOUR-SUBSCRIPTION-ID"
 ```
+
+**Before the next command:** in Foundry **Build → Models**, confirm the newly created `rag-embedding` is `Succeeded` and uses `text-embedding-3-small`. Resolve any deployment error first.
 
 ```bash
 az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --deployment-name rag-planner --model-name gpt-5.4-mini --model-version "YOUR-PLANNER-VERSION" --model-format OpenAI --sku-name GlobalStandard --sku-capacity 60 --subscription "YOUR-SUBSCRIPTION-ID"
@@ -170,7 +240,7 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 **Checkpoint:** in Foundry **Build → Models**, confirm both `rag-embedding` and `rag-planner` succeeded with the intended models/versions. The recorded additional-model versions were embedding `1` and planner `2026-03-17`. You can select currently supported versions for these two models, but must keep them unchanged after `setup` within this experiment. Keep the answer model at the recorded V1 version verified earlier.
 
 <a id="configure"></a>
-### Write the configuration and create search objects
+### 2-6. Write the configuration and create search objects
 
 **In VS Code**, open `advanced-rag/config.example.json`, then use **File → Save As** to create **`config.advanced.json` beside `advanced_lab.py`**. Do not save it inside `advanced-rag/` or as `config.advanced.json.txt`. If your configuration already exists, check its actual values rather than overwriting it.
 
@@ -205,7 +275,7 @@ Keep the template's `top_k: 4`, 1536 embedding dimensions, and `low` planning ef
 
 **Sharing a service does not mean unconditionally sharing search objects or experiments.** Choose the three object names before the first run and keep them when resuming that experiment. Reuse objects only with the owner's permission and the same corpus, vector settings, model endpoint, deployments, and planning settings. `setup` stops rather than updating mismatched existing objects; use new object names for another experiment.
 
-Embeddings use the account's `/openai/v1/embeddings` endpoint with Entra authentication. The author's earlier project gateway returned 404 for embeddings; this is not a universal limitation of every Foundry endpoint. Use the `.openai.azure.com` endpoint required by this code, without API keys.
+Embeddings use the account's `/openai/v1/embeddings` endpoint with Entra authentication. Store **only the resource endpoint** from the table above. The code appends `/openai/v1/embeddings`; do not append it yourself.
 
 **Before running:** save both files, remove every endpoint placeholder `YOUR-...`, and verify the user, project, and Search identities' roles separately. Keep the provided instructions, questions, labels, and settings unchanged during this experiment.
 
@@ -216,8 +286,6 @@ python advanced_lab.py setup
 `setup` checks existing object contracts, prepares the embedding cache, creates a missing index/uploads documents, and then creates the Knowledge Source and planned Knowledge Base.
 
 **Checkpoint:** `VECTOR SETUP OK: 7 documents, 1536 dimensions`. `results/advanced/setup.json` retains model snapshots, intended upload count, and server HNSW/vectorizer/knowledge-object definitions; `embedding-cache.json` retains document vectors. Successful setup alone does not validate retrieval or answer quality: continue with the actual queries in section 3.
-
-The smaller [optional text-RAG lab](optional-rag.md) can use this **same Search endpoint** in `config.rag.json`, with its distinct index/base names. Do not point both workflows at the same index name.
 
 <a id="resume"></a>
 ### Command status, interruption, and resumption
@@ -231,6 +299,8 @@ Outputs are fixed under **`results/advanced/`**. Use this table rather than intr
 |---|---|
 | Connection failure/interruption during `setup` | Resolve the cause and repeat the same `setup`. It reuses the matching corpus/model embedding cache and matching objects, then continues missing work. Contract mismatches are not overwritten |
 | `GENERATION COMPLETE` or `Evaluation complete` | Check the stage's count and saved evidence, then continue. Completion does not mean acceptance |
+| `Using complete saved generation; no new model/retrieval calls.` | Completed answers from the same stage were reused. Do not wait for `GENERATION COMPLETE` or regenerate; continue to that stage's `judge` if still needed |
+| `Existing frozen experiment retained.` / `Existing holdout registration retained.` | The existing freeze/registration was checked and retained. Use the resume-position table below for the next unfinished step; do not recreate an existing holdout |
 | `아직 처리 중입니다` / exit `3` | Repeat the **entire original command**: the same `calibrate` for calibration, or the same `judge --stage …` for judging. It retrieves the saved remote job |
 | Transient connection failure or interruption during generation | Resolve the cause, then repeat the same `run --stage …`. Saved responses are not regenerated. A response interrupted before persistence can incur another charge |
 | `initial clarification/handoff field checks failed` / exit `1` | Initial quality failure. Read `<stage>/generation.json` at `pending → case ID → initial_response → response`, and preserve the failure. Repeating the command cannot resample a better answer |
@@ -243,6 +313,18 @@ Outputs are fixed under **`results/advanced/`**. Use this table rather than intr
 **An initial quality failure leaves `generation.json` in `collecting` state.** You cannot use `judge` or `inspect` as if generation completed, or obtain a final decision with `accept`. Read the saved initial response in JSON and the terminal error directly, mark later stages as not run, and preserve them in section 8. This CLI's `inspect` requires both generation and judging to be complete for that stage.
 
 Calibration/judging has a default **300-second status-polling budget**. Authentication, submission, HTTP responses, and result collection can make total command time longer.
+
+**If you cannot remember your last completed step:** find the furthest applicable row below. Check the stage's completion message, status, and count, not file existence alone. **Errors, partial collection, or failed calibration take precedence via the status table above**; do not use this table to skip a failed stage.
+
+| Last completed checkpoint | Continue at |
+|---|---|
+| `setup.json`; retrieval probes not yet complete | The missing query or queries in [section 3](#retrieval-proof) |
+| Both query JSON files; no `judge-contract.json` yet | Calibration in [section 4](#calibration) |
+| Passed calibration and `judge-contract.json` | The first unfinished V1 import/judging or V2 generation/judging step in [section 5](#improve) |
+| Four V2 replay answers generated and judged | The first unfinished `planned-dev` generation/judging or `freeze` step in [section 6](#freeze) |
+| `frozen.json`; holdout not yet registered | `create-holdout` in [section 7](#holdout). If data files already exist, use the recovery row above first |
+| `holdout-registration.json`; no final report yet | The first unfinished holdout generation → judging → dialogue review → `accept` step in [section 7](#holdout) |
+| `acceptance-report.md` and `acceptance-result.json` | Interpretation, retention, and costs in [section 8](#retention) |
 
 | Artifact, relative to `results/advanced/` | Purpose |
 |---|---|
@@ -524,6 +606,7 @@ Intermediate clarification is retained as evidence, and user follow-up data is e
 - [Agentic vector index and vectorizer](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-create-index)
 - [Knowledge-base features and models by API version](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-create-knowledge-base)
 - [Azure OpenAI vectorizer identity and role](https://learn.microsoft.com/azure/search/vector-search-vectorizer-azure-open-ai)
+- [Search user roles and service scope](https://learn.microsoft.com/azure/search/search-security-rbac)
 - [LLM retrieval reasoning effort](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-set-retrieval-reasoning-effort)
 - [Search tier feature support](https://learn.microsoft.com/azure/search/search-sku-tier)
 - [Embeddings with Entra authentication](https://learn.microsoft.com/azure/foundry/openai/how-to/embeddings)

@@ -108,12 +108,10 @@ The roles are **Search Service Contributor**, which permits service configuratio
 
 **Checkpoint:** verify both roles apply to your Object ID and allow propagation. A successful role assignment alone does not prove data access. If sections 3–4 return 401/403, check your identity, scope, network, and propagation, then repeat the same command. Do not repeatedly create roles or fall back to keys.
 
-**If the complete path sent you here only for this section, return to [Search identity model access](complete-lab.md#search-model-access).** The minimal-RAG index in section 3 is not a prerequisite for the complete path.
-
 <a id="index"></a>
 ## 3. Create the index and actual Foundry IQ knowledge objects
 
-Save [the example](../../optional-rag/config.example.json) as **`config.rag.json`** beside `rag_lab.py` at the repository root, not inside `optional-rag/`. Copy the actual service URL from Search Overview. Keep the original `config.json` unchanged.
+**In VS Code**, open [the example](../../optional-rag/config.example.json) and use **File → Save As** to create **`config.rag.json`** beside `rag_lab.py` at the repository root. Do not save inside `optional-rag/` or as `config.rag.json.txt`. Check an existing personal configuration rather than overwriting it. Copy the actual service URL from Search Overview and save. **Retain shared setup's `config.json` unchanged**; both files are required.
 
 ```json
 {
@@ -150,13 +148,15 @@ Setup resumes incomplete uploads for the same corpus, but does not overwrite obj
 python rag_lab.py query --mode search --query "2026년 9월 국내 숙박비가 220000원이고 사전 승인이 없습니다. 정산 가능한가요?" --out results/rag-query-search.json
 ```
 
+**Checkpoint:** `RETRIEVAL OK: search`, selected chunk IDs, and the saved `results/rag-query-search.json`. Resolve any error here; only after completion, query IQ with the same question.
+
 ```bash
 python rag_lab.py query --mode iq --query "2026년 9월 국내 숙박비가 220000원이고 사전 승인이 없습니다. 정산 가능한가요?" --out results/rag-query-iq.json
 ```
 
 The question asks about a September domestic hotel expense of KRW 220000 without prior approval.
 
-**Checkpoint:** both print `RETRIEVAL OK`, selected chunk IDs, official source IDs, and scores. IQ also returns **searchIndex activity and original reference/source data**. The saved JSON's `raw_response` is the actual service response; `documents` is the selection to be supplied to the model. These commands do not generate an answer or run a judge.
+**Checkpoint:** `RETRIEVAL OK: iq`, selected chunk IDs, official source IDs, scores, **`searchIndex` activity**, and the saved `results/rag-query-iq.json`. The JSON's `raw_response` is the actual service response, including IQ reference/source data; `documents` is the selection to be supplied to the model. Neither query generates an answer or runs a judge.
 
 | Identifier | Purpose |
 |---|---|
@@ -201,6 +201,8 @@ For IQ, also confirm four generated answers followed by **`평가 완료: 4개 �
 python rag_lab.py compare results/rag-search results/rag-iq
 ```
 
+**Checkpoint:** `REVIEW_REQUIRED` and `Comparison: results/rag-iq/rag-comparison.md`. Comparison files have been produced; inspect the actual case below before deciding what they mean.
+
 ```bash
 python rag_lab.py inspect results/rag-iq D04
 ```
@@ -233,6 +235,7 @@ Restore the virtual environment and sign-in in a new terminal. Never use the sam
 | Connection failure/interruption during `setup` | Resolve the cause and repeat `setup` with the same configuration. It reuses matching objects and completes same-corpus uploads; mismatches are not overwritten |
 | Connection failure/interruption during `run` | Repeat the entire command with the same `--mode` and `--out`. Saved responses and searches in `pending_retrievals` are reused. A response interrupted before persistence can incur another charge |
 | `run.json` has `status: collecting` | Partial run. Read saved `rows`, `pending_retrievals`, and the error; do not use `judge`, `inspect`, or `compare` yet |
+| `Using completed LIVE evidence; no new retrieval or generation calls.` | Completed evidence for the same inputs was reused. A new `LIVE RAG generation complete` message is not expected; proceed to this route's judging or next unfinished step |
 | Judge pending / exit `3` | Repeat the same complete `python lab.py judge …` command, retaining IQ's `--like`. The default status-polling budget is **300 seconds**; total command time can be longer |
 | Generation/judging complete with low scores or failed checks | Do not resample saved answers. Finish judging both routes, then preserve failures with the dedicated comparison |
 | `ERROR:` / argument error | Resolve the cause, then resume the same command. If unable to finish, distinguish the last completed stage from unperformed work and preserve it in section 6 |

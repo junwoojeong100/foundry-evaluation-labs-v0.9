@@ -16,9 +16,7 @@ Find out whether the fictional **Gaon Lab travel-expense assistant** follows pol
 
 **Language scope:** this guide and the supporting English documents are in English. The controlled policy, questions, prompts, and CLI output remain **Korean** so both language guides run the same experiment. This page translates the concepts and explains the exact Korean completion messages. Use the [English policy translation](docs/en/policies.md) for reading; do not substitute it into a partially completed experiment.
 
-[Recorded summaries and subtitles](docs/media/README.md) show actual portal and CLI interactions from the **separate complete path**, not execution evidence or completion checkpoints for the introduction below. Keep [evidence scopes separate](docs/en/reference.md#live-verification): the published complete-path result does not revalidate introductory LIVE. Do not rerun to reproduce another execution's scores.
-
-**Optional RAG extension:** [Azure AI Search + Foundry IQ and evaluation](docs/en/optional-rag.md) adds a real search index and knowledge base, evaluates retrieval separately from answers, and uses only retrieved context. It is separate from the core fixed-policy workshop below.
+Keep [evidence scopes separate](docs/en/reference.md#live-verification): the published complete-path result does not revalidate introductory LIVE. Do not rerun to reproduce another execution's scores.
 
 <a id="choose-path"></a>
 ### Choose your path
@@ -307,6 +305,7 @@ python lab.py doctor --live
 | Output | Meaning | Action |
 |---|---|---|
 | `평가 완료: …개 답변 × 2개 지표 (점수·이유 저장)` | All scores/reasons are validated and saved: “evaluation complete” | Check the case count, then continue. This does **not** mean the answers passed. |
+| `기존의 완료된 결과를 읽었습니다` | Completed answers for the same inputs were reused; new collection messages such as `8/8 … 저장` do not appear | Check the summary count and `report.md`, then continue at the next unfinished step. Do not delete files to regenerate answers. |
 | `D04 FAIL` or a low score | A collected answer failed a criterion | Record why and continue; do not resample for a better score. |
 | `Judge: 아직 미평가` | “Judge: not evaluated yet” | Run this step's `judge`. |
 | Only `Foundry 상태: completed` | The remote job ended; local collection may remain | Wait for **`평가 완료`**. Resolve any later `ERROR:`. |
@@ -689,6 +688,6 @@ Record deletion status/time and reported or still-pending costs. Use the [retent
 | Explore a higher-average regression trap | [Optional DEMO exercise](docs/en/offline.md#regression-trap) |
 | Check your understanding | [Five questions](docs/en/reference.md#self-check) |
 | Lead a group | [Facilitator guide](docs/en/facilitator.md) |
-| Watch edited portal/CLI recordings | [Videos and subtitles](docs/media/README.md) |
+| Watch edited portal/CLI recordings | [Videos and subtitles](docs/media/README.md), from a separate complete-path run, not evidence that you completed this lab |
 
 See [contracts, limitations, and official sources](docs/en/reference.md) for details, not prerequisites to reading this guide.

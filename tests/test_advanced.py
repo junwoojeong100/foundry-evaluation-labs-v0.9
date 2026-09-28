@@ -16,7 +16,7 @@ from unittest.mock import Mock, patch
 import advanced_evaluation as grading
 import advanced_lab
 import advanced_retrieval as retrieval
-from evaluation import ROOT, digest, read_json, response_checks, write_json
+from evaluation import METRICS, ROOT, digest, read_cases, read_json, response_checks, write_json
 from rag_client import read_documents
 from foundry_client import messages_for
 
@@ -151,6 +151,55 @@ class AdvancedTests(unittest.TestCase):
         self.assertEqual(sum(passed), 3)
         self.assertEqual(rows["D02"]["response"]["citations"], ["TRAVEL-CURRENT", "SCOPE"])
         self.assertNotIn("project_endpoint", json.dumps(fixture))
+
+    def test_documented_workload_counts_include_initial_turns_and_calibration(self):
+        with self.freeze_inputs() as (data, _):
+            self.assertEqual(advanced_lab.freeze_command(None), 0)
+            self.assertEqual(advanced_lab.main(["create-holdout", "--seed", "42"]), 0)
+            smoke_count = len(read_cases(ROOT / "data/my-case.example.jsonl"))
+            dev_count = len(advanced_lab.baseline()["cases"])
+            dev_followups = len(read_json(data / "dev-followups.json"))
+            holdout_count = len(read_cases(advanced_lab.holdout_paths()[0]))
+            holdout_followups = len(read_json(advanced_lab.followup_path("holdout")))
+            controls, _ = grading.calibration_cases()
+            workload = {
+                "setup-smoke": (smoke_count, smoke_count * len(METRICS)),
+                "calibration": (0, len(controls)),
+                "v1-recorded": (0, dev_count * len(grading.METRICS)),
+                "v2-replay": (dev_count + dev_followups, dev_count * len(grading.METRICS)),
+                "planned-dev": (dev_count + dev_followups, dev_count * len(grading.METRICS)),
+                "holdout": (holdout_count + holdout_followups, holdout_count * len(grading.METRICS)),
+            }
+        for relative in ("docs/complete-lab.md", "docs/en/complete-lab.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(guide=relative):
+                for stage, expected in workload.items():
+                    row = re.search(rf"^\| `{stage}` \| (\d+)[^|]*\| (\d+) \|", text, re.MULTILINE)
+                    self.assertIsNotNone(row, stage)
+                    self.assertEqual(tuple(map(int, row.groups())), expected)
+                responses = sum(counts[0] for counts in workload.values())
+                evaluations = sum(counts[1] for counts in workload.values())
+                self.assertIn(f"**{responses}** | **{evaluations}**", text)
+
+    def test_saved_generation_matches_the_documented_resume_signal_without_cloud_calls(self):
+        with self.freeze_inputs() as (_, results):
+            path = results / "v2-replay/generation.json"
+            saved = path.read_bytes()
+            output = io.StringIO()
+            with (
+                patch("advanced_lab.retrieval.read_config", return_value=CONFIG),
+                patch("advanced_lab.read_config", return_value=FOUNDRY_CONFIG),
+                patch("advanced_lab.search_client", side_effect=AssertionError("Search forbidden")),
+                patch("advanced_lab.clients", side_effect=AssertionError("Foundry forbidden")),
+                redirect_stdout(output),
+            ):
+                self.assertEqual(advanced_lab.main(["run", "--stage", "v2-replay"]), 0)
+            signal = "Using complete saved generation; no new model/retrieval calls."
+            self.assertIn(signal, output.getvalue())
+            self.assertNotIn("GENERATION COMPLETE", output.getvalue())
+            self.assertEqual(path.read_bytes(), saved)
+        for relative in ("docs/complete-lab.md", "docs/en/complete-lab.md"):
+            self.assertIn(signal, (ROOT / relative).read_text(encoding="utf-8"))
 
     def test_calibration_has_positive_negative_and_injection_controls_without_label_leakage(self):
         items, labels = grading.calibration_cases()

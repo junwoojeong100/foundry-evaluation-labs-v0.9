@@ -59,7 +59,6 @@
 | 구성 | 역할 |
 |---|---|
 | `swedencentral`의 Basic Search 서비스 | 이 경로의 모든 인덱스·지식 기반을 수용 |
-| `travel-rag-index` / `travel-policy-kb` | Optional RAG를 선택할 때만 별도로 만드는 기본 추출형 RAG 객체 |
 | `travel-vector-index` | 실제 1536차원 HNSW 벡터와 검색 가능한 규정 텍스트 |
 | `travel-vector-ks` / `travel-planned-kb` | LLM 검색 계획 모델을 연결한 Foundry IQ |
 | `rag-embedding` | 문서·질의 벡터를 만드는 `text-embedding-3-small` |
@@ -75,15 +74,50 @@ Free 서비스에는 여기서 필요한 아웃바운드 관리 ID 제약이 있
 
 **추가 유료 자원을 만들기 전에 확인:** 저장된 V1과 비교하려면 답변 배포가 **`eval-model` / `gpt-6-luna` / 버전 `2026-09-22`**여야 합니다. 지역은 `swedencentral`입니다. 과거에 실행됐다는 사실은 현재 구독의 버전 가용성·쿼터를 보장하지 않습니다. 이 조건을 충족할 수 없다면 Search·추가 모델을 만들기 전에 [고정 규정 입문 LIVE](../README.ko.md#lab-0) 또는 [DEMO](offline.md)를 선택합니다. 다른 버전의 결과를 기록된 V1과 비교하지 않습니다.
 
-코드는 [V1의 `model_snapshot`](../advanced-rag/fixtures/recorded-v1.json)의 이름·모델·버전·`type: ModelDeployment`를 비교합니다. **모델 이름만 같아서는 부족**하며, 맞추기 위해 fixture나 공유 배포를 수정하지 않습니다.
+**모델 이름만 같아서는 부족**합니다. 배포 이름과 모델 버전도 [V1의 저장된 모델 정보(`model_snapshot`)](../advanced-rag/fixtures/recorded-v1.json)와 일치해야 합니다. 맞추기 위해 기록 파일이나 공유 배포를 수정하지 않습니다.
 
 - 같은 Foundry 리소스에서 아래 임베딩·계획 모델의 지원 버전과 **GlobalStandard 용량 40·60**도 [모델 가용성 확인](reference.md#model-availability)으로 먼저 점검합니다. 이 숫자는 생성 명령의 용량 설정이지 비용 상한이 아닙니다.
 - Search/모델 생성·사용과 **Search 및 Foundry 리소스 범위의 역할 할당**을 소유자에게 승인받습니다. 역할을 할당할 권한이 없으면 권한 있는 담당자가 준비합니다. Basic 유지 비용, 사용량 비용, preview·네트워크 허용 여부를 확인한 뒤 진행합니다.
 
+**준비는 아래 여섯 단계입니다.** 공통 준비에서 한 번 돌아온 뒤에는 **Optional RAG 문서로 이동하지 않고 이 문서에서 계속**합니다. 기존 자원이 있으면 해당 생성 명령만 건너뛰고 조회·권한 확인은 수행합니다.
+
+| 준비 순서 | 할 일 |
+|---|---|
+| [2-1. 공통 환경](#common-setup) | Python·로그인·Foundry·답변 모델·한 건 평가 |
+| [2-2. 실제 값](#search-setup) | 이름·ID 구분, 답변 버전과 추가 모델 가용성 확인 |
+| [2-3. Search](#search-service) | 서비스 하나 준비, 실제 리소스 ID·관리 ID 조회 |
+| [2-4. 접근 권한](#search-access) | 본인 → Search, Search 관리 ID → 모델 권한 확인 |
+| [2-5. 추가 모델](#extra-models) | 임베딩·검색 계획 모델 배포 |
+| [2-6. 설정·연결](#configure) | `config.advanced.json` 저장, 검색 객체 생성 |
+
+전체 구성은 **모델 배포 3개와 Search 서비스 1개**입니다. 공통 준비의 모델 하나는 이 중 답변·Judge용입니다. 새 자원 수는 기존 자원 재사용 여부에 따라 달라집니다.
+
+<details>
+<summary>비용 계획에 필요한 호출 규모 보기</summary>
+
+공통 준비부터 정상적으로 한 번 완료하는 경우입니다. **새 응답 수에는 중간 대화도 포함**하고, 평가 항목은 답변별 지표 수입니다.
+
+| 단계 | 새로 생성하는 응답 | 평가 항목 |
+|---|---|---|
+| `setup-smoke` | 1 | 2 |
+| `calibration` | 0 — 작성된 교정 답변 10개 사용 | 10 |
+| `v1-recorded` | 0 — 이전 답변 4개 가져오기 | 12 |
+| `v2-replay` | 6 — 최종 4개 + 초기 2개 | 12 |
+| `planned-dev` | 6 — 최종 4개 + 초기 2개 | 12 |
+| `holdout` | 10 — 최종 8개 + 초기 2개 | 24 |
+| 합계 | **23** | **72** |
+
+이는 청구 API 횟수나 비용 상한이 아닙니다. Search 유지비, 임베딩·검색 계획, 평가기 내부 호출·재시도 비용은 별도로 고려합니다. 중단·저장 결과 재사용 여부에 따라 실제 호출량도 달라집니다.
+
+</details>
+
+<a id="common-setup"></a>
+### 2-1. 공통 환경 준비
+
 먼저 [README의 준비 1–7](../README.ko.md#prepare)만 완료합니다. [준비 5](../README.ko.md#setup-model)에서 위 답변 모델 버전을 확인하고, `config.json`과 한 건의 생성·평가까지 준비합니다. 기존 허가된 환경은 [기존 환경 준비](setup.md#existing-environment)를 사용합니다. 입문 A/B·실습 1–6은 이 경로의 필수 선행 활동이 아닙니다. **이 문서는 열린 채로 두고 공통 준비를 새 탭에서 읽으면 복귀하기 쉽습니다. 준비가 끝나면 바로 아래로 돌아옵니다.**
 
 <a id="search-setup"></a>
-### 공통 준비 후 실제 값 확인
+### 2-2. 실제 값과 모델 가용성 확인
 
 이제 `config.json`과 N01 한 건의 생성·평가가 있어야 합니다. 아래 `YOUR-...`는 **본인 값으로 바꿀 자리**입니다. 따옴표는 유지하며 이름·ID·주소를 서로 바꾸어 넣지 않습니다.
 
@@ -94,7 +128,9 @@ Free 서비스에는 여기서 필요한 아웃바운드 관리 ID 제약이 있
 | `YOUR-FOUNDRY-ACCOUNT` | 상위 Foundry 리소스 이름. 프로젝트 이름 `eval-workshop`이 아님 |
 | `YOUR-SHARED-SEARCH` | 재사용을 허가받은 Search 이름, 또는 신규 고유 이름(예: `feval-search-a7k3m9`) |
 | `YOUR-FOUNDRY-RESOURCE-ID` | 상위 Foundry 리소스 **Overview → JSON View**의 전체 `id`. `/accounts/실제이름`으로 끝남 |
+| `YOUR-SEARCH-RESOURCE-ID` | 2-3의 Search 조회 결과 중 전체 `id`. 역할을 적용할 범위 |
 | `YOUR-SEARCH-PRINCIPAL-ID` | 아래 Search 조회에서 확인할 `identity.principalId`. 사용자·프로젝트 ID가 아님 |
+| `YOUR-USER-OBJECT-ID` | 2-4의 사용자 조회 결과 중 `objectId`. 본인 계정의 ID |
 
 먼저 **이미 배포한 답변 모델**을 읽기 전용으로 확인합니다.
 
@@ -118,7 +154,8 @@ az cognitiveservices usage list --location swedencentral --subscription "YOUR-SU
 
 첫 결과의 `model.name`별 **`model.version`과 `GlobalStandard` 지원**을 확인합니다. 선택한 버전을 각각 아래 배포 명령의 **`YOUR-EMBEDDING-VERSION`·`YOUR-PLANNER-VERSION`**에 사용합니다. 두 번째 결과의 남은 쿼터(`limit - current`)가 신규 임베딩 **40**, 계획 **60**의 용량 설정을 수용해야 합니다. 기존 배포를 재사용하면 그 배포의 할당량을 다시 더하지 않습니다. 쿼터·capacity 단위도 모델/SKU별로 확인하며 빈 목록·403을 쿼터 0으로 해석하지 않습니다. 막히면 [가용성·권한 도움말](reference.md#model-availability)을 따릅니다.
 
-### Search 서비스 준비
+<a id="search-service"></a>
+### 2-3. Search 서비스 준비
 
 **허가된 Basic 이상 서비스를 재사용하거나 이미 생성했다면 아래 두 생성 준비 명령을 건너뜁니다.** 신규 서비스가 필요할 때만 고유한 이름으로 실행합니다. `az search service create`는 기존 서비스도 갱신하므로, 재사용할 서비스에 실행하면 복제본·인증 설정 등을 바꿀 수 있습니다. 이 경로를 위해 별도 Free Search를 만들지 않습니다.
 
@@ -140,10 +177,33 @@ az search service create --name "YOUR-SHARED-SEARCH" --resource-group "YOUR-LAB-
 az search service show --name "YOUR-SHARED-SEARCH" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --query "{id:id,identity:identity,location:location,sku:sku.name,state:provisioningState,disableLocalAuth:disableLocalAuth,semanticSearch:semanticSearch}" -o json
 ```
 
-`Succeeded/succeeded`, `swedencentral`, Basic 이상 SKU, `disableLocalAuth: true`, `identity.principalId`를 확인합니다. `semanticSearch`는 `free` 또는 이미 승인된 `standard`여야 합니다. 사용자에게 필요한 **Search Service Contributor**, **Search Index Data Contributor**는 [사용자 ID 조회와 Search 역할 설정](optional-rag.md#search-access)만 수행한 뒤 이곳으로 돌아옵니다. 그 절의 `YOUR-SEARCH-NAME`은 위 서비스 이름이며, Optional RAG 3절부터는 실행하지 않습니다.
+**완료 확인:** `Succeeded/succeeded`, `swedencentral`, Basic 이상 SKU, `disableLocalAuth: true`, `identity.principalId`가 있습니다. `semanticSearch`는 `free` 또는 이미 승인된 `standard`여야 합니다. 다음 단계에서는 **전체 `id`를 `YOUR-SEARCH-RESOURCE-ID`**, **`identity.principalId`를 `YOUR-SEARCH-PRINCIPAL-ID`**로 사용합니다. 전자는 권한을 줄 자원의 주소, 후자는 Search의 신원입니다.
+
+<a id="search-access"></a>
+### 2-4. 본인과 Search 관리 ID의 권한 설정
+
+먼저 **본인 → Search** 접근을 준비합니다. 현재 로그인한 사용자 ID를 조회합니다.
+
+```bash
+az ad signed-in-user show --query "{account:userPrincipalName,objectId:id}" --output json
+```
+
+`account`가 사용할 테넌트의 본인인지 확인하고 **`objectId`를 `YOUR-USER-OBJECT-ID`**로 사용합니다. 프로젝트나 Search 관리 ID를 넣지 않습니다. 조회가 제한되면 환경 소유자에게 같은 테넌트의 본인 ID 대조를 요청합니다.
+
+Search의 **Access control (IAM) → Role assignments**에서 상속된 역할까지 확인합니다. 다음 두 역할 중 **없는 역할만**, 할당 권한이 있는 사람이 **Search 서비스 범위**에 부여합니다. 이미 두 역할이 있으면 두 명령 모두 건너뜁니다.
+
+```bash
+az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "7ca78c08-252a-4471-8644-bb5ff32d4ba0" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
+```
+
+```bash
+az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "8ebe5a00-799e-43f5-93ac-243d3dce84a7" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
+```
+
+첫 역할은 **Search Service Contributor**(검색 객체·서비스 설정 관리·키 조회 포함), 두 번째는 **Search Index Data Contributor**(문서 업로드·검색)입니다. **이 권한은 서비스의 다른 참가자 객체에도 적용**되므로 승인된 공동 실습 범위에서만 사용합니다. 객체 이름을 나누는 것은 보안 격리가 아니며, 구독 전체에 할당하지 않습니다.
 
 <a id="search-model-access"></a>
-이제 조회 결과의 **`identity.principalId`인 Search 관리 ID**에 상위 Foundry 리소스 범위의 **Cognitive Services OpenAI User**가 있는지 IAM에서 확인하고, 없는 경우에만 할당합니다. `YOUR-FOUNDRY-RESOURCE-ID`는 `/accounts/실제리소스이름`까지이며 `/projects/...`가 붙지 않습니다. 프로젝트나 사용자 ID로 대신하지 않습니다.
+이어서 **Search 관리 ID → 모델** 접근을 준비합니다. 조회 결과의 **`identity.principalId`인 Search 관리 ID**에 상위 Foundry 리소스 범위의 **Cognitive Services OpenAI User**가 있는지 IAM에서 확인하고, 없는 경우에만 할당합니다. `YOUR-FOUNDRY-RESOURCE-ID`는 `/accounts/실제리소스이름`까지이며 `/projects/...`가 붙지 않습니다. 프로젝트나 사용자 ID로 대신하지 않습니다.
 
 ```bash
 az role assignment create --assignee-object-id "YOUR-SEARCH-PRINCIPAL-ID" --assignee-principal-type ServicePrincipal --role "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd" --scope "YOUR-FOUNDRY-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
@@ -151,15 +211,25 @@ az role assignment create --assignee-object-id "YOUR-SEARCH-PRINCIPAL-ID" --assi
 
 **호출 주체를 구분합니다.** 문서 임베딩과 `vector`·`hybrid` 질의의 임베딩은 터미널의 **본인 `AzureCliCredential`**, 서비스의 vectorizer·검색 계획은 **Search 관리 ID**, 클라우드 평가는 공통 준비의 **프로젝트 관리 ID**를 사용합니다. 본인·프로젝트의 기존 Foundry User 권한도 유지합니다. 역할 생성 성공이 즉시 호출 성공을 뜻하지는 않습니다. 401/403이면 대상·범위·전파와 네트워크를 확인한 뒤 같은 단계로 재개하며, 중복 역할이나 API 키로 우회하지 않습니다.
 
+**완료 확인:** IAM에서 본인에게 Search 역할 두 개, Search 관리 ID에 Foundry 리소스의 모델 호출 역할이 있는지 **대상 ID와 범위까지** 대조했습니다. 실제 데이터 접근은 아래 `setup`과 3절의 질의로 확인합니다.
+
+<details>
+<summary>공식 문서와 역할 이름이 다르게 보일 때만 보기</summary>
+
 **공식 안내의 범위 차이:** [vectorizer 문서](https://learn.microsoft.com/azure/search/vector-search-vectorizer-azure-open-ai)는 위 OpenAI User를, [Knowledge Base 문서](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-create-knowledge-base)는 계획 모델에 더 넓은 Cognitive Services User를 안내합니다. 이 코드의 Azure OpenAI endpoint·API 버전과 구분합니다. 계획 호출만 거부된다면 소유자와 대상 API의 권한을 확인하며 더 넓은 역할을 추측으로 추가하지 않습니다.
 
-### 추가 모델 배포
+</details>
 
-앞서 확인한 실제 버전으로 `YOUR-EMBEDDING-VERSION`·`YOUR-PLANNER-VERSION`을 바꾸고 두 모델을 **순서대로** 배포합니다. 첫 배포가 `Succeeded`인지 확인한 뒤 다음 명령을 실행합니다. 같은 Foundry 계정에 동시 쓰기를 하면 충돌할 수 있습니다. 이미 허가된 배포가 있다면 실제 모델·버전을 확인하고 해당 생성 명령은 건너뜁니다. 공유 배포를 임의 갱신하지 않습니다.
+<a id="extra-models"></a>
+### 2-5. 추가 모델 배포
+
+앞서 확인한 실제 버전으로 `YOUR-EMBEDDING-VERSION`·`YOUR-PLANNER-VERSION`을 바꾸고 두 모델을 **순서대로** 배포합니다. 같은 Foundry 계정에 동시 쓰기를 하면 충돌할 수 있습니다. 이미 허가된 배포가 있다면 실제 모델·버전을 확인하고 해당 생성 명령은 건너뜁니다. 공유 배포를 임의 갱신하지 않습니다.
 
 ```bash
 az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --deployment-name rag-embedding --model-name text-embedding-3-small --model-version "YOUR-EMBEDDING-VERSION" --model-format OpenAI --sku-name GlobalStandard --sku-capacity 40 --subscription "YOUR-SUBSCRIPTION-ID"
 ```
+
+**다음 명령 전에:** Foundry **Build → Models**에서 방금 만든 `rag-embedding`이 `Succeeded`이고 모델이 `text-embedding-3-small`인지 확인합니다. 배포 오류는 먼저 해결합니다.
 
 ```bash
 az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --deployment-name rag-planner --model-name gpt-5.4-mini --model-version "YOUR-PLANNER-VERSION" --model-format OpenAI --sku-name GlobalStandard --sku-capacity 60 --subscription "YOUR-SUBSCRIPTION-ID"
@@ -168,7 +238,7 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 **완료 확인:** Foundry의 **Build → Models**에서 `rag-embedding`·`rag-planner` 모두 성공 상태와 의도한 모델·버전인지 확인합니다. 기록된 실행의 추가 모델 버전은 임베딩 `1`, 계획 모델 `2026-03-17`입니다. 이 두 모델은 현재 지원 버전을 선택할 수 있지만 `setup` 이후 같은 실험에서는 바꾸지 않습니다. 답변 모델은 앞서 확인한 V1의 고정 버전을 유지합니다.
 
 <a id="configure"></a>
-### 설정 파일 작성과 검색 객체 생성
+### 2-6. 설정 파일 작성과 검색 객체 생성
 
 **VS Code에서** `advanced-rag/config.example.json`을 열고 **File → Save As**로 **`advanced_lab.py`와 같은 폴더에 `config.advanced.json`**을 만듭니다. `advanced-rag/` 안이나 `config.advanced.json.txt`로 저장하지 않습니다. 이미 본인 설정이 있다면 덮어쓰지 말고 실제 값부터 확인합니다.
 
@@ -203,7 +273,7 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 
 **서비스 공유는 검색 객체·실험의 무조건적인 공유가 아닙니다.** 처음 실행하기 전에 세 객체 이름을 정하고, 같은 실험을 재개할 때는 유지합니다. 기존 객체는 소유자의 허가와 동일 코퍼스·벡터 설정·모델 주소·배포·계획 설정을 확인한 경우에만 재사용합니다. `setup`은 불일치하는 기존 객체를 갱신하지 않고 중단하므로, 다른 실험은 새 객체 이름으로 구분합니다.
 
-임베딩은 계정의 `/openai/v1/embeddings` 주소에서 Entra 인증으로 호출합니다. 작성자의 이전 환경에서 프로젝트 게이트웨이가 임베딩에 404를 반환해 이 주소를 사용했으며, 모든 Foundry endpoint에 대한 일반적인 제약이라는 뜻은 아닙니다. 이 코드가 요구하는 `.openai.azure.com` 주소를 사용하고 API 키는 넣지 않습니다.
+임베딩은 계정의 `/openai/v1/embeddings` 주소에서 Entra 인증으로 호출합니다. 설정에는 위 표의 **리소스 주소까지만** 넣습니다. `/openai/v1/embeddings`는 코드가 붙이므로 직접 덧붙이지 않습니다.
 
 **실행 전 확인:** 두 설정 파일이 저장됐고, 예시 주소 `YOUR-...`가 남아 있지 않으며 본인·프로젝트·Search 관리 ID의 역할을 각각 확인했습니다. 이후 제공된 지침·질문·정답·설정은 같은 실험 도중 수정하지 않습니다.
 
@@ -214,8 +284,6 @@ python advanced_lab.py setup
 `setup`은 기존 객체 계약 확인 → 임베딩 캐시 준비 → 누락 인덱스 생성·문서 업로드 → Knowledge Source → 계획형 Knowledge Base 순서로 진행합니다.
 
 **완료 확인:** `VECTOR SETUP OK: 7 documents, 1536 dimensions`. `results/advanced/setup.json`은 모델 snapshot·업로드 대상 건수·서버의 HNSW/vectorizer·지식 객체 정의를, `embedding-cache.json`은 문서 벡터를 보존합니다. 설정 성공만으로 검색·답변 품질을 검증한 것은 아니므로 3절의 실제 질의를 이어갑니다.
-
-이 Basic URL을 기존 [기본 추출형 RAG](optional-rag.md)의 `config.rag.json`에도 사용할 수 있습니다. 두 경로의 인덱스·Knowledge Base 이름은 구분합니다.
 
 <a id="resume"></a>
 ### 명령 상태·중단·재개
@@ -229,6 +297,8 @@ python advanced_lab.py setup
 |---|---|
 | `setup` 중 연결 오류·중단 | 원인을 해결한 뒤 같은 `setup` 재실행. 같은 코퍼스·모델의 임베딩 캐시와 일치하는 객체를 재사용하고 누락된 작업을 계속함. 계약 불일치는 덮어쓰지 않음 |
 | `GENERATION COMPLETE` 또는 `Evaluation complete` | 해당 단계 건수와 저장 결과를 확인한 뒤 다음 명령으로 이동. 답변 합격과는 별개 |
+| `Using complete saved generation; no new model/retrieval calls.` | 이미 완료된 같은 단계의 답변을 재사용함. `GENERATION COMPLETE`를 기다리거나 다시 생성하지 말고, 해당 단계의 채점이 남았으면 `judge`로 이동 |
+| `Existing frozen experiment retained.` / `Existing holdout registration retained.` | 기존 고정/등록을 검증·유지함. 아래 재개 위치 표에서 다음 미완료 단계로 이동. 이미 만든 holdout은 다시 생성하지 않음 |
 | `아직 처리 중입니다` / 종료 코드 `3` | **방금 실행한 명령 전체**를 재실행. 교정 중이면 같은 `calibrate`, 채점 중이면 같은 `judge --stage …`. 저장된 원격 작업을 조회함 |
 | 생성 도중 일시적인 연결 오류·사용자 중단 | 원인을 해결한 뒤 같은 `run --stage …` 재개. 저장된 응답은 다시 생성하지 않음. 응답 직후 저장 전에 끊긴 호출은 재청구될 수 있음 |
 | `initial clarification/handoff field checks failed` / 종료 코드 `1` | 초기 품질 실패. `<stage>/generation.json`의 `pending → 사례 ID → initial_response → response`를 읽고 실패로 보존. 같은 명령으로 좋은 답을 다시 뽑을 수 없음 |
@@ -241,6 +311,18 @@ python advanced_lab.py setup
 **초기 품질 실패로 중단된 `generation.json`은 `collecting` 상태입니다.** 이때는 `judge`·`inspect`로 완료된 실행처럼 읽거나 `accept`로 최종 판정을 만들 수 없습니다. JSON의 저장된 초기 응답과 터미널의 오류를 직접 기록하고, 뒤 단계는 미실행으로 표시한 뒤 8절에서 보존합니다. 이 CLI의 `inspect`는 생성뿐 아니라 해당 단계의 채점 완료도 필요합니다.
 
 교정·채점의 기본 **상태 조회 대기 예산은 300초**입니다. 인증·제출·HTTP 응답·결과 수집을 포함한 전체 명령 시간은 더 길 수 있습니다.
+
+**마지막 완료 위치가 기억나지 않는다면:** 아래에서 충족한 가장 뒤의 행을 찾습니다. 파일이 있다는 사실뿐 아니라 해당 단계의 완료 메시지·상태·건수를 확인합니다. **오류·부분 수집·교정 실패가 있다면 위 상태 표가 우선**이며, 아래 표로 실패 단계를 건너뛰지 않습니다.
+
+| 마지막으로 완료한 것 | 이어갈 위치 |
+|---|---|
+| `setup.json`, 검색 질의는 아직 안 함 | [3절](#retrieval-proof)의 두 질의 중 빠진 것 |
+| 두 질의 JSON, `judge-contract.json`은 아직 없음 | [4절](#calibration)의 교정 |
+| 교정 통과와 `judge-contract.json` | [5절](#improve)의 V1 가져오기·채점·V2 생성·채점 중 첫 미완료 단계 |
+| V2 replay 4개 생성·채점 완료 | [6절](#freeze)의 `planned-dev` 생성·채점·`freeze` 중 첫 미완료 단계 |
+| `frozen.json`, holdout 등록은 아직 안 함 | [7절](#holdout)의 `create-holdout`. 데이터 파일이 이미 있다면 위 복구 행부터 확인 |
+| `holdout-registration.json`, 최종 보고서는 아직 없음 | [7절](#holdout)의 holdout 생성 → 채점 → 대화 검토 → `accept` 중 첫 미완료 단계 |
+| `acceptance-report.md`와 `acceptance-result.json` | [8절](#retention)의 결과 해석·보존·비용 확인 |
 
 | 산출물 (`results/advanced/` 기준) | 용도 |
 |---|---|
@@ -522,6 +604,7 @@ V1은 제공된 실제 이전 응답 4개를 가져와 **새 환경의 Judge로 
 - [Agentic retrieval 벡터 인덱스](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-create-index)
 - [Knowledge Base의 API 버전별 기능·지원 모델](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-create-knowledge-base)
 - [Azure OpenAI vectorizer의 관리 ID·역할](https://learn.microsoft.com/azure/search/vector-search-vectorizer-azure-open-ai)
+- [Search 사용자 역할과 서비스 범위](https://learn.microsoft.com/azure/search/search-security-rbac)
 - [LLM 검색 계획 수준](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-set-retrieval-reasoning-effort)
 - [Search 계층별 기능](https://learn.microsoft.com/azure/search/search-sku-tier)
 - [Entra 인증 임베딩](https://learn.microsoft.com/azure/foundry/openai/how-to/embeddings)

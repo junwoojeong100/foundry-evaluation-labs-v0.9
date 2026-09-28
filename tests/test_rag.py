@@ -15,8 +15,8 @@ from unittest.mock import Mock, patch
 import rag_lab
 import lab
 from evaluation import (
-    BUSINESS_VERSION, METRICS, comparable, digest, evidence_hash, load_run,
-    response_context, write_json,
+    BUSINESS_VERSION, METRICS, ROOT, comparable, digest, evidence_hash, load_run,
+    read_json, response_context, write_json,
 )
 from foundry_client import evaluation_items
 from rag_client import (
@@ -110,6 +110,35 @@ class RagTests(unittest.TestCase):
         }
         write_json(folder / "judge.json", judge)
         return folder, run
+
+    def test_saved_generation_matches_the_documented_resume_signal_without_cloud_calls(self):
+        signal = "Using completed LIVE evidence; no new retrieval or generation calls."
+        for mode in ("search", "iq"):
+            with self.subTest(mode=mode):
+                folder, run = self.saved_run(mode)
+                run["prompt"] = (rag_lab.DATA / "prompt.txt").read_text(encoding="utf-8")
+                run["prompt_hash"] = digest(run["prompt"])
+                run["evidence_hash"] = evidence_hash(run)
+                write_json(folder / "run.json", run)
+                judge = read_json(folder / "judge.json")
+                judge["evidence_hash"] = run["evidence_hash"]
+                write_json(folder / "judge.json", judge)
+                saved = (folder / "run.json").read_bytes()
+                output = io.StringIO()
+                with (
+                    patch("rag_lab.read_config", return_value=run["config"]),
+                    patch("rag_lab.read_rag_config", return_value=CONFIG),
+                    patch("rag_lab.generation_contract", return_value=run["generation_contract"]),
+                    patch("rag_lab.search_client", side_effect=AssertionError("Search forbidden")),
+                    patch("rag_lab.clients", side_effect=AssertionError("Foundry forbidden")),
+                    redirect_stdout(output),
+                ):
+                    self.assertEqual(rag_lab.main(["run", "--mode", mode, "--out", str(folder)]), 0)
+                self.assertIn(signal, output.getvalue())
+                self.assertNotIn("LIVE RAG generation complete", output.getvalue())
+                self.assertEqual((folder / "run.json").read_bytes(), saved)
+        for relative in ("docs/optional-rag.md", "docs/en/optional-rag.md"):
+            self.assertIn(signal, (ROOT / relative).read_text(encoding="utf-8"))
 
     def test_corpus_and_labels_are_separate_from_model_inputs(self):
         self.assertEqual(len(self.documents), 7)

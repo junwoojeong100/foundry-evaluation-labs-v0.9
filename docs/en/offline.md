@@ -67,6 +67,8 @@ python lab.py doctor
 
 Run one command at a time from the `lab.py` folder; use only `demo-*` result folders for this path. Resolve `ERROR:` through [troubleshooting](reference.md#troubleshooting); treat FAIL and low scores as observations. For BLOCK, distinguish quality failures from missing evidence in activity 5. Use [resume checkpoints](setup.md#resume-checkpoints) after interruption; repeating a completed `run` or `judge` reads saved results rather than creating new examples. Do not switch to `--mode live` to work around a DEMO error.
 
+**`기존의 완료된 결과를 읽었습니다` means completed results were reused successfully.** Instead of a new `8/8 … 저장` message, check the summary count and `report.md`, then continue at the next unfinished step. Do not delete results to remove this message.
+
 In a new terminal, return to the `lab.py` folder and run only `source .venv/bin/activate` (macOS/Linux) or `.\.venv\Scripts\Activate.ps1` (PowerShell). Do not recreate the environment or repeat installation. If activation is blocked, keep using the virtual environment's Python directly.
 
 **Setup complete. Continue to activity 1.**

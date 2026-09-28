@@ -73,6 +73,8 @@ python lab.py doctor
 
 **오류·중단 시:** `ERROR:`는 [문제 해결](reference.md#troubleshooting)에서 해결한 뒤 진행하고, 낮은 점수·`FAIL`은 관찰 결과로 기록합니다. `BLOCK`은 실습 5에서 품질 실패와 증거 누락을 구분합니다. [결과 파일로 재개 위치 찾기](setup.md#resume-checkpoints)를 사용하되 완료된 `run`·`judge`를 반복하면 저장된 결과를 읽을 뿐 새 예제를 만들지 않습니다. DEMO 오류를 해결하려고 `--mode live`로 바꾸지 않습니다.
 
+**`기존의 완료된 결과를 읽었습니다`가 나오면 정상적인 재사용입니다.** 새 `8/8 … 저장` 메시지 대신 요약의 건수와 `report.md`를 확인하고 다음 미완료 단계로 갑니다. 이 메시지를 없애려고 결과를 지우지 않습니다.
+
 새 터미널에서는 `lab.py` 폴더로 돌아와 macOS/Linux의 `source .venv/bin/activate` 또는 PowerShell의 `.\.venv\Scripts\Activate.ps1`만 실행합니다. 생성·설치부터 반복하지 않습니다. 활성화가 막히면 가상환경 Python 직접 실행 방식을 유지합니다.
 
 **준비 끝. 이제 아래 실습 1로 이어갑니다.**

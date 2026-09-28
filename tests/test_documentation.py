@@ -231,8 +231,27 @@ class DocumentationTests(unittest.TestCase):
                 ):
                     self.assertLess(text.index(command), creation)
                 self.assertLess(text.index("az search service check-name-availability"), creation)
-                self.assertIn("(optional-rag.md#search-access)", text)
+                self.assertIn("(#search-access)", text)
                 self.assertIn("config.advanced.json", text[:text.index("python advanced_lab.py setup")])
+
+    def test_complete_setup_has_six_inline_steps_without_an_optional_rag_detour(self):
+        anchors = (
+            "common-setup", "search-setup", "search-service",
+            "search-access", "extra-models", "configure",
+        )
+        for relative in ("docs/complete-lab.md", "docs/en/complete-lab.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            setup = text.split('<a id="setup"></a>')[1].split('<a id="resume"></a>')[0]
+            with self.subTest(guide=relative):
+                self.assertEqual(re.findall(r"^### 2-(\d)\.", setup, re.MULTILINE), list("123456"))
+                for anchor in anchors:
+                    self.assertIn(f"(#{anchor})", setup)
+                    self.assertIn(f'<a id="{anchor}"></a>', setup)
+                self.assertNotIn("(optional-rag.md", setup)
+                self.assertLess(
+                    setup.index("az search service show"),
+                    setup.index("az ad signed-in-user show"),
+                )
 
     def test_search_provider_is_checked_before_creating_either_search_path(self):
         for name in ("complete-lab", "optional-rag"):
@@ -312,17 +331,65 @@ class DocumentationTests(unittest.TestCase):
                 self.assertIn(json.dumps(expected), section)
                 self.assertIn(json.dumps(actual), section)
 
-    def test_search_roles_have_user_lookup_and_a_complete_path_return(self):
-        for relative in ("docs/optional-rag.md", "docs/en/optional-rag.md"):
-            text = (ROOT / relative).read_text(encoding="utf-8")
-            section = text.split('<a id="search-access"></a>')[1].split('<a id="index"></a>')[0]
-            with self.subTest(guide=relative):
-                self.assertLess(
-                    section.index("az ad signed-in-user show"),
-                    section.index('az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID"'),
-                )
-                self.assertIn('"{account:userPrincipalName,objectId:id}"', section)
-                self.assertIn("(complete-lab.md#search-model-access)", section)
+    def test_both_rag_paths_include_the_same_service_scoped_user_roles(self):
+        roles_by_guide = {}
+        for name in ("complete-lab", "optional-rag"):
+            for language in ("", "en/"):
+                relative = f"docs/{language}{name}.md"
+                document = ROOT / relative
+                text = document.read_text(encoding="utf-8")
+                end_anchor = "search-model-access" if name == "complete-lab" else "index"
+                section = text.split('<a id="search-access"></a>')[1].split(f'<a id="{end_anchor}"></a>')[0]
+                commands = [
+                    command for command in shell_commands(document)
+                    if command[:4] == ["az", "role", "assignment", "create"]
+                    and "YOUR-USER-OBJECT-ID" in command
+                ]
+                roles_by_guide[relative] = commands
+                with self.subTest(guide=relative):
+                    self.assertLess(
+                        section.index("az ad signed-in-user show"),
+                        section.index('az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID"'),
+                    )
+                    self.assertIn('"{account:userPrincipalName,objectId:id}"', section)
+                    self.assertEqual(len(commands), 2)
+                    self.assertEqual(
+                        {command[command.index("--role") + 1] for command in commands},
+                        {"7ca78c08-252a-4471-8644-bb5ff32d4ba0", "8ebe5a00-799e-43f5-93ac-243d3dce84a7"},
+                    )
+                    for command in commands:
+                        self.assertEqual(command[command.index("--assignee-principal-type") + 1], "User")
+                        self.assertEqual(command[command.index("--scope") + 1], "YOUR-SEARCH-RESOURCE-ID")
+        self.assertTrue(all(commands == roles_by_guide["docs/complete-lab.md"] for commands in roles_by_guide.values()))
+
+    def test_rag_queries_and_comparison_have_checkpoints_before_the_next_command(self):
+        for name, script, parser, expected_count in (
+            ("complete-lab", "advanced_lab.py", advanced_lab.parser(), 2),
+            ("optional-rag", "rag_lab.py", rag_lab.parser(), 3),
+        ):
+            for language in ("", "en/"):
+                relative = f"docs/{language}{name}.md"
+                text = (ROOT / relative).read_text(encoding="utf-8")
+                blocks = list(SHELL_BLOCKS.finditer(text))
+                checked = 0
+                for index, block in enumerate(blocks):
+                    command = shlex.split(block.group(1), comments=True)
+                    if command[:2] != ["python", script]:
+                        continue
+                    args = parser.parse_args(command[2:])
+                    if args.command not in ("query", "compare"):
+                        continue
+                    end = blocks[index + 1].start() if index + 1 < len(blocks) else len(text)
+                    checkpoint = text[block.end():end]
+                    with self.subTest(guide=relative, command=command):
+                        if args.command == "query":
+                            self.assertIn(f"RETRIEVAL OK: {args.mode}", checkpoint)
+                            self.assertIn(args.out.as_posix(), checkpoint)
+                        else:
+                            self.assertIn("REVIEW_REQUIRED", checkpoint)
+                            self.assertIn((args.iq / "rag-comparison.md").as_posix(), checkpoint)
+                    checked += 1
+                self.assertEqual(checked, expected_count)
 
     def test_complete_resume_distinguishes_partial_quality_failures_and_remote_ids(self):
         for relative in ("docs/complete-lab.md", "docs/en/complete-lab.md"):
@@ -334,6 +401,10 @@ class DocumentationTests(unittest.TestCase):
                     "initial_response", "initial clarification/handoff field checks failed",
                     "calibration-result.json", "evaluation-request.json", "foundry-job.json",
                     "LAB_ACCEPTANCE_BLOCKED", "300", "--out",
+                    "Using complete saved generation; no new model/retrieval calls.",
+                    "Existing frozen experiment retained.", "Existing holdout registration retained.",
+                    "(#retrieval-proof)", "(#calibration)", "(#improve)", "(#freeze)",
+                    "(#holdout)", "(#retention)",
                 ):
                     self.assertIn(required, section)
         for relative in ("docs/reference.md", "docs/en/reference.md"):
@@ -618,6 +689,18 @@ class DocumentationTests(unittest.TestCase):
                             self.assertIn(checkpoint, command_output.getvalue())
                             self.assertIn(f"Judge 결과: {folder / 'judge.json'}", command_output.getvalue())
                             self.assertIn("사례별 근거", (folder / "report.md").read_text(encoding="utf-8"))
+                        if argv[0] == "run":
+                            folder = lab.parser().parse_args(argv).out
+                            saved = (folder / "run.json").read_bytes()
+                            reused = io.StringIO()
+                            with redirect_stdout(reused):
+                                self.assertEqual(lab.main(argv), 0)
+                            signal = "기존의 완료된 결과를 읽었습니다"
+                            self.assertIn(signal, reused.getvalue())
+                            self.assertNotRegex(reused.getvalue(), r"\d+/\d+\s+\w+ 저장")
+                            self.assertEqual((folder / "run.json").read_bytes(), saved)
+                            for relative in ("README.md", "README.ko.md", "docs/offline.md", "docs/en/offline.md"):
+                                self.assertIn(signal, (ROOT / relative).read_text(encoding="utf-8"))
             result = read_json(output / "results" / "demo-candidate" / "gate.json")
             self.assertEqual(result["status"], "BLOCK")
             self.assertEqual(result["business_rates"], {"baseline": 0.625, "candidate": 1.0, "holdout": 0.75})

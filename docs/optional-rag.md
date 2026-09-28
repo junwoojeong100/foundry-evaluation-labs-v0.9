@@ -108,12 +108,10 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 
 **완료 확인:** 본인의 Object ID에 두 역할이 유효한지 확인하고 전파를 기다립니다. 역할 생성 성공만으로 데이터 접근이 입증되지는 않습니다. 3–4절에서 401/403이 나면 본인·범위·네트워크·전파를 확인한 뒤 같은 명령으로 재개합니다. 역할을 반복 생성하거나 키로 우회하지 않습니다.
 
-**완결형에서 이 절만 참고했다면 [Search 관리 ID의 모델 접근 설정](complete-lab.md#search-model-access)으로 돌아갑니다.** 아래 3절의 최소 RAG 인덱스는 완결형의 선행 필수 조건이 아닙니다.
-
 <a id="index"></a>
 ## 3. 실제 인덱스와 Foundry IQ Knowledge Base 생성
 
-[설정 예제](../optional-rag/config.example.json)를 저장소 루트의 `rag_lab.py` 옆 **`config.rag.json`**으로 저장합니다. `optional-rag/` 안에 저장하지 않습니다. Search Overview의 실제 서비스 URL을 넣고 기존 `config.json`은 그대로 둡니다.
+**VS Code에서** [설정 예제](../optional-rag/config.example.json)를 열고 **File → Save As**로 저장소 루트의 `rag_lab.py` 옆 **`config.rag.json`**을 만듭니다. `optional-rag/` 안이나 `config.rag.json.txt`로 저장하지 않습니다. 이미 본인 설정이 있다면 덮어쓰지 말고 확인합니다. Search Overview의 실제 서비스 URL을 넣고 저장하며, 공통 준비의 **`config.json`도 그대로 유지**합니다. 두 파일이 모두 필요합니다.
 
 ```json
 {
@@ -150,11 +148,13 @@ python rag_lab.py setup
 python rag_lab.py query --mode search --query "2026년 9월 국내 숙박비가 220000원이고 사전 승인이 없습니다. 정산 가능한가요?" --out results/rag-query-search.json
 ```
 
+**완료 확인:** `RETRIEVAL OK: search`와 선택된 청크 ID가 보이고 `results/rag-query-search.json`이 저장됩니다. 오류라면 여기서 해결하고, 완료 후에만 같은 질문으로 IQ를 조회합니다.
+
 ```bash
 python rag_lab.py query --mode iq --query "2026년 9월 국내 숙박비가 220000원이고 사전 승인이 없습니다. 정산 가능한가요?" --out results/rag-query-iq.json
 ```
 
-**완료 확인:** 각각 `RETRIEVAL OK`, 선택된 청크 ID·공식 `source_id`·점수가 나옵니다. IQ에는 **`searchIndex` 활동과 원본 참조/문서 데이터**가 있습니다. 저장한 JSON의 `raw_response`가 실제 서비스 응답이고 `documents`가 모델에 전달할 선택 결과입니다. 이 명령은 답변을 생성하거나 Judge를 실행하지 않습니다.
+**완료 확인:** `RETRIEVAL OK: iq`, 선택된 청크 ID·공식 `source_id`·점수와 **`searchIndex` 활동**이 보이고 `results/rag-query-iq.json`이 저장됩니다. 저장한 JSON의 `raw_response`가 실제 서비스 응답이며 IQ 원본 참조/문서 데이터를 포함하고, `documents`가 모델에 전달할 선택 결과입니다. 두 질의는 답변을 생성하거나 Judge를 실행하지 않습니다.
 
 | ID | 의미 |
 |---|---|
@@ -199,6 +199,8 @@ IQ도 4개 생성 완료 후 **`평가 완료: 4개 답변 × 2개 지표`**를 
 python rag_lab.py compare results/rag-search results/rag-iq
 ```
 
+**완료 확인:** `REVIEW_REQUIRED`와 `Comparison: results/rag-iq/rag-comparison.md`가 보입니다. 비교 파일 생성이 끝났다는 뜻이며, 아래에서 실제 사례를 읽고 판단합니다.
+
 ```bash
 python rag_lab.py inspect results/rag-iq D04
 ```
@@ -231,6 +233,7 @@ python rag_lab.py inspect results/rag-iq D04
 | `setup`의 연결 오류·중단 | 원인 해결 후 같은 설정으로 `setup` 재실행. 일치하는 객체와 같은 코퍼스의 미완료 업로드를 재사용/완료. 불일치는 덮어쓰지 않음 |
 | `run`의 연결 오류·중단 | 같은 `--mode`·`--out`을 포함한 명령 전체를 재실행. 저장된 응답과 `pending_retrievals`의 검색을 재사용. 응답 직후 저장 전에 끊긴 호출은 재청구될 수 있음 |
 | `run.json`의 `status: collecting` | 부분 실행. 저장된 `rows`·`pending_retrievals`와 오류를 확인하며 아직 `judge`·`inspect`·`compare`를 실행하지 않음 |
+| `Using completed LIVE evidence; no new retrieval or generation calls.` | 같은 입력의 완료 결과를 재사용함. 새 `LIVE RAG generation complete` 메시지가 없어도 정상. 해당 경로의 채점 등 다음 미완료 단계로 이동 |
 | Judge 대기 / 종료 코드 `3` | 같은 `python lab.py judge …` 전체 명령 재실행. IQ의 `--like`도 유지. 기본 상태 조회 대기 예산은 **300초**이며 전체 명령 시간은 더 길 수 있음 |
 | 생성/채점 완료지만 낮은 점수·업무 실패 | 저장된 답변을 다시 뽑지 않음. 두 경로 채점 완료 후 전용 비교로 실패를 보존 |
 | `ERROR:` / 인자 오류 | 원인을 해결한 뒤 같은 명령으로 재개. 완료되지 못하면 마지막 완료 단계와 미실행 항목을 구분해 6절에서 보존 |
