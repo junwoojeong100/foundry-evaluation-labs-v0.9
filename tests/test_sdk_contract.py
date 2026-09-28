@@ -338,8 +338,11 @@ class SDKContractTests(unittest.TestCase):
             self.assertEqual(len(read_json(folder / "judge.json")["rows"]), count)
         self.assertEqual(load_run(holdout)["frozen_from"], load_run(candidate)["evidence_hash"])
 
-    def test_main_guide_alone_executes_end_to_end_with_local_transport(self):
-        text = (ROOT / "README.md").read_text(encoding="utf-8")
+    def test_shared_setup_and_intro_execute_end_to_end_with_local_transport(self):
+        text = "\n".join(
+            (ROOT / relative).read_text(encoding="utf-8")
+            for relative in ("docs/en/setup.md", "docs/en/intro-lab.md")
+        )
         config = read_json(ROOT / "config.example.json")
         config["project_endpoint"] = self.config["project_endpoint"]
         config_file = self.root / "config.json"

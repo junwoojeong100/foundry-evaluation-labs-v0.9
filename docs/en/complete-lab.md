@@ -127,7 +127,7 @@ Free Search does not provide the outbound managed identity needed here. Reuse an
 ## 2. Azure setup and permissions
 
 > [!WARNING]
-> **Check the answer-model version before creating Search or extra models.** Recorded V1 requires **`eval-model` / `gpt-6-luna` / version `2026-09-22`** in **`swedencentral`**. If unavailable, choose [introductory LIVE](../../README.md#lab-0) or [DEMO](offline.md). Do not compare results from another model version.
+> **Check the answer-model version before creating Search or extra models.** Recorded V1 requires **`eval-model` / `gpt-6-luna` / version `2026-09-22`** in **`swedencentral`**. If unavailable, choose [introductory LIVE](intro-lab.md#lab-0) or [DEMO](offline.md). Do not compare results from another model version.
 
 **Four checks before creating resources**
 
@@ -175,11 +175,11 @@ These are not billable API-request counts or spending caps. Account separately f
 <a id="common-setup"></a>
 ### 2-1. Prepare the shared environment
 
-1. **Keep this page open** and follow [README setup 1–7](../../README.md#prepare) in a new tab. For authorized existing resources, use [existing-environment setup](setup.md#existing-environment).
-2. Check the answer-model version in [setup 5](../../README.md#setup-model).
+1. **Keep this page open** and follow [shared setup 1–7](setup.md#prepare) in a new tab. For authorized existing resources, use [existing-environment setup](setup.md#existing-environment).
+2. Check the answer-model version in [setup 5](setup.md#setup-model).
 3. Create `config.json` and finish the one-case generation/evaluation check. Introductory A/B and activities 1–6 are not prerequisites.
 
-> **Return here:** after setup 7 shows `평가 완료: 1개 답변 × 2개 지표` and you inspect N01's scores/reasons, continue to **[2-2 below](#search-setup)**, not README activity 1. Do not regenerate N01 if already completed in the same environment.
+> **Return here:** after setup 7 shows `평가 완료: 1개 답변 × 2개 지표` and you inspect N01's scores/reasons, continue to **[2-2 below](#search-setup)**, not introductory activity 1. Do not regenerate N01 if already completed in the same environment.
 
 <a id="search-setup"></a>
 ### 2-2. Check actual values and model availability
@@ -410,7 +410,7 @@ Keep the template's `top_k: 4`, 1536 embedding dimensions, and `low` planning ef
 | `model_resource_endpoint` in `config.advanced.json` | The same parent Foundry resource's Keys and Endpoint page: use the **Azure OpenAI resource endpoint** ending in `.openai.azure.com`, not the project endpoint. Do not copy API keys |
 | `index_name`, `knowledge_source`, `knowledge_base` | Authorized names unique to the participant/experiment, such as `travel-vector-a7k3m9`, `travel-vector-ks-a7k3m9`, `travel-planned-kb-a7k3m9` |
 
-**The three endpoints serve different purposes.** Do not paste one endpoint into every field or merge the two configuration files. Follow the shared [JSON editing guidance](../../README.md#setup-config), changing only the specified values and saving the files.
+**The three endpoints serve different purposes.** Do not paste one endpoint into every field or merge the two configuration files. Follow the shared [JSON editing guidance](setup.md#setup-config), changing only the specified values and saving the files.
 
 **Sharing a service does not mean unconditionally sharing search objects or experiments.** Choose the three object names before the first run and keep them when resuming that experiment. Reuse objects only with the owner's permission and the same corpus, vector settings, model endpoint, deployments, and planning settings. `setup` stops rather than updating mismatched existing objects; use new object names for another experiment.
 

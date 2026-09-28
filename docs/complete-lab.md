@@ -125,7 +125,7 @@ Free 서비스에는 여기서 필요한 아웃바운드 관리 ID 제약이 있
 ## 2. Azure 준비와 권한
 
 > [!WARNING]
-> **Search·추가 모델을 만들기 전에 답변 모델 버전을 확인합니다.** 기록된 V1 비교에는 **`eval-model` / `gpt-6-luna` / 버전 `2026-09-22`**, 지역 **`swedencentral`**이 필요합니다. 충족할 수 없다면 [입문 LIVE](../README.ko.md#lab-0) 또는 [DEMO](offline.md)를 선택합니다. 다른 버전의 결과와 비교하지 않습니다.
+> **Search·추가 모델을 만들기 전에 답변 모델 버전을 확인합니다.** 기록된 V1 비교에는 **`eval-model` / `gpt-6-luna` / 버전 `2026-09-22`**, 지역 **`swedencentral`**이 필요합니다. 충족할 수 없다면 [입문 LIVE](intro-lab.md#lab-0) 또는 [DEMO](offline.md)를 선택합니다. 다른 버전의 결과와 비교하지 않습니다.
 
 **생성 전 확인할 네 가지**
 
@@ -173,11 +173,11 @@ Free 서비스에는 여기서 필요한 아웃바운드 관리 ID 제약이 있
 <a id="common-setup"></a>
 ### 2-1. 공통 환경 준비
 
-1. **이 문서는 열어 둔 채**, [README 준비 1–7](../README.ko.md#prepare)을 새 탭에서 진행합니다. 기존 허가된 자원은 [기존 환경 준비](setup.md#existing-environment)를 사용합니다.
-2. [준비 5](../README.ko.md#setup-model)에서 답변 모델 버전을 확인합니다.
+1. **이 문서는 열어 둔 채**, [공통 준비 1–7](setup.md#prepare)을 새 탭에서 진행합니다. 기존 허가된 자원은 [기존 환경 준비](setup.md#existing-environment)를 사용합니다.
+2. [준비 5](setup.md#setup-model)에서 답변 모델 버전을 확인합니다.
 3. `config.json`과 한 건의 생성·평가까지 준비합니다. 입문 A/B·실습 1–6은 필수 선행 활동이 아닙니다.
 
-> **돌아올 시점:** 준비 7에서 `평가 완료: 1개 답변 × 2개 지표`와 N01의 두 점수·이유를 확인했다면 **[아래 2-2](#search-setup)로 복귀**합니다. README 실습 1로 가지 않습니다. 같은 환경에서 이미 완료한 N01은 다시 생성하지 않습니다.
+> **돌아올 시점:** 준비 7에서 `평가 완료: 1개 답변 × 2개 지표`와 N01의 두 점수·이유를 확인했다면 **[아래 2-2](#search-setup)로 복귀**합니다. 입문 실습 1로 가지 않습니다. 같은 환경에서 이미 완료한 N01은 다시 생성하지 않습니다.
 
 <a id="search-setup"></a>
 ### 2-2. 실제 값과 모델 가용성 확인
@@ -408,7 +408,7 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 | `config.advanced.json`의 `model_resource_endpoint` | 같은 상위 Foundry 리소스의 Keys and Endpoint에서 **Azure OpenAI 리소스 주소** 확인. `.openai.azure.com`으로 끝나며 프로젝트 주소와 다름. API 키는 복사하지 않음 |
 | `index_name`, `knowledge_source`, `knowledge_base` | 참가자·실험별로 허가된 고유 이름. 예: `travel-vector-a7k3m9`, `travel-vector-ks-a7k3m9`, `travel-planned-kb-a7k3m9` |
 
-**주소 세 개는 서로 다른 용도입니다.** 하나의 주소를 모든 항목에 붙여 넣거나 두 설정 파일의 내용을 합치지 않습니다. [JSON 편집 요령](../README.ko.md#setup-config)처럼 안내한 값만 바꾸고 저장합니다.
+**주소 세 개는 서로 다른 용도입니다.** 하나의 주소를 모든 항목에 붙여 넣거나 두 설정 파일의 내용을 합치지 않습니다. [JSON 편집 요령](setup.md#setup-config)처럼 안내한 값만 바꾸고 저장합니다.
 
 **서비스 공유는 검색 객체·실험의 무조건적인 공유가 아닙니다.** 처음 실행하기 전에 세 객체 이름을 정하고, 같은 실험을 재개할 때는 유지합니다. 기존 객체는 소유자의 허가와 동일 코퍼스·벡터 설정·모델 주소·배포·계획 설정을 확인한 경우에만 재사용합니다. `setup`은 불일치하는 기존 객체를 갱신하지 않고 중단하므로, 다른 실험은 새 객체 이름으로 구분합니다.
 

@@ -2,9 +2,9 @@
 
 # Commands, contracts, troubleshooting, and sources
 
-[Main guide](../../README.md) · [Setup](setup.md) · [Retention](cleanup.md)
+[All paths](../../README.md) · [Introductory LIVE](intro-lab.md) · [Shared setup](setup.md) · [Retention](cleanup.md)
 
-The main guide is self-contained. Read this reference only for a specific question or failure. In the default path, you own the dedicated environment; organizational policies and shared infrastructure remain subject to their owners.
+Follow [introductory LIVE](intro-lab.md) or your chosen RAG guide, using [shared setup](setup.md) for the environment. Read this reference only for a specific question or failure. In the default path, you own the dedicated environment; organizational policies and shared infrastructure remain subject to their owners.
 
 The command table below describes introductory `lab.py`. For `advanced_lab.py` status and fixed output paths, use [complete-path resumption](complete-lab.md#resume). Remote evaluation ID recovery below distinguishes each path's files.
 
@@ -226,17 +226,17 @@ Portal Overall score/Pass may use threshold 3. Portal **100%** can therefore coe
 | Provider not registered | In the intended subscription's Resource providers, check `Microsoft.CognitiveServices` for Foundry or `Microsoft.Search` for Search creation. An authorized administrator registers only the provider you need. |
 | Cannot find `python` or `lab.py` | Open the correct folder and reactivate `.venv`. |
 | `SyntaxError` at `>>>` | Exit the Python REPL; use a shell terminal. |
-| Windows does not recognize `source` | Check whether you copied the macOS/Linux block. Open a PowerShell profile using [setup 1](../../README.md#setup-tools) and use only the Windows block. |
+| Windows does not recognize `source` | Check whether you copied the macOS/Linux block. Open a PowerShell profile using [setup 1](setup.md#setup-tools) and use only the Windows block. |
 | `>>` or `quote>` waits for another line before execution | The shell is waiting for incomplete input, such as an unclosed quote. Use `Ctrl+C` to cancel that unfinished input, then paste the entire one-line command after replacing `YOUR-...`. Keep straight rather than curly quotes. |
 | Edits are not reflected | Edit/save the local copy, check paths, and do not overwrite completed results. |
 | PowerShell activation blocked | Use `.venv\Scripts\python.exe`; do not change organizational policy. |
 | Moving/renaming the folder broke the virtual environment | [Repair the moved environment](#moved-folder), keeping results/configuration. DEMO still needs no LIVE packages. |
 | Missing/mismatched LIVE packages | Install the pinned `requirements.txt` in `.venv`; do not arbitrarily upgrade. |
 | Example config rejected | Replace the project endpoint and use actual deployment names; do not use model names. |
-| Config reports `Expecting property name` / `Expecting ',' delimiter` / `Extra data` | Check for explanatory text, code-block fences, or a trailing comma in the JSON file. Follow the [JSON editing guidance](../../README.md#setup-config), restore straight quotes/commas/braces, and save. Do not paste separate configurations into one file. |
+| Config reports `Expecting property name` / `Expecting ',' delimiter` / `Extra data` | Check for explanatory text, code-block fences, or a trailing comma in the JSON file. Follow the [JSON editing guidance](setup.md#setup-config), restore straight quotes/commas/braces, and save. Do not paste separate configurations into one file. |
 | Only a classic connection string/model endpoint exists | A new Foundry project endpoint is required. |
 | `config.json` not found | Check its folder and `.json.txt` extensions. |
-| `prompts/my-v2.txt` missing | Check the repository folder, path, and saved file first. Follow [activity 4](../../README.md#lab-4) only if the included working file is genuinely missing; do not overwrite personal work with V2. |
+| `prompts/my-v2.txt` missing | Check the repository folder, path, and saved file first. Follow [activity 4](intro-lab.md#lab-4) only if the included working file is genuinely missing; do not overwrite personal work with V2. |
 | `my-v2.txt` / `my-case.jsonl` already exists | These are included example working files. Inspect contents/personal edits and distinguish reuse from your own edit. `my-v2.txt` adds instructions against conditional limits before date clarification and cites only SCOPE then; it is not identical to `v2.txt`. |
 | JSONL validation fails | Fix the identified line/field; retain all eight fields and valid types. |
 | Extra-case count is not one | Remove unintended extra rows; keep N02 only. |
@@ -289,7 +289,7 @@ RAG's **user → Search** access is also separate from **Search identity → mod
 <a id="managed-identity-access"></a>
 ## If the project identity cannot be selected
 
-Use this fallback only when portal selection in [setup 4](../../README.md#setup-permissions) is difficult. If you cannot assign roles, ask the owner to verify identity and scope instead of attempting the command.
+Use this fallback only when portal selection in [setup 4](setup.md#setup-permissions) is difficult. If you cannot assign roles, ask the owner to verify identity and scope instead of attempting the command.
 
 1. Open the project's Azure resource. Its ID ends in `/accounts/ACCOUNT/projects/PROJECT`.
 2. Copy **Identity → System assigned → Object (principal) ID**, or `identity.principalId` from JSON view. Do not use the parent account's identity.

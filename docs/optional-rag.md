@@ -97,7 +97,7 @@
 
 | 내 환경 | 수행할 공통 준비 |
 |---|---|
-| 새 환경이 필요함 | [README 준비 1–7](../README.ko.md#prepare) |
+| 새 환경이 필요함 | [공통 준비 1–7](setup.md#prepare) |
 | 허가된 프로젝트·모델이 이미 있음 | [기존 환경 준비](setup.md#existing-environment). 신규 생성 생략 |
 
 선택한 경로에서 가상환경·패키지·`config.json`·모델 배포와 한 건의 생성·평가를 확인합니다.
@@ -114,7 +114,7 @@ python lab.py doctor --live
 
 이 조회는 로그인·모델 배포만 확인합니다. **평가기 조회·Search 준비·실제 생성·채점 성공까지 확인하지는 않습니다.** 생성·채점은 공통 준비의 한 건 실행에서, Search는 아래 단계에서 확인합니다.
 
-포털과 CLI가 같은 계정·테넌트·구독인지 기본 가이드에서 대조합니다.
+포털과 CLI가 같은 계정·테넌트·구독인지 [공통 준비 2](setup.md#setup-sign-in)에서 대조합니다.
 
 ### 1-2. Search 비용과 권한 확인하기
 
@@ -221,7 +221,7 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 
 예제의 세 객체 이름은 기본값입니다. **공유 서비스에서는 실행 전에** `index_name`·`knowledge_source`·`knowledge_base`를 허가된 참가자별 이름(예: `travel-rag-a7k3m9`, `travel-policy-ks-a7k3m9`, `travel-policy-kb-a7k3m9`)으로 정합니다. 같은 실험을 재개할 때는 이름과 `top_k: 3`을 유지하며 완결형 객체를 지정하지 않습니다.
 
-**설정 구분:** `config.json`에는 공통 준비의 프로젝트 주소(`.services.ai.azure.com/api/projects/...`), `config.rag.json`에는 Search 주소(`.search.windows.net`)가 들어갑니다. 두 파일을 합치거나 같은 주소를 양쪽에 넣지 않습니다. [JSON 편집 요령](../README.ko.md#setup-config)처럼 안내한 값만 수정하고 저장합니다.
+**설정 구분:** `config.json`에는 공통 준비의 프로젝트 주소(`.services.ai.azure.com/api/projects/...`), `config.rag.json`에는 Search 주소(`.search.windows.net`)가 들어갑니다. 두 파일을 합치거나 같은 주소를 양쪽에 넣지 않습니다. [JSON 편집 요령](setup.md#setup-config)처럼 안내한 값만 수정하고 저장합니다.
 
 ### 3-2. 검색 객체 생성하기
 

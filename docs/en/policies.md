@@ -1,4 +1,4 @@
-**English reading translation** | [한국어 원본](../../data/policies.md) | [Guide](../../README.md#lab-0)
+**English reading translation** | [한국어 원본](../../data/policies.md) | [Guide](intro-lab.md#lab-0)
 
 # Gaon Lab travel policy: fictional workshop reference
 

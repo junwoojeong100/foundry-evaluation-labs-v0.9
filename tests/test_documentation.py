@@ -22,6 +22,10 @@ from evaluation import ANSWER_SCHEMA, DECISIONS, ROOT, read_cases, read_json
 
 DOCUMENTS = sorted([*ROOT.glob("*.md"), *(ROOT / "docs").rglob("*.md")])
 SHELL_BLOCKS = re.compile(r"```(?:bash|powershell)\n(.*?)```", re.DOTALL)
+TRANSLATED_GUIDES = (
+    "intro-lab", "setup", "reference", "offline", "cleanup",
+    "facilitator", "complete-lab", "optional-rag",
+)
 
 
 def shell_commands(document: Path) -> list[list[str]]:
@@ -48,8 +52,91 @@ class DocumentationTests(unittest.TestCase):
                 self.assertIn(f"]({source})", opening)
                 self.assertEqual(text.count(source), 1)
 
+    def test_readmes_are_short_path_selectors_without_executable_commands(self):
+        for relative, directory in (("README.ko.md", "docs"), ("README.md", "docs/en")):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(guide=relative):
+                self.assertLessEqual(len(text.splitlines()), 120)
+                self.assertFalse(SHELL_BLOCKS.search(text))
+                choices = text.split('<a id="choose-path"></a>')[1].split('<a id="prepare"></a>')[0]
+                for guide in ("complete-lab", "intro-lab", "offline", "optional-rag"):
+                    self.assertIn(f"({directory}/{guide}.md)", choices)
+                self.assertIn(f"({directory}/setup.md#resume)", text)
+                self.assertIn(f"({directory}/cleanup.md#retain-resources)", text)
+
+    def test_readme_legacy_step_anchors_forward_to_the_current_guides(self):
+        routes = {
+            "prepare": "setup.md#prepare",
+            "setup-map": "setup.md#prepare",
+            "lab-map": "intro-lab.md#lab-map",
+            "reading-guide": "intro-lab.md#reading-guide",
+            "working-files": "intro-lab.md#working-files",
+            "validate-extra": "intro-lab.md#validate-extra",
+            "finish": "intro-lab.md#finish",
+            "command-status": "setup.md#command-status",
+            "retain-resources": "cleanup.md#retain-resources",
+            "delete-resources": "cleanup.md#delete-resources",
+        }
+        for step in (
+            "setup-tools", "setup-sign-in", "setup-project", "setup-permissions",
+            "setup-model", "setup-config", "setup-smoke",
+        ):
+            routes[step] = f"setup.md#{step}"
+        for number in range(7):
+            routes[f"lab-{number}"] = f"intro-lab.md#lab-{number}"
+        for relative, directory in (("README.ko.md", "docs"), ("README.md", "docs/en")):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            for anchor, target in routes.items():
+                with self.subTest(guide=relative, anchor=anchor):
+                    marker = f'<a id="{anchor}"></a>'
+                    self.assertIn(marker, text)
+                    following = text.split(marker, 1)[1]
+                    links = re.findall(r"\[[^\]]*\]\(([^)]+)\)", following)
+                    self.assertTrue(links)
+                    self.assertEqual(links[0], f"{directory}/{target}")
+
+    def test_learning_guides_link_directly_to_shared_setup(self):
+        for language in ("", "en/"):
+            for name in ("intro-lab", "complete-lab", "optional-rag"):
+                relative = f"docs/{language}{name}.md"
+                text = (ROOT / relative).read_text(encoding="utf-8")
+                with self.subTest(guide=relative):
+                    self.assertIn("(setup.md#prepare)", text)
+                    self.assertIn("(setup.md#existing-environment)", text)
+
+    def test_internal_links_do_not_detour_through_legacy_readme_step_anchors(self):
+        readmes = {ROOT / "README.md", ROOT / "README.ko.md"}
+        for document in DOCUMENTS:
+            if document in readmes:
+                continue
+            text = document.read_text(encoding="utf-8")
+            for link in re.findall(r"\[[^\]]*\]\(([^)]+)\)", text):
+                url = urlsplit(link)
+                if url.scheme or url.netloc or not url.fragment:
+                    continue
+                target = (document.parent / unquote(url.path)).resolve() if url.path else document
+                if target in readmes:
+                    with self.subTest(guide=document.relative_to(ROOT), link=link):
+                        self.assertEqual(url.fragment, "choose-path")
+
+    def test_shared_setup_preserves_the_previous_shortcut_anchors(self):
+        aliases = {
+            "tools": "setup-tools",
+            "sign-in": "setup-sign-in",
+            "create-project": "setup-project",
+            "permissions": "setup-permissions",
+            "deploy-model": "setup-model",
+            "configure": "setup-config",
+            "smoke": "setup-smoke",
+        }
+        for relative in ("docs/setup.md", "docs/en/setup.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            for alias, step in aliases.items():
+                with self.subTest(guide=relative, alias=alias):
+                    self.assertIn(f'<a id="{alias}"></a>\n<a id="{step}"></a>', text)
+
     def test_setup_identifies_the_local_shell_and_shows_the_activation_fallback(self):
-        for relative in ("README.ko.md", "README.md", "docs/offline.md", "docs/en/offline.md"):
+        for relative in ("docs/setup.md", "docs/en/setup.md", "docs/offline.md", "docs/en/offline.md"):
             text = (ROOT / relative).read_text(encoding="utf-8")
             preparation = text.split('<a id="prepare"></a>')[1].split('<a id="working-files"></a>')[0]
             with self.subTest(guide=relative):
@@ -61,8 +148,8 @@ class DocumentationTests(unittest.TestCase):
 
     def test_each_learning_path_explains_the_answer_contract_without_another_path(self):
         paths = [
-            ("README.ko.md", "lab-1", "lab-2"),
-            ("README.md", "lab-1", "lab-2"),
+            ("docs/intro-lab.md", "lab-1", "lab-2"),
+            ("docs/en/intro-lab.md", "lab-1", "lab-2"),
         ]
         for language in ("", "en/"):
             paths.extend((
@@ -153,7 +240,7 @@ class DocumentationTests(unittest.TestCase):
     def test_learning_paths_have_progress_maps_and_return_links(self):
         introductory_steps = ["lab-0", "prepare", *[f"lab-{number}" for number in range(1, 7)], "finish"]
         paths = (
-            (("README.ko.md", "README.md"), introductory_steps),
+            (("docs/intro-lab.md", "docs/en/intro-lab.md"), introductory_steps),
             (("docs/offline.md", "docs/en/offline.md"), introductory_steps),
             (
                 ("docs/complete-lab.md", "docs/en/complete-lab.md"),
@@ -181,7 +268,7 @@ class DocumentationTests(unittest.TestCase):
 
     def test_reading_conventions_are_visible_before_each_learning_path(self):
         paths = (
-            (("README.ko.md", "README.md"), "lab-0", "lab.py"),
+            (("docs/intro-lab.md", "docs/en/intro-lab.md"), "lab-0", "lab.py"),
             (("docs/offline.md", "docs/en/offline.md"), "lab-0", "lab.py"),
             (
                 ("docs/complete-lab.md", "docs/en/complete-lab.md"),
@@ -212,7 +299,7 @@ class DocumentationTests(unittest.TestCase):
             "setup-tools", "setup-sign-in", "setup-project", "setup-permissions",
             "setup-model", "setup-config", "setup-smoke",
         )
-        for relative in ("README.ko.md", "README.md"):
+        for relative in ("docs/setup.md", "docs/en/setup.md"):
             text = (ROOT / relative).read_text(encoding="utf-8")
             for current, following in zip(steps, steps[1:]):
                 section = text.split(f'<a id="{current}"></a>', 1)[1]
@@ -282,23 +369,19 @@ class DocumentationTests(unittest.TestCase):
         self.assertGreater(counts["rag_lab.py"], 8)
         self.assertGreater(counts["advanced_lab.py"], 10)
 
-    def test_main_path_is_checkpoint_driven_without_a_time_limit(self):
-        text = (ROOT / "README.ko.md").read_text(encoding="utf-8")
+    def test_intro_path_is_checkpoint_driven_without_a_time_limit(self):
+        text = (ROOT / "docs/intro-lab.md").read_text(encoding="utf-8")
         self.assertIn("시간 제한 없이", text)
-        self.assertIn("(docs/setup.md)", text)
-        self.assertIn("(docs/cleanup.md)", text)
-        for anchor in (
-            "choose-path", "prepare", "setup-tools", "setup-sign-in", "setup-project",
-            "setup-permissions", "setup-model", "setup-config", "setup-smoke",
-            "command-status", "finish",
-        ):
+        self.assertIn("(setup.md)", text)
+        self.assertIn("(cleanup.md)", text)
+        for anchor in ("prepare", "working-files", "finish"):
             self.assertIn(f'<a id="{anchor}"></a>', text)
         self.assertEqual(re.findall(r'<a id="lab-(\d+)"></a>', text), [str(i) for i in range(7)])
         self.assertNotRegex(text, r"\d{2}:\d{2}[–-]\d{2}:\d{2}")
-        english = (ROOT / "README.md").read_text(encoding="utf-8")
+        english = (ROOT / "docs/en/intro-lab.md").read_text(encoding="utf-8")
         self.assertIn("No time limit", english)
-        self.assertIn("(docs/en/setup.md)", english)
-        self.assertIn("(docs/en/cleanup.md)", english)
+        self.assertIn("(setup.md)", english)
+        self.assertIn("(cleanup.md)", english)
         for document in DOCUMENTS:
             with self.subTest(document=document.name):
                 content = document.read_text(encoding="utf-8")
@@ -307,7 +390,7 @@ class DocumentationTests(unittest.TestCase):
 
     def test_live_and_demo_share_steps_with_judgment_before_setup(self):
         steps = [str(i) for i in range(7)]
-        for document in (ROOT / "README.ko.md", ROOT / "docs" / "offline.md"):
+        for document in (ROOT / "docs/intro-lab.md", ROOT / "docs/offline.md"):
             text = document.read_text(encoding="utf-8")
             with self.subTest(document=document.name):
                 self.assertEqual(re.findall(r"^## (\d+)\.", text, re.MULTILINE), steps)
@@ -321,11 +404,11 @@ class DocumentationTests(unittest.TestCase):
                 self.assertIn("실습 1로 이어갑니다", text[setup_start:criteria_start])
         setup = (ROOT / "docs" / "setup.md").read_text(encoding="utf-8")
         existing = setup.split('<a id="existing-environment"></a>')[1].split('<a id="cost"></a>')[0]
-        self.assertIn("5. [실습 1](../README.ko.md#lab-1)", existing)
+        self.assertIn("5. [실습 1](intro-lab.md#lab-1)", existing)
 
     def test_permission_illustration_is_labeled_and_linked(self):
-        text = (ROOT / "README.ko.md").read_text(encoding="utf-8")
-        self.assertRegex(text, r"!\[[^\]]+\]\(docs/images/foundry-permissions\.svg\)")
+        text = (ROOT / "docs/setup.md").read_text(encoding="utf-8")
+        self.assertRegex(text, r"!\[[^\]]+\]\(images/foundry-permissions\.svg\)")
         self.assertIn("실제 포털 캡처가 아닙니다", text)
         svg = ElementTree.parse(ROOT / "docs" / "images" / "foundry-permissions.svg").getroot()
         namespace = "{http://www.w3.org/2000/svg}"
@@ -345,7 +428,7 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn("# Can you trust an AI answer?", english)
         self.assertIn("remain **Korean**", english)
         for left, right in (
-            ("README.md", "README.ko.md"),
+            ("docs/en/intro-lab.md", "docs/intro-lab.md"),
             ("docs/en/offline.md", "docs/offline.md"),
         ):
             with self.subTest(english=left):
@@ -362,7 +445,7 @@ class DocumentationTests(unittest.TestCase):
                 )
 
     def test_supporting_guides_have_matching_anchors_and_language_navigation(self):
-        for name in ("setup", "reference", "offline", "cleanup", "facilitator", "complete-lab", "optional-rag"):
+        for name in TRANSLATED_GUIDES:
             korean = (ROOT / "docs" / f"{name}.md").read_text(encoding="utf-8")
             english = (ROOT / "docs" / "en" / f"{name}.md").read_text(encoding="utf-8")
             with self.subTest(guide=name):
@@ -374,7 +457,7 @@ class DocumentationTests(unittest.TestCase):
                 )
                 without_translation_link = korean.replace("[영문 기본 가이드](../README.md)", "")
                 self.assertNotIn("(../README.md", without_translation_link)
-        english = (ROOT / "README.md").read_text(encoding="utf-8")
+        english = (ROOT / "docs/en/setup.md").read_text(encoding="utf-8")
         self.assertIn("not an actual portal screenshot", english)
         svg = ElementTree.parse(ROOT / "docs" / "images" / "foundry-permissions.en.svg").getroot()
         self.assertEqual(svg.get("role"), "img")
@@ -392,20 +475,20 @@ class DocumentationTests(unittest.TestCase):
                 )
 
     def test_complete_path_returns_from_shared_setup_and_keeps_criteria_inline(self):
-        for readme, guide, setup in (
-            ("README.ko.md", "docs/complete-lab.md", "docs/setup.md"),
-            ("README.md", "docs/en/complete-lab.md", "docs/en/setup.md"),
+        for intro, guide, setup in (
+            ("docs/intro-lab.md", "docs/complete-lab.md", "docs/setup.md"),
+            ("docs/en/intro-lab.md", "docs/en/complete-lab.md", "docs/en/setup.md"),
         ):
             with self.subTest(guide=guide):
-                main = (ROOT / readme).read_text(encoding="utf-8")
-                preparation = main.split('<a id="prepare"></a>')[1].split('<a id="lab-1"></a>')[0]
-                self.assertIn(f"({guide}#search-setup)", preparation)
+                main = (ROOT / intro).read_text(encoding="utf-8")
+                setup_text = (ROOT / setup).read_text(encoding="utf-8")
+                preparation = setup_text.split('<a id="prepare"></a>')[1].split('<a id="cli-provision"></a>')[0]
+                self.assertIn("(complete-lab.md#search-setup)", preparation)
                 smoke = preparation.split('<a id="setup-smoke"></a>')[1]
-                optional_guide = guide.replace("complete-lab.md", "optional-rag.md")
-                self.assertIn(f"({guide}#search-setup)", smoke)
-                self.assertIn(f"({optional_guide}#prerequisites)", smoke)
-                self.assertIn("(complete-lab.md#search-setup)", (ROOT / setup).read_text(encoding="utf-8"))
-                self.assertIn("(optional-rag.md#prerequisites)", (ROOT / setup).read_text(encoding="utf-8"))
+                self.assertIn("(intro-lab.md#lab-1)", smoke)
+                self.assertIn("(complete-lab.md#search-setup)", smoke)
+                self.assertIn("(optional-rag.md#prerequisites)", smoke)
+                self.assertIn("(setup.md#prepare)", main)
                 complete = (ROOT / guide).read_text(encoding="utf-8")
                 for required in ("100%", "4/5", "CALIBRATION PASSED: 10 controls", "intermediate_safe", "D04", "D08", "N05", "N06"):
                     self.assertIn(required, complete)
@@ -416,7 +499,7 @@ class DocumentationTests(unittest.TestCase):
         pairs = [("README.ko.md", "README.md")]
         pairs.extend(
             (f"docs/{name}.md", f"docs/en/{name}.md")
-            for name in ("setup", "reference", "offline", "cleanup", "facilitator", "complete-lab", "optional-rag")
+            for name in TRANSLATED_GUIDES
         )
         for korean, english in pairs:
             with self.subTest(guide=korean):
@@ -658,15 +741,19 @@ class DocumentationTests(unittest.TestCase):
                 with self.subTest(document=document.name, example=block[:60]):
                     json.loads(block)
 
-    def test_main_path_uses_live_only_and_one_lab_command_per_block(self):
-        commands = lab_commands(ROOT / "README.md")
+    def test_intro_path_uses_live_only_and_one_lab_command_per_block(self):
+        commands = lab_commands(ROOT / "docs/en/setup.md") + lab_commands(ROOT / "docs/en/intro-lab.md")
         runs = [lab.parser().parse_args(argv) for argv in commands if argv[0] == "run"]
         self.assertEqual(
             [run.out for run in runs],
             [Path("results") / name for name in ("setup-smoke", "baseline", "candidate", "holdout", "my-case")],
         )
         self.assertTrue(all(run.mode == "live" for run in runs))
-        for document in (ROOT / "README.md", ROOT / "docs" / "setup.md", ROOT / "docs" / "offline.md"):
+        for relative in (
+            "docs/intro-lab.md", "docs/en/intro-lab.md",
+            "docs/setup.md", "docs/en/setup.md", "docs/offline.md", "docs/en/offline.md",
+        ):
+            document = ROOT / relative
             for block in SHELL_BLOCKS.findall(document.read_text(encoding="utf-8")):
                 with self.subTest(document=document.name, block=block):
                     self.assertLessEqual(sum(line.startswith("python lab.py ") for line in block.splitlines()), 1)
@@ -683,7 +770,7 @@ class DocumentationTests(unittest.TestCase):
                         self.assertEqual(parts[1], "foundry-evaluation-labs-v1")
 
     def test_main_preparation_smoke_is_one_committed_extra_case_not_dev_or_holdout(self):
-        commands = lab_commands(ROOT / "README.md")
+        commands = lab_commands(ROOT / "docs/en/setup.md")
         runs = [lab.parser().parse_args(argv) for argv in commands if argv[0] == "run"]
         run = runs[0]
         self.assertEqual(run.mode, "live")
@@ -704,7 +791,7 @@ class DocumentationTests(unittest.TestCase):
         )
 
     def test_main_preparation_uses_one_deployment_for_answers_and_judging(self):
-        for relative in ("README.md", "README.ko.md"):
+        for relative in ("docs/setup.md", "docs/en/setup.md"):
             text = (ROOT / relative).read_text(encoding="utf-8")
             configs = [json.loads(block) for block in re.findall(r"```json\n(.*?)```", text, re.DOTALL)]
             configs = [config for config in configs if "project_endpoint" in config]
@@ -750,7 +837,7 @@ class DocumentationTests(unittest.TestCase):
 
     def test_live_guides_keep_requested_model_region_and_deployment_distinct(self):
         for relative in (
-            "README.md", "README.ko.md", "docs/complete-lab.md", "docs/en/complete-lab.md",
+            "docs/complete-lab.md", "docs/en/complete-lab.md",
             "docs/setup.md", "docs/reference.md", "docs/facilitator.md",
             "docs/en/setup.md", "docs/en/reference.md", "docs/en/facilitator.md",
         ):
@@ -761,7 +848,7 @@ class DocumentationTests(unittest.TestCase):
                 self.assertIn("eval-model", text)
                 for obsolete in ("gpt-4.1-mini", "gpt-sol-luna", "East US 2"):
                     self.assertNotIn(obsolete, text)
-        text = (ROOT / "README.md").read_text(encoding="utf-8")
+        text = (ROOT / "docs/en/setup.md").read_text(encoding="utf-8")
         self.assertIn("account:user.name", text)
         reference = (ROOT / "docs" / "reference.md").read_text(encoding="utf-8")
         self.assertIn('id="live-verification"', reference)
@@ -782,7 +869,7 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn("삭제 명령을 실행하지 않습니다", section)
 
     def test_portal_comparison_selects_matching_dev_runs_and_v1_baseline(self):
-        for relative in ("README.md", "docs/reference.md"):
+        for relative in ("docs/en/intro-lab.md", "docs/reference.md"):
             text = (ROOT / relative).read_text(encoding="utf-8")
             with self.subTest(document=relative):
                 for required in ("Evaluation runs", "Compare runs", "Baseline", "v1-dev-", "my-v2-dev-", "Too few samples"):
@@ -799,25 +886,35 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn("실제 운영 승인은", current)
 
     def test_retention_is_the_default_and_deletion_is_explicitly_optional(self):
-        main = (ROOT / "README.md").read_text(encoding="utf-8")
+        main = (ROOT / "docs/en/intro-lab.md").read_text(encoding="utf-8")
         self.assertLess(
             main.index('<a id="retain-resources"></a>'),
             main.index('<a id="delete-resources"></a>'),
         )
-        for relative in ("README.ko.md", "docs/cleanup.md"):
+        for relative in ("docs/intro-lab.md", "docs/cleanup.md"):
             text = (ROOT / relative).read_text(encoding="utf-8")
             with self.subTest(document=relative):
                 self.assertIn("별도 요청 전까지 유지", text)
                 self.assertIn("보존", text)
-        for relative in ("README.md", "docs/en/cleanup.md"):
+        for relative in ("docs/en/intro-lab.md", "docs/en/cleanup.md"):
             self.assertIn("retain until a separate request", (ROOT / relative).read_text(encoding="utf-8"))
         cleanup = (ROOT / "docs" / "cleanup.md").read_text(encoding="utf-8")
         self.assertIn("3–5단계는 건너뜁니다", cleanup)
         self.assertIn("리소스 보존 요청이 있는 동안 삭제하지 않습니다", cleanup)
         self.assertIn("과금 중지가 아닙니다", cleanup)
 
-    def test_setup_shortcuts_do_not_duplicate_the_main_command_sequence(self):
-        self.assertEqual(lab_commands(ROOT / "docs" / "setup.md"), [])
+    def test_shared_setup_stops_after_the_smoke_case(self):
+        expected = [
+            ["doctor"],
+            ["doctor", "--live"],
+            ["run", "--mode", "live", "--prompt", "v1", "--data", "data/my-case.example.jsonl",
+             "--out", "results/setup-smoke"],
+            ["judge", "results/setup-smoke"],
+            ["inspect", "results/setup-smoke", "N01"],
+        ]
+        for relative in ("docs/setup.md", "docs/en/setup.md"):
+            with self.subTest(guide=relative):
+                self.assertEqual(lab_commands(ROOT / relative), expected)
 
     def test_moved_folder_recovery_keeps_demo_separate_from_live_package_installation(self):
         for relative in ("docs/reference.md", "docs/en/reference.md"):
@@ -845,8 +942,8 @@ class DocumentationTests(unittest.TestCase):
                 self.assertFalse(any("pip" in command or command[0] == "az" for command in commands))
                 self.assertNotIn("--live", common)
         for relative, link in (
-            ("README.ko.md", "docs/reference.md#moved-folder"),
-            ("README.md", "docs/en/reference.md#moved-folder"),
+            ("docs/setup.md", "reference.md#moved-folder"),
+            ("docs/en/setup.md", "reference.md#moved-folder"),
             ("docs/offline.md", "reference.md#moved-folder"),
             ("docs/en/offline.md", "reference.md#moved-folder"),
         ):
@@ -863,7 +960,7 @@ class DocumentationTests(unittest.TestCase):
             self.assertEqual(list(Path(directory).iterdir()), [])
 
     def test_documented_extra_cases_and_validation_commands_work_locally(self):
-        for document in (ROOT / "README.md", ROOT / "docs" / "offline.md"):
+        for document in (ROOT / "docs/en/intro-lab.md", ROOT / "docs/offline.md"):
             text = document.read_text(encoding="utf-8")
             examples = re.findall(r"```jsonl\n(.*?)```", text, re.DOTALL)
             commands = [argv for argv in lab_commands(document) if argv[0] == "validate-data"]
@@ -912,7 +1009,7 @@ class DocumentationTests(unittest.TestCase):
 
     def test_human_judgments_precede_baseline_judge_scores(self):
         for document, folder in (
-            (ROOT / "README.md", "results/baseline"),
+            (ROOT / "docs/en/intro-lab.md", "results/baseline"),
             (ROOT / "docs" / "offline.md", "results/demo-baseline"),
         ):
             commands = lab_commands(document)
@@ -968,7 +1065,10 @@ class DocumentationTests(unittest.TestCase):
                             self.assertIn(signal, reused.getvalue())
                             self.assertNotRegex(reused.getvalue(), r"\d+/\d+\s+\w+ 저장")
                             self.assertEqual((folder / "run.json").read_bytes(), saved)
-                            for relative in ("README.md", "README.ko.md", "docs/offline.md", "docs/en/offline.md"):
+                            for relative in (
+                                "docs/intro-lab.md", "docs/en/intro-lab.md",
+                                "docs/offline.md", "docs/en/offline.md",
+                            ):
                                 self.assertIn(signal, (ROOT / relative).read_text(encoding="utf-8"))
             result = read_json(output / "results" / "demo-candidate" / "gate.json")
             self.assertEqual(result["status"], "BLOCK")

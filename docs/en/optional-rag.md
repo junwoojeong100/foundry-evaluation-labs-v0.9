@@ -97,7 +97,7 @@ The [English/Korean vector and LLM-planned RAG summaries](../media/complete-rag/
 
 | Your environment | Shared setup to follow |
 |---|---|
-| You need a new environment | [README setup 1–7](../../README.md#prepare) |
+| You need a new environment | [Shared setup 1–7](setup.md#prepare) |
 | An authorized project and model already exist | [Existing-environment setup](setup.md#existing-environment); skip creation |
 
 In your chosen route, verify the virtual environment, packages, `config.json`, model deployment, and one-case generation/evaluation check.
@@ -221,7 +221,7 @@ The roles are **Search Service Contributor**, which permits service configuratio
 
 The three object names above are defaults. **Before running on a shared service**, choose authorized participant-specific `index_name`, `knowledge_source`, and `knowledge_base` values, such as `travel-rag-a7k3m9`, `travel-policy-ks-a7k3m9`, and `travel-policy-kb-a7k3m9`. Keep those names and `top_k: 3` when resuming the same experiment; do not target complete-path objects.
 
-**Keep the configurations distinct:** `config.json` holds the shared-setup project endpoint (`.services.ai.azure.com/api/projects/...`); `config.rag.json` holds the Search endpoint (`.search.windows.net`). Do not merge the files or put the same endpoint in both. Follow the shared [JSON editing guidance](../../README.md#setup-config), changing only the specified values and saving the file.
+**Keep the configurations distinct:** `config.json` holds the shared-setup project endpoint (`.services.ai.azure.com/api/projects/...`); `config.rag.json` holds the Search endpoint (`.search.windows.net`). Do not merge the files or put the same endpoint in both. Follow the shared [JSON editing guidance](setup.md#setup-config), changing only the specified values and saving the file.
 
 ### 3-2. Create search objects
 

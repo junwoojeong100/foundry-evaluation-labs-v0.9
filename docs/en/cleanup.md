@@ -2,9 +2,9 @@
 
 # Retain results and Azure resources
 
-[Main finish checklist](../../README.md#finish) · [Setup](setup.md)
+[All paths](../../README.md) · [Introductory finish checklist](intro-lab.md#finish) · [Shared setup](setup.md)
 
-**The default is to retain every created resource.**
+**The default is to retain every created resource.** Continue here from your chosen guide's finish section, or select the relevant steps below when stopping early.
 
 > [!WARNING]
 > **Do not delete while a retention request is active.** Closing the terminal or deleting local results does not remove Azure resources. Check retention and costs even when stopping early.

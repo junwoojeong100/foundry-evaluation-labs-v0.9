@@ -2,9 +2,9 @@
 
 # 명령·평가 계약·문제 해결·출처
 
-[메인 가이드](../README.ko.md) · [환경 준비 바로가기](setup.md) · [리소스 정리](cleanup.md)
+[전체 경로](../README.ko.md) · [입문 LIVE](intro-lab.md) · [공통 환경 준비](setup.md) · [리소스 보존·정리](cleanup.md)
 
-기본 LIVE 경로의 준비·명령·완료 확인·정리는 모두 [README](../README.ko.md)에 있습니다. 이 문서를 처음부터 읽을 필요는 없습니다. 막히거나 결과를 정확히 해석해야 할 때 찾아봅니다.
+실습은 [입문 LIVE](intro-lab.md) 또는 선택한 RAG 가이드의 순서를 따릅니다. 환경 설정은 [공통 준비](setup.md)에서 진행합니다. 이 참고 문서는 처음부터 읽지 않아도 됩니다. 막히거나 결과를 정확히 해석해야 할 때 필요한 항목만 찾습니다.
 
 아래 명령표는 `lab.py` 입문 경로용입니다. `advanced_lab.py`의 명령 상태·고정 출력 경로는 [완결형 재개 안내](complete-lab.md#resume)를 사용합니다. 원격 평가 ID 복구는 아래에서 경로별 파일을 구분합니다.
 
@@ -62,7 +62,7 @@ python lab.py run --help
 <a id="data-contract"></a>
 ## 데이터 한 줄 읽기
 
-`data/dev.jsonl`과 추가 사례 예제는 **한 줄에 JSON 객체 하나**입니다. 필드 이름을 추가하거나 지우지 않고, 새 질문에 맞는 값을 넣습니다. [실습 6](../README.ko.md#lab-6)의 N02 예제와 로컬 검사 명령으로 시작할 수 있습니다.
+`data/dev.jsonl`과 추가 사례 예제는 **한 줄에 JSON 객체 하나**입니다. 필드 이름을 추가하거나 지우지 않고, 새 질문에 맞는 값을 넣습니다. [실습 6](intro-lab.md#lab-6)의 N02 예제와 로컬 검사 명령으로 시작할 수 있습니다.
 
 ```bash
 python lab.py validate-data data/my-case.jsonl
@@ -251,19 +251,19 @@ AI 보조 검토는 `reviews.json`에 남지만 **사람 검토의 건수나 최
 | 구독이 목록에 없음 | 포털·CLI의 계정과 테넌트 확인. 다른 디렉터리의 게스트 계정이라면 사용할 구독의 테넌트로 로그인 |
 | Owner인데 역할 할당/생성이 안 됨 | 구독 범위의 역할인지, PIM에서 활성인지 확인. 관리 그룹 정책·deny assignment·조건부 액세스는 Owner로 우회하지 않기 |
 | 공급자가 등록되지 않았다고 함 | 해당 구독의 Resource providers에서 Foundry는 `Microsoft.CognitiveServices`, Search 생성은 `Microsoft.Search`의 등록 상태 확인. 필요한 공급자만 권한 있는 담당자가 등록 |
-| `python` 또는 `lab.py`를 찾을 수 없음 | VS Code에서 `lab.py`가 있는 폴더를 열고 [준비 1](../README.ko.md#setup-tools)의 가상환경 활성화부터 확인. 새 터미널마다 활성화 필요 |
+| `python` 또는 `lab.py`를 찾을 수 없음 | VS Code에서 `lab.py`가 있는 폴더를 열고 [준비 1](setup.md#setup-tools)의 가상환경 활성화부터 확인. 새 터미널마다 활성화 필요 |
 | 명령 입력 후 `SyntaxError`, 화면에 `>>>`가 보임 | Python 대화창에 셸 명령을 입력한 상태. `exit()`로 나온 뒤 VS Code 터미널에 명령만 입력 |
-| Windows에서 `source`가 인식되지 않음 | macOS/Linux 블록을 실행했는지 확인. [준비 1](../README.ko.md#setup-tools)에서 PowerShell 프로필을 열고 Windows 블록만 사용 |
+| Windows에서 `source`가 인식되지 않음 | macOS/Linux 블록을 실행했는지 확인. [준비 1](setup.md#setup-tools)에서 PowerShell 프로필을 열고 Windows 블록만 사용 |
 | 명령 실행 전 `>>` 또는 `quote>`에서 계속 입력을 기다림 | 닫히지 않은 따옴표 등으로 셸이 다음 줄을 기다리는 상태. `Ctrl+C`로 미완성 입력만 취소한 뒤 `YOUR-...`를 바꾼 명령 한 줄 전체를 다시 붙여 넣음. 따옴표를 곡선 모양으로 바꾸지 않기 |
 | 파일을 수정했는데 실행에 반영되지 않음 | 브라우저가 아니라 VS Code의 로컬 복사본인지, File → Save로 저장했는지, 명령의 파일 경로가 맞는지 확인. 완료된 결과는 덮어쓰지 않기 |
-| Windows에서 `Activate.ps1` 실행이 차단됨 | 조직 정책을 해제하지 않고 설치 명령부터 모든 `python`을 `.\.venv\Scripts\python.exe`로 대체. [준비 1](../README.ko.md#setup-tools) 확인 |
+| Windows에서 `Activate.ps1` 실행이 차단됨 | 조직 정책을 해제하지 않고 설치 명령부터 모든 `python`을 `.\.venv\Scripts\python.exe`로 대체. [준비 1](setup.md#setup-tools) 확인 |
 | 폴더 이동·이름 변경 후 가상환경이 실행되지 않음 | [이동한 폴더의 가상환경 복구](#moved-folder). 결과·설정은 유지하며 DEMO는 LIVE 패키지를 설치하지 않음 |
 | LIVE 패키지 없음/버전 불일치 | 가상환경 안에서 `python -m pip install -r requirements.txt`. 임의 최신 업그레이드 금지 |
 | config 예시 값 오류 | endpoint의 `YOUR-...`를 실제 프로젝트 주소로 교체. 두 배포 이름은 본인이 만든 `eval-model` 또는 실제 이름인지 확인 |
-| 설정 파일에서 `Expecting property name` / `Expecting ',' delimiter` / `Extra data` | 해당 JSON 파일에 설명문·코드 블록 테두리·마지막 항목 뒤 쉼표가 들어갔는지 확인. [JSON 편집 요령](../README.ko.md#setup-config)대로 큰따옴표·쉼표·중괄호를 복원하고 저장. 서로 다른 설정 파일을 한 파일에 붙이지 않기 |
+| 설정 파일에서 `Expecting property name` / `Expecting ',' delimiter` / `Extra data` | 해당 JSON 파일에 설명문·코드 블록 테두리·마지막 항목 뒤 쉼표가 들어갔는지 확인. [JSON 편집 요령](setup.md#setup-config)대로 큰따옴표·쉼표·중괄호를 복원하고 저장. 서로 다른 설정 파일을 한 파일에 붙이지 않기 |
 | classic 허브 연결 문자열이나 모델 주소만 있음 | 새 Foundry 프로젝트의 `/api/projects/...` 주소가 필요. [기존 환경 조건](setup.md#existing-environment)을 확인하고 새 환경 사용 또는 [DEMO로 분리 전환](setup.md#switch-to-demo) |
 | 저장했는데 config를 찾을 수 없음 | `lab.py` 옆의 `config.json`인지, `config.json.txt`로 저장되지 않았는지 확인 |
-| `prompts/my-v2.txt`를 찾을 수 없음 | 먼저 저장소 폴더·파일 경로·저장 여부 확인. 포함된 작업본이 정말 없을 때만 [실습 4](../README.ko.md#lab-4)에 따라 준비. 기존 개인 작업을 V2로 덮어쓰지 않기 |
+| `prompts/my-v2.txt`를 찾을 수 없음 | 먼저 저장소 폴더·파일 경로·저장 여부 확인. 포함된 작업본이 정말 없을 때만 [실습 4](intro-lab.md#lab-4)에 따라 준비. 기존 개인 작업을 V2로 덮어쓰지 않기 |
 | `my-v2.txt`·`my-case.jsonl`이 이미 있음 | 저장소의 예제 작업본. 기존 내용·개인 수정부터 확인하고 재사용/직접 편집을 구분. `my-v2.txt`는 날짜 미확인 시 조건부 한도를 나열하지 않고 SCOPE만 인용하는 지침이 추가되어 `v2.txt`와 동일하지 않음 |
 | `validate-data`가 `ERROR:`를 출력 | 표시된 줄·필드 수정. JSON 객체 전체를 한 줄로 저장하고 빈 줄 제거. 필수 8개 필드·숫자/null·true/false·공식 출처 확인 후 같은 검사 재실행. 통과 전 유료 `run` 실행하지 않기 |
 | `validate-data`의 건수가 1이 아님 | N01 등 다른 사례를 복사본에 남겼는지 확인. 이번 추가 사례 파일에는 N02 한 줄만 저장. 원본 질문 파일이나 기존 결과는 수정하지 않기 |
@@ -315,7 +315,7 @@ RAG의 **사용자 → Search** 접근과 **Search 관리 ID → 모델** 접근
 <a id="managed-identity-access"></a>
 ## 프로젝트 관리 ID를 선택할 수 없을 때
 
-이 절은 [준비 4: 권한 확인](../README.ko.md#setup-permissions)의 포털 선택이 어려울 때만 사용합니다. 역할 할당 권한이 없으면 아래 명령을 시도하는 대신 소유자에게 대상과 범위의 대조를 요청합니다.
+이 절은 [준비 4: 권한 확인](setup.md#setup-permissions)의 포털 선택이 어려울 때만 사용합니다. 역할 할당 권한이 없으면 아래 명령을 시도하는 대신 소유자에게 대상과 범위의 대조를 요청합니다.
 
 1. Foundry의 **Manage → Project details**에서 해당 프로젝트의 Azure 리소스를 엽니다. 프로젝트 리소스 ID는 `/accounts/계정이름/projects/프로젝트이름`으로 끝납니다.
 2. Azure 포털의 프로젝트 **Identity → System assigned**에서 **Object (principal) ID**를 복사합니다. ID 메뉴가 보이지 않으면 리소스의 JSON 보기에서 `identity.principalId`를 확인합니다. 상위 Foundry 계정의 ID가 아닙니다.
@@ -457,7 +457,7 @@ python lab.py doctor
 
 **기록된 모델 구성:** 2026-09-28 새 환경의 완결형 실행은 `swedencentral`의 `gpt-6-luna` 버전 `2026-09-22`, **GlobalStandard 60K TPM**을 사용했습니다. 그 실제 실행 결과는 [완결형 실습](complete-lab.md#results)을 확인합니다. 현재 또는 다른 구독·지역의 가용성은 별도로 확인해야 합니다.
 
-**로컬에서 확인하는 것:** 작성된 예제의 전체 실습 경로, 업무 검사·Gate의 조건, 누락/변조/회귀 차단, 문서 명령과 N02 데이터 검사, 설치된 SDK로 만든 요청·응답의 모양. README의 준비부터 추가 사례까지 LIVE 명령도 메모리 내 HTTP 응답으로 연결해 실행하며, 실제 Azure 응답이나 Judge 품질을 검증하는 것은 아닙니다.
+**로컬에서 확인하는 것:** 작성된 예제의 전체 실습 경로, 업무 검사·Gate의 조건, 누락/변조/회귀 차단, 문서 명령과 N02 데이터 검사, 설치된 SDK로 만든 요청·응답의 모양. 공통 준비부터 입문 추가 사례까지 LIVE 명령도 메모리 내 HTTP 응답으로 연결해 실행하며, 실제 Azure 응답이나 Judge 품질을 검증하는 것은 아닙니다.
 
 **이것만으로 확인되지 않는 것:** 사용자의 실제 Azure 권한, 지역 가용성, 모델 배포 기능, 클라우드 채점 완료, 현재 포털의 화면 배치. 문서 작성이나 로컬 검사만으로 이를 완료했다고 주장하지 않습니다. 참가자는 자기 환경에서 [한 건의 생성·평가](setup.md#smoke)로 준비를 확인합니다. 단체 진행 전에는 필요에 따라 [전체 리허설](facilitator.md#rehearsal)을 수행합니다.
 

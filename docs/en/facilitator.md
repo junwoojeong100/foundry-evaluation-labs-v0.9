@@ -2,13 +2,13 @@
 
 # Facilitator guide
 
-[Participant guide](../../README.md) · [Setup](setup.md)
+[All paths](../../README.md) · [Introductory participant guide](intro-lab.md) · [Shared setup](setup.md)
 
 Teach **evidence-based judgment**, not just tool operation. If D06 actually regressed, “approval fabrication means I would hold the change” is more useful than “the score increased.” Require evidence and reasons, not a predetermined failure.
 
 **Scope:** the pre-class checklist, rehearsal, and 0–6 table below are for **fixed-policy introductory LIVE/DEMO**. For recommended complete RAG, use [its dedicated checkpoints](#complete-checkpoints), not the 80% gate, D06/H04 workflow, or one-model constraint.
 
-Introductory participants follow one main guide: activity 0, setup, activities 1–6, and resource retention. Use checkpoints rather than a fixed timetable. Keep LIVE and authored DEMO evidence distinct. English documentation uses the same Korean experimental inputs as the Korean guide; use the [policy translation](policies.md) to explain them without changing the experiment.
+Introductory participants follow the [introductory guide](intro-lab.md): activity 0, shared setup, activities 1–6, and resource retention. Return to that guide after setup. Use checkpoints rather than a fixed timetable. Keep LIVE and authored DEMO evidence distinct. English documentation uses the same Korean experimental inputs as the Korean guide; use the [policy translation](policies.md) to explain them without changing the experiment.
 
 Use generated reports and ask participants to explain cases and judgment reasons, rather than transcribing scores or completing a separate submission form.
 
@@ -35,7 +35,7 @@ Shared environments are not the introductory default. If unavoidable, define per
 <a id="rehearsal"></a>
 ## Rehearse the real environment
 
-Local and SDK transport tests are **not actual Azure execution**. For a full rehearsal, follow the participant guide in a clean working/output location; do not delete previous `results/` or mistake a cached run for a new experiment. Paid calls occur.
+Local and SDK transport tests are **not actual Azure execution**. For a full rehearsal, follow the [introductory guide](intro-lab.md) and its linked shared setup in a clean working/output location; do not delete previous `results/` or mistake a cached run for a new experiment. Paid calls occur.
 
 | Check | Expected evidence |
 |---|---|
@@ -110,7 +110,7 @@ Ask for a concrete case and sentence, the changed instruction, both improvements
 <a id="complete-checkpoints"></a>
 ## Dedicated complete-RAG checkpoints
 
-Participants use the checkpoints in sections 1–8 of the [complete guide](complete-lab.md) and the generated reports. After README setup 1–7, confirm they return to complete-path Search setup, not introductory activity 1.
+Participants use the checkpoints in sections 1–8 of the [complete guide](complete-lab.md) and the generated reports. After shared setup 1–7, confirm they return to complete-path Search setup, not introductory activity 1.
 
 | Stage | Evidence for completion or holding |
 |---|---|
