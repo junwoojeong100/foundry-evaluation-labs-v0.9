@@ -14,6 +14,7 @@ from datetime import datetime
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 PRIVATE = ROOT / "results" / "media"
@@ -125,10 +126,6 @@ def project_context() -> dict:
     account = load(ROOT / "results" / "azure-foundry-account.json")
     baseline = load(ROOT / "results" / "baseline" / "judge.json")
     prefix = baseline["report_url"].split("/build/")[0]
-    worksheet = (ROOT / "results" / "my-worksheet.md").read_text(encoding="utf-8")
-    comparisons = re.findall(r"https://ai\.azure\.com/\S+/compare/\S+", worksheet)
-    if not comparisons:
-        raise RuntimeError("The worksheet must contain the verified portal comparison URL.")
     display_name = subprocess.check_output(
         ["az", "ad", "signed-in-user", "show", "--query", "displayName", "-o", "tsv"],
         text=True,
@@ -144,7 +141,6 @@ def project_context() -> dict:
             "01-resources": f"https://portal.azure.com/#@{identity['tenantId']}/resource{group['id']}/overview",
             "03-model": prefix + "/build/models/deployments?tid=" + identity["tenantId"],
             "06-evaluation": baseline["report_url"] + "?tid=" + identity["tenantId"],
-            "08-portal-compare": comparisons[-1],
         },
     }
 
@@ -158,9 +154,23 @@ def redact(text: str, values: list[str]) -> str:
     return re.sub(r"\b[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}\b", "[ID redacted]", text)
 
 
-def prepare(name: str, *, scenes=SCENES, private=PRIVATE, context=None) -> None:
+def prepare(name: str, *, scenes=SCENES, private=PRIVATE, context=None, comparison_url: str | None = None) -> None:
     scene = scene_for(name, scenes)
+    if comparison_url is not None:
+        url = urlsplit(comparison_url)
+        if (
+            name != "08-portal-compare" or url.scheme != "https"
+            or url.netloc.casefold() != "ai.azure.com" or re.search(r"\s", comparison_url)
+            or "/compare/" not in url.path or not url.path.split("/compare/", 1)[1].strip("/")
+        ):
+            raise ValueError("--comparison-url must be a verified Foundry Compare runs URL for 08-portal-compare.")
+    if name == "08-portal-compare" and comparison_url is None and (
+        context is None or not context["urls"].get(name)
+    ):
+        raise ValueError("Supply the verified Foundry Compare runs URL with --comparison-url.")
     context = project_context() if context is None else context
+    if comparison_url is not None:
+        context = {**context, "urls": {**context["urls"], name: comparison_url}}
     work, raw = private / "work", private / "raw"
     server = load(work / "server.json")
     config = {
@@ -469,11 +479,17 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=("serve", "prepare", "run", "render", "verify"))
     parser.add_argument("scene", nargs="?")
+    parser.add_argument("--comparison-url", help="Verified Foundry Compare runs URL for prepare 08-portal-compare.")
     args = parser.parse_args()
+    if args.comparison_url is not None and (args.action != "prepare" or args.scene != "08-portal-compare"):
+        parser.error("--comparison-url is only valid for prepare 08-portal-compare.")
     if args.action in ("prepare", "run"):
         if not args.scene:
             parser.error("A scene ID is required.")
-        (prepare if args.action == "prepare" else run_scene)(args.scene)
+        if args.action == "prepare":
+            prepare(args.scene, comparison_url=args.comparison_url)
+        else:
+            run_scene(args.scene)
     else:
         {"serve": serve, "render": render, "verify": verify}[args.action]()
 

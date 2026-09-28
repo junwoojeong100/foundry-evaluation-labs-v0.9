@@ -303,7 +303,7 @@ def run_command(args) -> int:
                 initial = pending["initial_response"]
                 checks = response_checks(case, initial["response"])
                 if initial.get("output_error") or not all(checks.values()):
-                    raise ValueError(f"{key}: the initial clarification/handoff behavior failed; it cannot be hidden by a later answer.")
+                    raise ValueError(f"{key}: the initial clarification/handoff field checks failed; it cannot be hidden by a later answer.")
                 history = [
                     {"role": "user", "content": case["query"]},
                     {"role": "assistant", "content": initial["response"]["answer"]},
@@ -426,6 +426,26 @@ def freeze_command(args) -> int:
     if [row["context_hash"] for row in old["rows"]] != initial_hashes:
         raise ValueError("The controlled starting contexts must match the recorded baseline.")
     run = load_generation(RESULTS / "planned-dev")
+    candidate_fields = ("prompt", "prompt_hash", "generation_contract", "model_snapshot", "initial_cases")
+    replay_inputs = {key: value for key, value in improved["input_contract"].items() if key != "stage"}
+    planned_inputs = {key: value for key, value in run["input_contract"].items() if key != "stage"}
+    if replay_inputs != planned_inputs or any(improved[key] != run[key] for key in candidate_fields):
+        raise ValueError("V2 replay and planned dev must validate the same candidate and input contract. Start a new experiment.")
+    if (
+        run["model_snapshot"] != old["model_snapshot"]
+        or run["generation_contract"] != old["generation_contract"]
+        or run["initial_cases"] != old["cases"]
+    ):
+        raise ValueError("The controlled model, generation settings and initial cases must match the recorded baseline.")
+    if (
+        run["prompt_hash"] != digest(run["prompt"])
+        or run["prompt_hash"] != run["input_contract"]["prompt_hash"]
+        or run["generation_contract"] != run["input_contract"]["generation_contract"]
+        or run["prompt_hash"] != digest((DATA / "instructions.v2.txt").read_text(encoding="utf-8"))
+        or run["generation_contract"] != generation_contract()
+        or run["input_contract"]["followups_hash"] != digest(read_json(DATA / "dev-followups.json"))
+    ):
+        raise ValueError("Candidate instructions, generation settings or follow-ups changed after dev. Start a new experiment.")
     for row in run["rows"]:
         if not row["retrieval"]["evidence"].get("llm_query_planning"):
             raise ValueError("Final dev run lacks actual query-planning evidence.")
@@ -450,7 +470,7 @@ def freeze_command(args) -> int:
         "generation_contract": run["generation_contract"], "model_snapshot": run["model_snapshot"],
         "dev_cases": run["cases"], "dev_evidence_hash": run["evidence_hash"],
         "dev_initial_cases": run["initial_cases"],
-        "dev_followups_hash": digest(read_json(DATA / "dev-followups.json")),
+        "dev_followups_hash": run["input_contract"]["followups_hash"],
         "baseline_result": baseline_result, "replay_result": replay, "planned_dev_result": planned,
     }
     path = RESULTS / "frozen.json"
@@ -638,7 +658,7 @@ def inspect_command(args) -> int:
         print("Evaluation-user follow-up:", interaction["followup"])
         print("Final answer:", row["response"]["answer"])
         print("Final scores:", json.dumps(metric["scores"], ensure_ascii=False))
-        print("Initial behavior checks:", json.dumps(metric["intermediate_safe"]))
+        print("Initial field checks (not prose evaluation):", json.dumps(metric["intermediate_safe"]))
         return 0
     print(json.dumps(row["response"], ensure_ascii=False, indent=2))
     print("Business checks:", json.dumps(metric["business_checks"], ensure_ascii=False))

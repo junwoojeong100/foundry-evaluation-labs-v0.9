@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import struct
+import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
+from tools.media import workshop_video as media
 from tools.media.success_video import SCENES
 from tools.media.workshop_video import redact, stamp
 
@@ -14,6 +19,65 @@ MEDIA = ROOT / "docs" / "media" / "complete-rag"
 
 
 class MediaTests(unittest.TestCase):
+    def test_recording_context_reads_only_structured_run_artifacts(self):
+        identity = {"subscriptionId": "test-sub", "tenantId": "test-tenant", "account": "learner@example.com"}
+        current = {"id": "test-sub", "name": "Test subscription", "user": {"name": "learner@example.com"}}
+        records = [
+            identity, {"name": "test-group", "id": "/test-group"},
+            {"name": "test-account"}, {"report_url": "https://ai.azure.com/nextgen/test/build/evaluations/test"},
+        ]
+        with (
+            tempfile.TemporaryDirectory() as temporary,
+            patch.object(media, "ROOT", Path(temporary)),
+            patch.object(media, "load", side_effect=records) as load,
+            patch.object(media.subprocess, "check_output", side_effect=[json.dumps(current), "Test learner\n"]),
+        ):
+            context = media.project_context()
+        self.assertEqual(context["subscription"], "test-sub")
+        self.assertEqual(
+            [call.args[0].name for call in load.call_args_list],
+            ["azure-identity.json", "azure-resource-group.json", "azure-foundry-account.json", "judge.json"],
+        )
+        self.assertNotIn("08-portal-compare", context["urls"])
+
+    def test_comparison_scene_requires_a_valid_explicit_url_before_loading_context(self):
+        invalid = (
+            None, "", "http://ai.azure.com/project/compare/test",
+            "https://example.com/project/compare/test",
+            "https://ai.azure.com/project/compare/",
+            "https://ai.azure.com/project/evaluations?next=/compare/test",
+            "https://ai.azure.com/project/compare/test\n",
+        )
+        for url in invalid:
+            with self.subTest(url=url), patch.object(media, "project_context") as context:
+                with self.assertRaisesRegex(ValueError, "--comparison-url"):
+                    media.prepare("08-portal-compare", comparison_url=url)
+                context.assert_not_called()
+
+    def test_comparison_scene_preserves_the_supplied_url_without_a_terminal_fallback(self):
+        url = "https://ai.azure.com/nextgen/test/compare/recorded?tid=test-tenant"
+        context = {"redact": [], "urls": {}}
+        with tempfile.TemporaryDirectory() as temporary, redirect_stdout(io.StringIO()):
+            private = Path(temporary)
+            media.save(private / "work/server.json", {"url": "http://127.0.0.1:8765"})
+            media.prepare("08-portal-compare", private=private, context=context, comparison_url=url)
+            capture = media.load(private / "work/capture-config.json")
+            saved = media.load(private / "context.json")
+        self.assertEqual(capture["kind"], "portal")
+        self.assertEqual(capture["url"], url)
+        self.assertEqual(saved["urls"]["08-portal-compare"], url)
+        self.assertEqual(context["urls"], {})
+
+    def test_prepare_cli_forwards_the_comparison_url(self):
+        url = "https://ai.azure.com/nextgen/test/compare/recorded"
+        with (
+            patch("sys.argv", ["workshop_video.py", "prepare", "08-portal-compare", "--comparison-url", url]),
+            patch.object(media.os, "umask"),
+            patch.object(media, "prepare") as prepare,
+        ):
+            media.main()
+        prepare.assert_called_once_with("08-portal-compare", comparison_url=url)
+
     def test_redaction_covers_names_emails_ids_paths_and_report_urls(self):
         text = (
             "EXAMPLE USER learner@example.com "

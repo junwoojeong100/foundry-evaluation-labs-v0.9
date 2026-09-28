@@ -167,9 +167,50 @@ def verify_definitions(search, config: dict, expected: dict) -> None:
         raise ValueError("Live index/knowledge definitions changed after the experiment was frozen.")
 
 
+def definition_matches(actual: object, expected: object) -> bool:
+    """Compare declared settings, allowing extra server-default properties."""
+    if isinstance(expected, dict):
+        if not isinstance(actual, dict):
+            return False
+        for key, value in expected.items():
+            if key not in actual:
+                return False
+            if key == "resourceUri" and isinstance(actual[key], str) and isinstance(value, str):
+                if actual[key].rstrip("/").casefold() != value.rstrip("/").casefold():
+                    return False
+            elif not definition_matches(actual[key], value):
+                return False
+        return True
+    if isinstance(expected, list):
+        if not isinstance(actual, list) or len(actual) != len(expected):
+            return False
+        if expected and all(isinstance(item, dict) and isinstance(item.get("name"), str) for item in expected):
+            if not all(isinstance(item, dict) and isinstance(item.get("name"), str) for item in actual):
+                return False
+            by_name = {item["name"]: item for item in actual}
+            return len(by_name) == len(expected) and all(
+                definition_matches(by_name.get(item["name"]), item) for item in expected
+            )
+        return all(definition_matches(left, right) for left, right in zip(actual, expected))
+    return type(actual) is type(expected) and actual == expected
+
+
 def initialize(search, project, client, config: dict, documents: list[dict], cache_path: Path) -> dict:
     corpus_hash = digest(documents)
     models = model_contract(project, config)
+    path = "indexes/" + quote(config["index_name"], safe="")
+    source_path = "knowledgesources/" + quote(config["knowledge_source"], safe="")
+    base_path = "knowledgebases/" + quote(config["knowledge_base"], safe="")
+    definitions = {
+        "index": (path, vector_index(config, corpus_hash, models)),
+        "knowledge source": (source_path, knowledge_source_definition(config)),
+        "knowledge base": (base_path, planned_base(config)),
+    }
+    existing = {}
+    for kind, (resource_path, definition) in definitions.items():
+        existing[kind] = search.request("GET", resource_path, missing_ok=True)
+        if existing[kind] is not None and not definition_matches(existing[kind], definition):
+            raise ValueError(f"Existing {kind} has a different retrieval/model contract. Use new object names; do not overwrite it.")
     embedding_contract = digest({"documents": documents, "models": models["embedding"], "dimensions": config["embedding_dimensions"]})
     if cache_path.exists():
         cache = read_json(cache_path)
@@ -183,13 +224,8 @@ def initialize(search, project, client, config: dict, documents: list[dict], cac
     else:
         vectors = embed(client, config, [document["title"] + "\n" + document["content"] for document in documents])
         write_json(cache_path, {"contract_hash": embedding_contract, "models": models, "vectors": vectors})
-    definition = vector_index(config, corpus_hash, models)
-    path = "indexes/" + quote(config["index_name"], safe="")
-    existing = search.request("GET", path, missing_ok=True)
-    if existing is None:
-        search.request("PUT", path, definition, create_only=True)
-    elif existing.get("description") != definition["description"] or existing.get("vectorSearch") is None:
-        raise ValueError("Existing index has another vector/corpus contract. Do not overwrite it.")
+    if existing["index"] is None:
+        search.request("PUT", path, definitions["index"][1], create_only=True)
     inventory = search.request("POST", path + "/docs/search", {
         "search": "*", "select": ",".join(DOCUMENT_FIELDS), "top": 100,
     })["value"]
@@ -207,25 +243,10 @@ def initialize(search, project, client, config: dict, documents: list[dict], cac
         values = response.get("value", [])
         if len(values) != len(documents) or any(value.get("status") is not True for value in values):
             raise RuntimeError(f"Vector document upload failed: {values}")
-    source = knowledge_source_definition(config)
-    source_path = "knowledgesources/" + quote(config["knowledge_source"], safe="")
-    old_source = search.request("GET", source_path, missing_ok=True)
-    if old_source is None:
-        search.request("PUT", source_path, source, create_only=True)
-    elif old_source.get("searchIndexParameters", {}).get("searchIndexName") != config["index_name"]:
-        raise ValueError("Existing knowledge source targets another index.")
-    base = planned_base(config)
-    base_path = "knowledgebases/" + quote(config["knowledge_base"], safe="")
-    old_base = search.request("GET", base_path, missing_ok=True)
-    if old_base is None:
-        search.request("PUT", base_path, base, create_only=True)
-    else:
-        if (
-            [source["name"] for source in old_base.get("knowledgeSources", [])] != [config["knowledge_source"]]
-            or old_base.get("retrievalReasoningEffort", {}).get("kind") != "low"
-            or not old_base.get("models")
-        ):
-            raise ValueError("Existing knowledge base has a different planning contract.")
+    for kind in ("knowledge source", "knowledge base"):
+        if existing[kind] is None:
+            resource_path, definition = definitions[kind]
+            search.request("PUT", resource_path, definition, create_only=True)
     return {
         "api_version": API_VERSION, "corpus_hash": corpus_hash, "models": models,
         "vector_dimensions": config["embedding_dimensions"], "document_count": len(documents),

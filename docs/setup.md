@@ -13,17 +13,17 @@
 <a id="tools"></a>
 ## 준비 1. 코드와 도구 준비
 
-[준비 1: 코드 받기와 도구 설치](../README.ko.md#setup-tools) — 운영체제별 명령, 터미널 위치, 가상환경, 실습지 복사. 완료 신호는 `LOCAL OK`와 `dev 8개, holdout 4개`입니다.
+[준비 1: 코드 받기와 도구 설치](../README.ko.md#setup-tools) — 운영체제별 명령, 터미널 위치, 가상환경을 확인합니다. 완료 신호는 `LOCAL OK`와 `dev 8개, holdout 4개`입니다.
 
 <a id="sign-in"></a>
 ## 준비 2. 같은 계정·구독으로 로그인
 
-[준비 2: 사용할 구독으로 로그인](../README.ko.md#setup-sign-in) — 포털과 CLI의 계정·테넌트·구독을 맞춥니다. `az account show`의 `account`까지 대조하며, `YOUR-...`에는 본인 실습지에 기록한 값을 넣습니다.
+[준비 2: 사용할 구독으로 로그인](../README.ko.md#setup-sign-in) — 포털과 CLI의 계정·테넌트·구독을 맞춥니다. `az account show`의 `account`까지 대조하며, `YOUR-...`에는 해당 화면과 조회 결과에서 확인한 값을 넣습니다.
 
 <a id="create-project"></a>
 ## 준비 3. 전용 그룹과 프로젝트 만들기
 
-[준비 3: 전용 그룹과 Foundry 프로젝트](../README.ko.md#setup-project) — 자원별 역할과 이름, 생성 순서, 기록할 값을 확인합니다. 그룹뿐 아니라 Foundry 리소스·프로젝트도 `swedencentral`인지 확인합니다. 공유 자원을 새 전용 자원으로 오해하지 않습니다.
+[준비 3: 전용 그룹과 Foundry 프로젝트](../README.ko.md#setup-project) — 자원별 역할과 실제 이름, 생성 순서를 확인합니다. 그룹뿐 아니라 Foundry 리소스·프로젝트도 `swedencentral`인지 확인합니다. 공유 자원을 새 전용 자원으로 오해하지 않습니다.
 
 <a id="permissions"></a>
 ## 준비 4. 데이터 접근 권한 확인
@@ -52,7 +52,7 @@
 
 **README 준비 1–2를 완료한 뒤, 준비 3–5의 포털 조작 대신 사용하는 경로**입니다. Azure CLI **2.80.0 이상**과 생성·역할 할당 권한이 필요합니다. [공식 프로젝트 생성 문서](https://learn.microsoft.com/azure/foundry/how-to/create-projects)를 따르며 `azd`, 검색 서비스, 에이전트 서버는 추가하지 않습니다. 이미 프로젝트·모델을 만들었다면 다시 실행하지 않습니다.
 
-`YOUR-...`를 실습지의 실제 값으로 바꿉니다. 그룹·Foundry 리소스 이름은 본인 고유 이름, 프로젝트는 `eval-workshop`, 배포는 `eval-model`을 사용합니다. 아래 명령은 macOS/Linux와 PowerShell에서 동일합니다.
+`YOUR-...`를 준비 2에서 확인한 구독 ID와 본인이 사용할 실제 값으로 바꿉니다. 그룹·Foundry 리소스 이름은 본인 고유 이름, 프로젝트는 `eval-workshop`, 배포는 `eval-model`을 사용합니다. 아래 명령은 macOS/Linux와 PowerShell에서 동일합니다.
 
 ### 1. 새 그룹과 Foundry 리소스
 
@@ -124,14 +124,18 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 
 `YOUR-MODEL-VERSION`에는 **조회한 실제 버전**을 넣습니다. 2026-09-27 실습에서는 `2026-09-22`를 사용했으며 이 값을 현재도 제공한다고 가정하지 않습니다. 완료 후 [README 준비 6](../README.ko.md#setup-config)으로 돌아가 설정·조회·한 건 생성·평가를 진행합니다. API 키를 조회하거나 저장할 필요는 없습니다. **마지막에 삭제 명령을 실행하지 않습니다.**
 
+완결형 RAG는 기록된 V1 비교를 위해 [지정 답변 버전](complete-lab.md#setup)이 필수입니다. 다른 제공 버전을 사용할 수 있는 입문 경로와 구분합니다.
+
 <a id="existing-environment"></a>
 ## 이미 허가받은 환경이 있다면
 
-새 자원을 만들거나 기존 모델의 이름·설정을 바꾸지 않습니다. 아직 하지 않았다면 [실습 0](../README.ko.md#lab-0)의 A/B 판단만 먼저 한 뒤 이 절로 돌아옵니다.
+새 자원을 만들거나 기존 모델의 이름·설정을 바꾸지 않습니다. 입문 참가자는 아직 하지 않았다면 [실습 0](../README.ko.md#lab-0)의 A/B 판단만 먼저 한 뒤 이 절로 돌아옵니다.
 
 **사용 가능한 환경:** 새 포털에서 사용하는 **Foundry 프로젝트**와 그 프로젝트에서 접근 가능한 모델 배포입니다. Project endpoint는 `https://리소스이름.services.ai.azure.com/api/projects/프로젝트이름` 형태입니다. 허브 기반 classic 프로젝트의 연결 문자열이나 Azure OpenAI 모델 주소만 있다면 이 실습의 설정으로 대신 사용할 수 없습니다.
 
-1. 환경 소유자에게 아래 정보를 받아 둡니다. 다음 순서에서 실습지를 만든 뒤 준비 표에 기록합니다. API 키나 공유 비밀번호를 받지 않습니다.
+**완결형 참가자는 아래 5번 대신 [완결형 Search 준비](complete-lab.md#search-setup)로 돌아갑니다.** 기존 배포도 완결형의 지정 이름·모델 버전 조건을 먼저 확인하며, 조건을 맞추려고 공유 배포를 임의 변경하지 않습니다.
+
+1. 환경 소유자에게 아래 정보를 확인해 다음 단계의 로그인·설정에 사용합니다. API 키나 공유 비밀번호를 받지 않습니다.
 2. [준비 1](../README.ko.md#setup-tools)에서 로컬 도구를 준비하고, [준비 2](../README.ko.md#setup-sign-in)의 **로그인과 구독 확인**을 수행합니다. 자원을 만들지 않으므로 Owner 취득이나 공급자 등록은 요구하지 않습니다.
 3. [준비 4](../README.ko.md#setup-permissions)의 접근 권한을 확인합니다. 부족한 역할은 할당 권한이 있는 소유자에게 요청합니다.
 4. 기존 배포가 **Chat Completions·Structured Outputs·Judge 평가**를 지원하는지 확인합니다. [준비 6](../README.ko.md#setup-config)의 설정에 실제 주소와 배포 이름을 넣고 [준비 7](../README.ko.md#setup-smoke)을 완료합니다.
@@ -149,8 +153,8 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 <a id="switch-to-demo"></a>
 ## LIVE가 막혀 DEMO로 전환할 때
 
-1. 새 LIVE 호출을 멈추고, 실습지 준비 표에 **중단한 단계·오류·이미 만든 Azure 자원**을 기록합니다. 기존 결과·설정·작성한 질문을 지우지 않습니다.
-2. [DEMO 가이드의 준비](offline.md#prepare)로 이동합니다. 설치한 Python·VS Code·가상환경은 재사용합니다. LIVE 실습지는 보존하고, 안내대로 **`results/my-worksheet-demo.md`**를 만들어 DEMO 기록을 분리합니다.
+1. 새 LIVE 호출을 멈추고 **중단한 단계·오류·이미 만든 Azure 자원**을 확인합니다. 기존 결과·설정·작성한 질문을 지우지 않습니다.
+2. [DEMO 가이드의 준비](offline.md#prepare)로 이동합니다. 설치한 Python·VS Code·가상환경을 재사용하고 기존 LIVE 기록은 보존합니다.
 3. DEMO 가이드의 `results/demo-*` 폴더만 사용해 실습 1–6을 진행합니다. LIVE 명령의 모드만 바꾸거나 LIVE 점수와 DEMO 점수를 비교하지 않습니다.
 4. LIVE에서 만든 자원이 있다면 DEMO가 끝나도 [보존 상태와 비용](cleanup.md#retain-resources)을 확인합니다. DEMO 전환을 이유로 리소스를 자동 삭제하지 않습니다. 이미 제출한 원격 평가는 터미널을 닫거나 DEMO로 전환해도 자동 취소되지 않습니다.
 
@@ -164,9 +168,11 @@ Azure 포털의 **Cost Management → Cost analysis**에서 해당 전용 그룹
 <a id="resume"></a>
 ## 나중에 이어서 하기
 
+아래 재개 표는 **`lab.py` 입문 LIVE/DEMO용**입니다. `advanced_lab.py`는 파일 구조와 출력 경로가 다르므로 [완결형 상태·재개 표](complete-lab.md#resume)를 사용합니다.
+
 1. VS Code에서 이전의 **`lab.py`가 있는 폴더**를 열고 새 터미널을 엽니다.
 2. 가상환경만 다시 활성화합니다. macOS/Linux는 `source .venv/bin/activate`, Windows는 `.\.venv\Scripts\Activate.ps1`입니다. 활성화가 막혔던 Windows 환경에서는 계속 `.\.venv\Scripts\python.exe`를 사용합니다. 패키지를 매번 재설치하지 않습니다.
-3. 본인 실습지의 **마지막 완료 단계 / 다음 명령**을 확인합니다. 기본은 `results/my-worksheet.md`, LIVE에서 전환한 DEMO는 `results/my-worksheet-demo.md`입니다. LIVE 로그인이 만료됐으면 [로그인](../README.ko.md#setup-sign-in)만 다시 합니다. DEMO는 로그인하지 않습니다.
+3. 아래 [결과 파일별 재개 표](#resume-checkpoints)에서 **마지막 완료 단계와 다음 명령**을 찾습니다. LIVE 로그인이 만료됐으면 [로그인](../README.ko.md#setup-sign-in)만 다시 합니다. DEMO는 로그인하지 않습니다.
 
 | 중단 당시 상태 | 재개 방법 |
 |---|---|

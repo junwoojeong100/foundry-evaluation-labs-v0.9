@@ -319,7 +319,7 @@ def judge_run(
             if job.status in ("completed", "failed", "canceled", "cancelled"):
                 break
             if time.monotonic() >= deadline:
-                print("아직 처리 중입니다. 같은 judge 명령으로 조회를 재개하세요. 새 작업은 생성하지 않습니다.")
+                print("아직 처리 중입니다. 방금 실행한 명령 전체로 조회를 재개하세요. 새 작업은 생성하지 않습니다.")
                 return None
             time.sleep(min(5, max(0, deadline - time.monotonic())))
         if job.status != "completed":

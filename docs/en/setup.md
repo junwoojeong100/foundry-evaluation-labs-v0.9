@@ -11,7 +11,7 @@ The LIVE target is **`gpt-6-luna`**, **`swedencentral`**, deployment **`eval-mod
 <a id="tools"></a>
 ## Setup 1. Tools and files
 
-[Install tools and create the worksheet](../../README.md#setup-tools). The local checkpoint is `LOCAL OK` with `dev 8개, holdout 4개`: eight dev and four holdout cases.
+[Install tools and prepare the virtual environment](../../README.md#setup-tools). The local checkpoint is `LOCAL OK` with `dev 8개, holdout 4개`: eight dev and four holdout cases.
 
 <a id="sign-in"></a>
 ## Setup 2. Account and subscription
@@ -50,7 +50,7 @@ The LIVE target is **`gpt-6-luna`**, **`swedencentral`**, deployment **`eval-mod
 
 After completing main-guide setup 1–2, this path **replaces portal setup 3–5**. It requires Azure CLI **2.80.0+** and resource-creation/role-assignment permissions. It follows the [official project-creation instructions](https://learn.microsoft.com/azure/foundry/how-to/create-projects). No azd, search service, or agent server is added. Do not run it if your project and model already exist.
 
-Use unique group and account names, project `eval-workshop`, and deployment `eval-model`. Replace placeholders with your worksheet values. These one-line commands work in macOS/Linux and PowerShell.
+Use unique group and account names, project `eval-workshop`, and deployment `eval-model`. Replace placeholders with the subscription ID verified in setup 2 and your actual chosen values. These one-line commands work in macOS/Linux and PowerShell.
 
 ### 1. Create a new group and parent Foundry resource
 
@@ -122,12 +122,16 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 
 Use an **actually listed version**. The September 27 rehearsal used `2026-09-22`; that is not a guarantee of future availability. Return to [setup 6](../../README.md#setup-config), then complete lookup and the smoke check. No API key needs to be retrieved. **Do not finish by deleting resources.**
 
+Complete RAG requires the [specified answer version](complete-lab.md#setup) for recorded V1 comparison. Do not confuse this with the introductory path, which can use another offered version.
+
 <a id="existing-environment"></a>
 ## If you already have an authorized environment
 
-Do not create resources or rename/reconfigure an existing model. Complete [activity 0](../../README.md#lab-0) first if needed.
+Do not create resources or rename/reconfigure an existing model. Introductory participants complete [activity 0](../../README.md#lab-0) first if needed.
 
-You need a new **Foundry project** and an accessible compatible deployment. A project endpoint has the form `https://ACCOUNT.services.ai.azure.com/api/projects/PROJECT`. A classic hub connection string or model-only endpoint is not interchangeable.
+You need an existing **Foundry project, not a classic hub-based project**, and an accessible compatible deployment. A project endpoint has the form `https://ACCOUNT.services.ai.azure.com/api/projects/PROJECT`. A classic hub connection string or model-only endpoint is not interchangeable.
+
+**Complete-RAG participants return to [complete-path Search setup](complete-lab.md#search-setup) instead of step 5 below.** Verify the required deployment name/model version on existing resources first; do not silently change a shared deployment to match.
 
 1. Obtain the actual tenant/subscription, resource names, region, project endpoint, deployment name, access permissions, and usage/cost/retention scope from the owner. Do not request API keys or shared passwords.
 2. Complete [local setup](../../README.md#setup-tools) and [sign-in checks](../../README.md#setup-sign-in). Resource creation is not required, so Owner activation/provider registration is not a prerequisite for this path.
@@ -141,7 +145,7 @@ You need a new **Foundry project** and an accessible compatible deployment. A pr
 ## Switching from blocked LIVE work to DEMO
 
 1. Stop new LIVE calls. Record the checkpoint, error, and already-created resources; preserve configuration, questions, and results.
-2. Follow [DEMO setup](offline.md#prepare), reusing installed Python/editor/environment. Create `results/my-worksheet-demo.md` rather than overwriting the LIVE worksheet.
+2. Follow [DEMO setup](offline.md#prepare), reusing installed Python/editor/environment and preserving the LIVE records.
 3. Use `results/demo-*` directories and the DEMO commands. Do not mix modes or compare authored scores with LIVE scores.
 4. [Verify retention and costs](cleanup.md#retain-resources) for any Azure resources. Switching modes does not delete resources or cancel already-submitted evaluations.
 
@@ -155,9 +159,11 @@ Scope **Cost Management → Cost analysis** to your dedicated group. Reporting m
 <a id="resume"></a>
 ## Resume later
 
+The tables below are for **introductory LIVE/DEMO with `lab.py`**. `advanced_lab.py` has different files and fixed output paths; use [complete-RAG status and resumption](complete-lab.md#resume).
+
 1. Reopen the folder containing `lab.py` in VS Code and open a terminal.
 2. Reactivate `.venv`, or keep using its Python executable if activation is prohibited. Do not reinstall packages every time.
-3. Read the worksheet's last checkpoint and complete next command. If LIVE authentication expired, [sign in again](../../README.md#setup-sign-in). DEMO needs no sign-in.
+3. Find your last completed stage and next command in the [result-file resume table](#resume-checkpoints). If LIVE authentication expired, [sign in again](../../README.md#setup-sign-in). DEMO needs no sign-in.
 
 | Saved state | Resume action |
 |---|---|

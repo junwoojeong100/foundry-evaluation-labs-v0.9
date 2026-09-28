@@ -2,13 +2,13 @@
 
 # Complete the DEMO without Azure
 
-[Main guide](../../README.md) · [Worksheet](../../WORKSHEET.en.md)
+[Main guide](../../README.md)
 
 Follow **this page only** to practice defining criteria, inspecting answers, comparing judge examples, and deciding whether to hold a change. You need Python 3.10+, not Azure, authentication, or paid calls.
 
 **All answers, judge scores, and reasons are authored examples.** DEMO does not call a model or Foundry evaluator. Its results do not prove prompt improvement or production readiness. The same Korean fixtures are used in both language guides.
 
-Activities **0–6** match LIVE and the worksheet. Complete the initial judgment, setup, activities 1–6, and final record in that order.
+Activities **0–6** match LIVE. Follow the initial judgment, setup, activities 1–6, and finish using this page's checkpoints and generated reports. Personal notes are optional; save human verdicts through the documented `review` commands.
 
 <a id="lab-0"></a>
 ## 0. Spot a plausible wrong answer
@@ -28,7 +28,7 @@ B is appropriate. KRW 240000 is an unapproved draft proposal. Exceeding the offi
 
 </details>
 
-**Checkpoint:** explain the choice in one sentence. Record A/B after creating the worksheet below. If already done in LIVE, do not repeat the judgment.
+**Checkpoint:** explain the choice in one sentence. If already done in LIVE, do not repeat the judgment.
 
 <a id="prepare"></a>
 ## Setup. Prepare files and a terminal
@@ -62,17 +62,10 @@ python lab.py doctor
 
 **Checkpoint:** `LOCAL OK` and `dev 8개, holdout 4개`.
 
-Create `results` if needed. Save [WORKSHEET.en.md](../../WORKSHEET.en.md) as **`results/my-worksheet.md`**, or **`results/my-worksheet-demo.md` if switching from LIVE**. Continue an existing DEMO worksheet instead of replacing it. Never overwrite the LIVE record. Mark the path DEMO, and Azure fields not applicable unless you already created resources during LIVE setup.
-
 <a id="working-files"></a>
-| When | Source | Working copy |
-|---|---|---|
-| Now | `WORKSHEET.en.md` | `results/my-worksheet.md`, or `results/my-worksheet-demo.md` after LIVE |
-| Activity 6 | `data/my-case.example.jsonl` | `data/my-case.jsonl` |
+**The only working copy you create is `data/my-case.jsonl` in activity 6**, copied from `data/my-case.example.jsonl`; do not create it yet. No `config.json` is needed. Commands create result directories automatically. Keep the original policy, questions, prompts, and generated evidence unchanged. Save copies as UTF-8. If switching from LIVE, preserve its results and Azure resources.
 
-No `config.json` is needed. Commands create result subdirectories automatically. Keep the original policy, questions, prompts, and generated evidence unchanged. Save your copies as UTF-8.
-
-Record the A/B judgment now. Run one command at a time from the `lab.py` folder; use only `demo-*` result folders for this path. Resolve `ERROR:` through [troubleshooting](reference.md#troubleshooting); record FAIL, low scores, or BLOCK as observations. Use [resume checkpoints](setup.md#resume-checkpoints) after interruption. Do not switch to `--mode live` to work around a DEMO error.
+Run one command at a time from the `lab.py` folder; use only `demo-*` result folders for this path. Resolve `ERROR:` through [troubleshooting](reference.md#troubleshooting); treat FAIL, low scores, or BLOCK as observations. Use [resume checkpoints](setup.md#resume-checkpoints) after interruption. Do not switch to `--mode live` to work around a DEMO error.
 
 **Setup complete. Continue to activity 1.**
 
@@ -81,13 +74,13 @@ Record the A/B judgment now. Run one command at a time from the `lab.py` folder;
 
 Read [the dev cases](../../data/dev.jsonl). Do not open holdout yet. JSONL contains one question/expectation object per line.
 
-D02 requires `needs_approval`, limit 200000, and `TRAVEL-CURRENT`. Do not advise immediate reimbursement or invent approval. Record the expectation and risk in worksheet 0–1.
+D02 requires `needs_approval`, limit 200000, and `TRAVEL-CURRENT`. Do not advise immediate reimbursement or invent approval. Identify the expected behavior and risk first.
 
 Code checks format, decision, limit, and citations. Groundedness asks whether policy supports the answer; Relevance asks whether it addresses the question. **Here their scores are examples, not fresh AI judgments.** A person still checks the explanation.
 
 Keep the LIVE thresholds: each judge score ≥4/5; candidate/holdout business and each judge pass rate ≥80%; no critical P0 failures, regressions, missing evidence, or human rejection; review at least one case in each of candidate and holdout. Seven of eight and all four of four are needed for 80%.
 
-**Checkpoint:** record these criteria without lowering them after results.
+**Checkpoint:** explain D02's expected behavior and risk, keeping the criteria unchanged after results.
 
 <a id="lab-2"></a>
 ## 2. Read the baseline answers
@@ -107,7 +100,7 @@ This replays authored answers and runs code checks.
 python lab.py inspect results/demo-baseline D04
 ```
 
-Read the question, expectation, and actual authored answer. `unknown` means absent from policy; `needs_info` means missing question information. **Before seeing judge scores**, record pass/fail and your reason. `Judge: 아직 미평가` is expected.
+Read the question, expectation, and actual authored answer. `unknown` means absent from policy; `needs_info` means missing question information. **Before seeing judge scores**, decide pass/fail and your reason. `Judge: 아직 미평가` is expected.
 
 ```bash
 python lab.py judge results/demo-baseline
@@ -124,7 +117,7 @@ python lab.py inspect results/demo-baseline D04
 <a id="lab-4"></a>
 ## 4. Compare V2 on the same questions
 
-Record a hypothesis. Read [V1](../../prompts/v1.txt) and [V2](../../prompts/v2.txt), noting official policy, travel dates, and missing-information handling. **Do not edit them.** DEMO cannot measure a new prompt; it replays the provided V2 examples.
+Choose a hypothesis. Read [V1](../../prompts/v1.txt) and [V2](../../prompts/v2.txt), noting official policy, travel dates, and missing-information handling. **Do not edit them.** DEMO cannot measure a new prompt; it replays the provided V2 examples.
 
 ```bash
 python lab.py run --mode demo --prompt v2 --out results/demo-candidate
@@ -146,7 +139,7 @@ Read newly passing cases, business regressions, and judge regressions in `compar
 python lab.py review results/demo-candidate D06
 ```
 
-Enter `pass` or `fail`, then a policy-based reason of at least five characters. Read the `answer` text and check amounts, dates, and approval claims; do not copy the code or judge verdict. Worksheet notes alone do not save a review.
+Enter `pass` or `fail`, then a policy-based reason of at least five characters. Read the `answer` text and check amounts, dates, and approval claims; do not copy the code or judge verdict. Save human verdicts through this command so the gate can use them.
 
 **Checkpoint:** business **8/8 (100%)**, newly passing D03/D04/D08, no regressions, and `검토 저장: results/demo-candidate/reviews.json`. Record the observation, not a claim of measured prompt improvement.
 
@@ -182,7 +175,7 @@ BLOCK is a quality decision, unlike execution errors or missing evidence. Dev an
 <a id="lab-6"></a>
 ## 6. Design an extra question and finish
 
-If LIVE already created `data/my-case.jsonl`, preserve it and skip to validation, recording that you reused it.
+If LIVE already created `data/my-case.jsonl`, preserve it and skip to validation, explaining that reuse in your final summary.
 
 Otherwise, save [the extra-case example](../../data/my-case.example.jsonl) as `data/my-case.jsonl` and replace the copy with this single line:
 
@@ -192,7 +185,7 @@ Otherwise, save [the extra-case example](../../data/my-case.example.jsonl) as `d
 
 Change **`170000` → `180000`** in both `query` and `ground_truth`, but keep the **160000** policy limit, `needs_approval`, and `TRAVEL-PREVIOUS`. The question concerns a June 15 trip claimed in September; travel date determines the limit.
 
-Record edited/original/unchanged example. For your own question, define all eight required fields and expectations from policy first; keep ID N02. Save one JSON object per line with no blank lines, integer or `null` limits, and lowercase booleans.
+Distinguish an edited, original, or unchanged example in your final summary. For your own question, define all eight required fields and expectations from policy first; keep ID N02. Save one JSON object per line with no blank lines, integer or `null` limits, and lowercase booleans.
 
 ```bash
 python lab.py validate-data data/my-case.jsonl
@@ -200,7 +193,7 @@ python lab.py validate-data data/my-case.jsonl
 
 **Checkpoint:** `DATA OK: 1 case(s)`. Fix field/line errors locally. The checker validates format, not the truth of the expectation. **DEMO does not generate or judge N02.** Do not add LIVE calls to this path.
 
-Record “N02 generation/judge not executed” and complete the DEMO four-sentence report:
+Distinguish “N02 generation/judge not executed” from completed work, and explain your findings in four sentences:
 
 > In authored example ___, I found ___.<br>
 > The same V1/V2 questions showed ___, and holdout showed ___.<br>
@@ -215,7 +208,7 @@ Record “N02 generation/judge not executed” and complete the DEMO four-senten
 - [ ] N02 validates but is explicitly not generated/judged.
 - [ ] The final report describes authored examples, not measured model improvement.
 
-Keep the worksheet/results. DEMO-only work creates no Azure resources. If you began LIVE first, verify [retention and costs](cleanup.md#retain-resources).
+Keep `results/` locally. DEMO-only work creates no Azure resources. If you began LIVE first, verify [retention and costs](cleanup.md#retain-resources).
 
 ---
 

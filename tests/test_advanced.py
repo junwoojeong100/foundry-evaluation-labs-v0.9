@@ -1,20 +1,22 @@
 from __future__ import annotations
 
 import copy
+import io
 import json
 import math
 import re
 import shlex
 import tempfile
 import unittest
+from contextlib import contextmanager, nullcontext, redirect_stderr, redirect_stdout
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import advanced_evaluation as grading
 import advanced_lab
 import advanced_retrieval as retrieval
-from evaluation import ROOT, digest, response_checks, write_json
+from evaluation import ROOT, digest, read_json, response_checks, write_json
 from rag_client import read_documents
 from foundry_client import messages_for
 
@@ -28,9 +30,66 @@ CONFIG = {
     "embedding_dimensions": 1536, "planner_deployment": "rag-planner",
     "planner_model": "gpt-5.4-mini", "retrieval_reasoning_effort": "low",
 }
+FOUNDRY_CONFIG = {
+    "project_endpoint": "https://example.services.ai.azure.com/api/projects/test",
+    "model_deployment": "eval-model", "judge_deployment": "eval-model",
+}
+MODELS = {"embedding": {"model_version": "1"}, "planner": {"model_version": "2026-03-17"}, "dimensions": 1536}
 
 
 class AdvancedTests(unittest.TestCase):
+    def save_generation(self, folder, run):
+        run["evidence_hash"] = advanced_lab.without_hash(run)
+        write_json(folder / "generation.json", run)
+
+    @contextmanager
+    def freeze_inputs(self):
+        fixture = advanced_lab.baseline()
+        documents = read_documents(ROOT / "optional-rag/documents.jsonl")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            data, results = root / "data", root / "results"
+            data.mkdir()
+            for name in ("instructions.v1.txt", "instructions.v2.txt", "dev-followups.json", "acceptance.json"):
+                (data / name).write_text((ROOT / "advanced-rag" / name).read_text(encoding="utf-8"), encoding="utf-8")
+            prompt = (data / "instructions.v2.txt").read_text(encoding="utf-8")
+            contract = {
+                "cases_hash": digest(fixture["cases"]), "labels_hash": digest(fixture["retrieval_labels"]),
+                "prompt_hash": digest(prompt), "retrieval_config": CONFIG,
+                "retrieval_models": MODELS, "corpus_hash": digest(documents),
+                "generation_contract": fixture["generation_contract"], "model_config": FOUNDRY_CONFIG,
+                "followups_hash": digest(read_json(data / "dev-followups.json")),
+                "interaction_protocol": "explicit-user-followup-v1",
+            }
+            for stage in ("v1-recorded", "v2-replay", "planned-dev"):
+                stage_prompt = (data / "instructions.v1.txt").read_text(encoding="utf-8") if stage == "v1-recorded" else prompt
+                run = {
+                    "schema_version": "advanced-generation-v1", "status": "complete", "stage": stage,
+                    "prompt": stage_prompt, "prompt_hash": digest(stage_prompt), "model_snapshot": fixture["model_snapshot"],
+                    "generation_contract": fixture["generation_contract"],
+                    "cases": fixture["cases"], "initial_cases": fixture["cases"],
+                    "input_contract": {**contract, "stage": stage}, "rows": copy.deepcopy(fixture["rows"]),
+                }
+                for row in run["rows"]:
+                    row["retrieval"] = {"evidence": {"llm_query_planning": True}}
+                self.save_generation(results / stage, run)
+            write_json(results / "setup.json", {
+                "models": MODELS, "corpus_hash": digest(documents),
+                "index": retrieval.vector_index(CONFIG, digest(documents), MODELS),
+                "knowledge_source": retrieval.knowledge_source_definition(CONFIG),
+                "knowledge_base": retrieval.planned_base(CONFIG),
+            })
+            write_json(results / "vector-query.json", {
+                "mode": "vector", "evidence": {"query_vector_dimensions": 1536}, "documents": documents[:1],
+            })
+            with (
+                patch("advanced_lab.DATA", data), patch("advanced_lab.RESULTS", results),
+                patch("advanced_lab.stage_metrics", side_effect=lambda stage: {"passed": stage != "v1-recorded"}),
+                patch("advanced_lab.fixed_judge", return_value={"unit_test": True}),
+                redirect_stdout(io.StringIO()),
+            ):
+                yield data, results
+
     def test_completed_dialogue_uses_explicit_user_turns_without_role_override(self):
         history = [
             {"role": "user", "content": "출장일 없이 정산 가능한가요?"},
@@ -59,6 +118,19 @@ class AdvancedTests(unittest.TestCase):
                         advanced_lab.parser().parse_args(shlex.split(line)[2:])
                         extracted.append(line)
             commands.append(extracted)
+            for stage, case_ids in (("v2-replay", ("D04", "D08")), ("holdout", ("N05", "N06"))):
+                for case_id in case_ids:
+                    inspect = f"python advanced_lab.py inspect --stage {stage} --case-id {case_id} --dialogue"
+                    self.assertIn(inspect, extracted)
+                    self.assertLess(extracted.index(f"python advanced_lab.py judge --stage {stage}"), extracted.index(inspect))
+            self.assertLess(
+                extracted.index("python advanced_lab.py judge --stage planned-dev"),
+                extracted.index("python advanced_lab.py freeze"),
+            )
+            self.assertLess(
+                extracted.index("python advanced_lab.py freeze"),
+                extracted.index("python advanced_lab.py create-holdout"),
+            )
         self.assertEqual(commands[0], commands[1])
         self.assertGreater(len(commands[0]), 10)
         self.assertEqual(
@@ -173,6 +245,211 @@ class AdvancedTests(unittest.TestCase):
         self.assertEqual(contract["required_metrics"], ["groundedness", "relevance", "policy_task_success"])
         self.assertEqual(contract["diagnostic_metrics"], [])
         self.assertEqual(contract["human_production_approval"], "separate and required")
+
+    def test_freeze_accepts_identical_candidates_and_preserves_existing_contract(self):
+        with self.freeze_inputs() as (data, results):
+            self.assertEqual(advanced_lab.freeze_command(None), 0)
+            frozen = read_json(results / "frozen.json")
+            self.assertEqual(frozen["dev_followups_hash"], digest(read_json(data / "dev-followups.json")))
+            self.assertEqual(advanced_lab.freeze_command(None), 0)
+            self.assertEqual(read_json(results / "frozen.json"), frozen)
+
+    def test_freeze_rejects_mixed_v2_candidate_contracts(self):
+        mutations = [
+            (("prompt",), "different candidate"),
+            (("prompt_hash",), digest("different candidate")),
+            (("generation_contract",), {"settings": {"max_completion_tokens": 2048}}),
+            (("model_snapshot", "model_version"), "different-version"),
+            (("initial_cases",), []),
+            (("input_contract", "followups_hash"), digest("different follow-ups")),
+            (("input_contract", "model_config", "project_endpoint"), "https://other.services.ai.azure.com/api/projects/test"),
+            (("input_contract", "retrieval_config", "top_k"), 3),
+            (("input_contract", "interaction_protocol"), "different-protocol"),
+        ]
+        for keys, value in mutations:
+            with self.subTest(keys=keys), self.freeze_inputs() as (_, results):
+                run = read_json(results / "planned-dev/generation.json")
+                target = run
+                for key in keys[:-1]:
+                    target = target[key]
+                target[keys[-1]] = value
+                self.save_generation(results / "planned-dev", run)
+                with self.assertRaisesRegex(ValueError, "same candidate"):
+                    advanced_lab.freeze_command(None)
+                self.assertFalse((results / "frozen.json").exists())
+
+    def test_freeze_rejects_candidate_files_changed_after_both_dev_runs(self):
+        for name in ("instructions.v2.txt", "dev-followups.json"):
+            with self.subTest(file=name), self.freeze_inputs() as (data, results):
+                path = data / name
+                if name.endswith(".json"):
+                    followups = read_json(path)
+                    followups["D04"]["query"] += " Changed."
+                    write_json(path, followups)
+                else:
+                    path.write_text("Different candidate instructions", encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "changed after dev"):
+                    advanced_lab.freeze_command(None)
+                self.assertFalse((results / "frozen.json").exists())
+
+    def test_freeze_requires_recorded_baseline_model_and_generation_settings(self):
+        for key in ("model_snapshot", "generation_contract"):
+            with self.subTest(field=key), self.freeze_inputs() as (_, results):
+                old = read_json(results / "v1-recorded/generation.json")
+                old[key] = {"different": "recorded contract"}
+                self.save_generation(results / "v1-recorded", old)
+                with self.assertRaisesRegex(ValueError, "recorded baseline"):
+                    advanced_lab.freeze_command(None)
+
+    def test_setup_rejects_existing_object_contract_mismatches_before_embedding_or_writes(self):
+        documents = read_documents(ROOT / "optional-rag/documents.jsonl")
+        definitions = {
+            "indexes/" + CONFIG["index_name"]: retrieval.vector_index(CONFIG, digest(documents), MODELS),
+            "knowledgesources/" + CONFIG["knowledge_source"]: retrieval.knowledge_source_definition(CONFIG),
+            "knowledgebases/" + CONFIG["knowledge_base"]: retrieval.planned_base(CONFIG),
+        }
+        mutations = [
+            ("indexes/" + CONFIG["index_name"], ("vectorSearch", "vectorizers", 0, "azureOpenAIParameters", "resourceUri"), "https://other.openai.azure.com"),
+            ("indexes/" + CONFIG["index_name"], ("vectorSearch", "vectorizers", 0, "azureOpenAIParameters", "deploymentId"), "other-embedding"),
+            ("indexes/" + CONFIG["index_name"], ("fields", 6, "dimensions"), 1024),
+            ("knowledgesources/" + CONFIG["knowledge_source"], ("searchIndexParameters", "semanticConfigurationName"), "other-semantic"),
+            ("knowledgebases/" + CONFIG["knowledge_base"], ("models", 0, "azureOpenAIParameters", "resourceUri"), "https://other.openai.azure.com"),
+            ("knowledgebases/" + CONFIG["knowledge_base"], ("models", 0, "azureOpenAIParameters", "deploymentId"), "other-planner"),
+            ("knowledgebases/" + CONFIG["knowledge_base"], ("outputMode",), "answerSynthesis"),
+        ]
+        for path, keys, value in mutations:
+            with self.subTest(path=path, keys=keys), tempfile.TemporaryDirectory() as temporary:
+                actual = copy.deepcopy(definitions)
+                target = actual[path]
+                for key in keys[:-1]:
+                    target = target[key]
+                target[keys[-1]] = value
+
+                def request(method, resource, *args, **kwargs):
+                    self.assertEqual(method, "GET", "Mismatched shared objects must be checked before any writes.")
+                    return actual[resource]
+
+                search = SimpleNamespace(request=Mock(side_effect=request))
+                with (
+                    patch("advanced_retrieval.model_contract", return_value=MODELS),
+                    patch("advanced_retrieval.embed", return_value=[[0.1] * 1536 for _ in documents]) as embed,
+                    self.assertRaisesRegex(ValueError, "Existing .* contract"),
+                ):
+                    retrieval.initialize(search, None, None, CONFIG, documents, Path(temporary) / "cache.json")
+                embed.assert_not_called()
+                self.assertFalse((Path(temporary) / "cache.json").exists())
+
+    def test_setup_accepts_server_defaults_without_overwriting_existing_objects(self):
+        documents = read_documents(ROOT / "optional-rag/documents.jsonl")
+        corpus_hash = digest(documents)
+        index = retrieval.vector_index(CONFIG, corpus_hash, MODELS)
+        index["@odata.etag"] = "server-etag"
+        index["fields"].reverse()
+        index["vectorSearch"]["profiles"][0]["compression"] = None
+        parameters = index["vectorSearch"]["vectorizers"][0]["azureOpenAIParameters"]
+        parameters["resourceUri"] += "/"
+        parameters["apiKey"] = None
+        source = retrieval.knowledge_source_definition(CONFIG)
+        source["searchIndexParameters"]["sourceDataFields"].reverse()
+        base = retrieval.planned_base(CONFIG)
+        base["models"][0]["azureOpenAIParameters"]["apiKey"] = None
+        inventory = [{**document, "corpus_hash": corpus_hash} for document in documents]
+        search = SimpleNamespace(request=Mock(side_effect=[
+            index, source, base, {"value": inventory}, index, {"documentCount": 7}, source, base,
+        ]))
+        with (
+            tempfile.TemporaryDirectory() as temporary,
+            patch("advanced_retrieval.model_contract", return_value=MODELS),
+            patch("advanced_retrieval.embed", return_value=[[0.1] * 1536 for _ in documents]),
+        ):
+            result = retrieval.initialize(search, None, None, CONFIG, documents, Path(temporary) / "cache.json")
+        self.assertEqual(result["document_count"], 7)
+        self.assertEqual(result["knowledge_base"], base)
+        self.assertFalse(any(call.args[0] == "PUT" or call.args[1].endswith("/docs/index") for call in search.request.call_args_list))
+
+    def test_setup_creates_missing_objects_and_uploads_vectors(self):
+        documents = read_documents(ROOT / "optional-rag/documents.jsonl")
+        definitions, uploads = {}, []
+
+        def request(method, path, body=None, **kwargs):
+            if method == "GET":
+                return {"documentCount": len(uploads)} if path.endswith("/stats") else definitions.get(path)
+            if method == "PUT":
+                self.assertTrue(kwargs["create_only"])
+                definitions[path] = body
+                return body
+            if path.endswith("/docs/search"):
+                return {"value": []}
+            self.assertTrue(path.endswith("/docs/index"))
+            uploads.extend(body["value"])
+            return {"value": [{"key": item["id"], "status": True} for item in uploads]}
+
+        with (
+            tempfile.TemporaryDirectory() as temporary,
+            patch("advanced_retrieval.model_contract", return_value=MODELS),
+            patch("advanced_retrieval.embed", return_value=[[0.1] * 1536 for _ in documents]) as embed,
+        ):
+            result = retrieval.initialize(SimpleNamespace(request=request), None, None, CONFIG, documents, Path(temporary) / "cache.json")
+        self.assertEqual(len(definitions), 3)
+        self.assertEqual(len(uploads), 7)
+        self.assertTrue(all(len(item["content_vector"]) == 1536 for item in uploads))
+        self.assertEqual(result["index_stats"]["documentCount"], 7)
+        embed.assert_called_once()
+
+    def test_initial_field_checks_do_not_claim_to_validate_answer_prose(self):
+        items, labels = grading.calibration_cases()
+        negative = next(item for item in items if item["id"] == "C07")
+        case = next(case for case in advanced_lab.baseline()["cases"] if case["id"] == "D04")
+        self.assertFalse(labels["C07"])
+        self.assertTrue(all(response_checks(case, json.loads(negative["response"])).values()))
+
+    def test_initial_field_failure_is_preserved_and_not_resampled(self):
+        fixture = advanced_lab.baseline()
+        case = next(case for case in fixture["cases"] if case["id"] == "D04")
+        response = {"decision": "allowed", "limit_krw": 200000, "citations": ["SCOPE"], "answer": "Incorrect test response."}
+        generated = {"response": response, "raw_response": json.dumps(response), "output_error": None}
+        with tempfile.TemporaryDirectory() as temporary:
+            results = Path(temporary)
+            write_json(results / "setup.json", {"models": MODELS, "corpus_hash": "local-test"})
+            followups = read_json(ROOT / "advanced-rag/dev-followups.json")
+            write_json(results / "followups.json", {"D04": followups["D04"]})
+            with (
+                patch("advanced_lab.RESULTS", results),
+                patch("advanced_lab.fixed_judge", return_value={}),
+                patch("advanced_lab.retrieval.read_config", return_value=CONFIG),
+                patch("advanced_lab.read_config", return_value=FOUNDRY_CONFIG),
+                patch("advanced_lab.stage_inputs", return_value=([case], {"D04": ["scope-overseas"]}, "Test instructions")),
+                patch("advanced_lab.followup_path", return_value=results / "followups.json"),
+                patch("advanced_lab.search_client", side_effect=lambda *a, **k: nullcontext(None)),
+                patch("advanced_lab.clients", side_effect=lambda *a, **k: nullcontext((None, None))),
+                patch("advanced_lab.deployment_snapshot", return_value=fixture["model_snapshot"]),
+                patch("advanced_lab.retrieval.model_contract", return_value=MODELS),
+                patch("advanced_lab.generate", return_value=generated) as generate,
+                redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()) as errors,
+            ):
+                for _ in range(2):
+                    self.assertEqual(advanced_lab.main(["run", "--stage", "v2-replay"]), 1)
+                generate.assert_called_once()
+                self.assertIn("initial clarification/handoff", errors.getvalue())
+                self.assertEqual(advanced_lab.main(["judge", "--stage", "v2-replay"]), 1)
+                self.assertEqual(advanced_lab.main(["inspect", "--stage", "v2-replay", "--case-id", "D04"]), 1)
+            run = read_json(results / "v2-replay/generation.json")
+            self.assertEqual(run["status"], "collecting")
+            self.assertEqual(run["pending"]["D04"]["initial_response"], generated)
+            self.assertFalse((results / "acceptance-result.json").exists())
+
+    def test_pending_evaluation_keeps_its_advanced_correlation_id(self):
+        fixed = {**FOUNDRY_CONFIG, "metrics": ["policy_task_success"]}
+        items, _ = grading.calibration_cases()
+        with tempfile.TemporaryDirectory() as temporary, patch("advanced_evaluation.judge_run", return_value=None):
+            folder = Path(temporary)
+            self.assertIsNone(grading.evaluate(FOUNDRY_CONFIG, items, fixed, folder))
+            request = read_json(folder / "evaluation-request.json")
+            self.assertTrue(request["run_id"])
+            self.assertEqual(request["split"], "advanced")
+            self.assertIsNone(grading.evaluate(FOUNDRY_CONFIG, items, fixed, folder))
+            self.assertEqual(read_json(folder / "evaluation-request.json"), request)
+            self.assertFalse((folder / "run.json").exists())
 
     def test_generation_evidence_rejects_changed_contexts(self):
         fixture = advanced_lab.baseline()

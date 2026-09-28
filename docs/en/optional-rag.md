@@ -8,7 +8,7 @@ This is an **optional extension, not a replacement for activities 0–6**. The c
 
 Reuse the intended account, Foundry project, **`gpt-6-luna` / `eval-model`**, and **`swedencentral`**. Add an Azure AI Search service, index, and actual Foundry IQ Knowledge Source/Knowledge Base. **Retain all resources and evidence.**
 
-**Additional recordings:** [English/Korean Optional RAG summaries and subtitles](../media/optional-rag/README.md).
+**Separate complete-path reference videos:** [English/Korean vector and LLM-planned RAG summaries](../media/complete-rag/README.md). These are not execution or validation records for this minimal `search`/`iq` exercise.
 
 ## What is used
 
@@ -67,13 +67,24 @@ az search service create --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RE
 
 This **disables API keys**. Do not retrieve or store keys. You can record `retain=true` under portal Tags; a tag is not a deletion lock.
 
+<a id="search-access"></a>
+### User ID and Search roles
+
+For both new and existing services, retrieve the actual resource ID:
+
 ```bash
 az search service show --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --query "{id:id,location:location,sku:sku.name,state:provisioningState,disableLocalAuth:disableLocalAuth,semanticSearch:semanticSearch}" --output json
 ```
 
 Confirm Succeeded/succeeded, Sweden Central, `basic`, and `disableLocalAuth: true`. Use the returned `id`, ending in `/providers/Microsoft.Search/searchServices/...`, as `YOUR-SEARCH-RESOURCE-ID`.
 
-Grant the following roles to the **user Object ID already verified in the core guide**, at the **Search service scope only**, and only if missing:
+Look up the currently signed-in **user Object ID**. It is not the project identity recorded during portal setup:
+
+```bash
+az ad signed-in-user show --query "{account:userPrincipalName,objectId:id}" --output json
+```
+
+Verify that `account` identifies you in the intended tenant, then use **`objectId` as `YOUR-USER-OBJECT-ID`**. Do not substitute the project or Search managed identity. If directory lookup is restricted, ask the environment owner to verify your user ID in that tenant. Grant the following roles at the **Search service scope only**, and only if missing:
 
 ```bash
 az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "7ca78c08-252a-4471-8644-bb5ff32d4ba0" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
@@ -84,6 +95,8 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 ```
 
 The roles are **Search Service Contributor** for index/knowledge-object management and **Search Index Data Contributor** for document upload/query. Do not grant subscription-wide roles. This custom-app path does not query using the project identity, so it does not need additional project-managed-identity assignments.
+
+**If the complete path sent you here only for this section, return to [Search identity model access](complete-lab.md#search-model-access).** The minimal-RAG index in section 3 is not a prerequisite for the complete path.
 
 <a id="index"></a>
 ## 3. Create the index and actual Foundry IQ knowledge objects
@@ -200,16 +213,16 @@ In the Foundry evaluation report URL, match a case's **question, answer, retriev
 - Preserve low scores and failures; do not rerun until results look better.
 
 <a id="observed-results"></a>
-### Superseded minimal-RAG validation
+### Earlier minimal-RAG records and evidence scope
 
-The earlier Free-service failure/validation records are superseded and scheduled for cleanup. Use the [shared Basic service and current acceptance result](complete-lab.md#results). This introductory API exercise can also run in its own index on that same Basic service.
+Cleanup of the author's earlier Free service and its failure/validation records is complete. The [recorded complete-path result](complete-lab.md#results) belongs to a separate vector/planning/dialogue experiment; it does not revalidate this minimal `search`/`iq` comparison. Run this API exercise in its own index on the same Basic service, and use your own `rag-comparison.md` and each `rag-report.md` for your judgment.
 
 <a id="troubleshooting"></a>
 ## Troubleshooting
 
 | Symptom | Action |
 |---|---|
-| Free service cannot be created | Check the subscription slot and regional availability; do not delete another service. |
+| Basic service cannot be created | First check for an authorized existing service, then regional capacity, subscription limits, and organizational policy. Do not delete another service or silently substitute Free. |
 | 401/403 | Verify CLI identity/tenant and both service-scoped Search roles; allow propagation. Do not fall back to keys. |
 | Only an MCP tool reports `invalid_token` | MCP and CLI authentication can differ. Verify the lab's explicit AzureCliCredential path; investigate tool authentication separately. |
 | `queryLanguage` is rejected | Do not send it with this API version. Use the provided request and Korean index analyzer. |

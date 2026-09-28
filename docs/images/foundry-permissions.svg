@@ -19,7 +19,7 @@
     <text x="48" y="241" font-size="15" fill="#4d6077">Object (principal) ID</text>
     <rect x="48" y="253" width="416" height="48" rx="6" fill="#e6effb" stroke="#1655a3" stroke-width="2"/>
     <text x="62" y="284" font-size="19" font-weight="700" fill="#1655a3">PROJECT-PRINCIPAL-ID</text>
-    <text x="48" y="327" font-size="16">본인 화면의 실제 ID를 실습지에 기록</text>
+    <text x="48" y="327" font-size="16">이 Object ID를 다음 IAM 대상과 대조</text>
     <text x="48" y="367" font-size="15" fill="#4d6077">프로젝트 리소스 ID의 끝부분</text>
     <text x="48" y="393" font-size="14" font-family="monospace">.../accounts/feval-example</text>
     <text x="48" y="416" font-size="14" font-family="monospace" font-weight="700">   /projects/eval-workshop</text>

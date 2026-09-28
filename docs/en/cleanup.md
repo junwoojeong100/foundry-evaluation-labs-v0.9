@@ -8,7 +8,7 @@
 
 ## 1. Keep the results locally
 
-Keep the worksheet, baseline/candidate/holdout reports, scores, reviews, comparison, and gate. Export additional portal records if needed. Record pending remote jobs; closing the terminal does not cancel them. Wait for completion or cancel only your own job when explicitly appropriate.
+Keep the baseline/candidate/holdout reports, scores, reviews, comparison, and gate. Export additional portal records if needed. Check pending remote jobs; closing the terminal does not cancel them. Wait for completion or cancel only your own job when explicitly appropriate.
 
 **Checkpoint:** needed local evidence is saved and remote job state is known. Apply your organization's data-retention policy if extending the workshop to real information.
 
@@ -22,9 +22,9 @@ Keep the worksheet, baseline/candidate/holdout reports, scores, reviews, compari
 3. Leave the group, account, project, deployment, evaluations, and required role assignments in place. Do not run group/model deletion or `azd down`.
 4. Scope **Cost Management → Cost analysis** to the group. Costs may not yet be reported. Retention is **not a billing stop**, and alerts do not automatically stop spending.
 
-Record **not deleted**, why, the next check date or condition, and reported or pending costs. With no planned deletion date, write **“retain until a separate request.”** Do not mark uncreated resources or unrun evaluations complete.
+Confirm **not deleted**, why, the next check date or condition, and reported or pending costs. With no planned deletion date, **retain until a separate request**. Do not mark uncreated resources or unrun evaluations complete.
 
-**Checkpoint:** actual resources and local evidence remain, with a retention and cost record. Deletion is not required to complete the workshop.
+**Checkpoint:** actual resources and local evidence remain, and you can explain retention conditions and cost status. Deletion is not required to complete the workshop.
 
 ## 3. Optional: verify the deletion scope
 
@@ -32,7 +32,7 @@ Continue only after a separate owner decision to delete.
 
 Open the exact recorded **subscription → resource group**. Before continuing, confirm all three:
 
-- It is the dedicated group recorded in your worksheet.
+- Its name and subscription ID match the dedicated group created during setup.
 - Its account, project, and deployment belong to this workshop.
 - No shared resources, other exercises, or production dependencies are included.
 

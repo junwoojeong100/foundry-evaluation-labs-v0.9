@@ -4,7 +4,7 @@
 
 ## Microsoft Foundry Evaluation: an end-to-end, self-guided workshop
 
-**Recommended complete path:** [Failure → V2 improvement → fresh-question acceptance](docs/en/complete-lab.md). It uses one shared Basic Search service, real vector/hybrid retrieval and LLM query planning. Every final V2 holdout case passes **Groundedness, Relevance, policy task success, business, and retrieval checks**. The introductory material below remains a separate learning path.
+**Recommended complete path:** [Failure → V2 improvement → fresh-question validation](docs/en/complete-lab.md). It uses one shared Basic Search service, real vector/hybrid retrieval and LLM query planning. **In one recorded run**, every final V2 holdout case passed Groundedness, Relevance, policy task success, business, and retrieval checks. This does not guarantee acceptance for your run; the material below is a separate introductory path.
 
 Find out whether the fictional **Gaon Lab travel-expense assistant** follows policy. Evaluation means **checking AI answers against criteria chosen in advance**. The code is provided; you do not need to write Python.
 
@@ -14,9 +14,9 @@ Find out whether the fictional **Gaon Lab travel-expense assistant** follows pol
 
 **LIVE configuration:** **`gpt-6-luna`**, **Sweden Central (`swedencentral`)**, deployment name **`eval-model`**. Use the same deployment for generation and judging. **Retain all Azure resources after the workshop.** At the end, [verify retention and costs](#retain-resources). Delete resources only after a separate decision to do so.
 
-**Language scope:** this guide, its worksheet, and the supporting English documents are in English. The controlled policy, questions, prompts, and CLI output remain **Korean** so both language guides run the same experiment. This page translates the concepts and explains the exact Korean completion messages. Use the [English policy translation](docs/en/policies.md) for reading; do not substitute it into a partially completed experiment.
+**Language scope:** this guide and the supporting English documents are in English. The controlled policy, questions, prompts, and CLI output remain **Korean** so both language guides run the same experiment. This page translates the concepts and explains the exact Korean completion messages. Use the [English policy translation](docs/en/policies.md) for reading; do not substitute it into a partially completed experiment.
 
-[Recorded summaries and subtitles](docs/media/README.md) show actual portal and CLI interactions. They are an overview, not a substitute for the completion checkpoints. The [recorded LIVE findings](docs/en/reference.md#live-verification) are a single-run example, not scores you should try to reproduce.
+[Recorded summaries and subtitles](docs/media/README.md) show actual portal and CLI interactions from the **separate complete path**, not execution evidence or completion checkpoints for the introduction below. Keep [evidence scopes separate](docs/en/reference.md#live-verification): the published complete-path result does not revalidate introductory LIVE. Do not rerun to reproduce another execution's scores.
 
 **Optional RAG extension:** [Azure AI Search + Foundry IQ and evaluation](docs/en/optional-rag.md) adds a real search index and knowledge base, evaluates retrieval separately from answers, and uses only retrieved context. It is separate from the core fixed-policy workshop below.
 
@@ -24,13 +24,14 @@ Find out whether the fictional **Gaon Lab travel-expense assistant** follows pol
 
 | Your situation | Start here |
 |---|---|
-| You want real model calls and Foundry evaluation | **LIVE: start at [0. Spot the mistake](#lab-0)**. Setup later requires an active Azure subscription and permission to create resources and assign roles. Calls incur charges. |
+| You want real retrieval, dialogue improvement, and fresh-question validation | **[Recommended complete RAG path](docs/en/complete-lab.md)**. Check the fixed answer-model version, Basic Search, additional models, permissions, and costs first. The full introduction is not a prerequisite. |
+| You want to learn answer evaluation and prompt improvement without retrieval | **Introductory LIVE: start at [0. Spot the mistake](#lab-0)**. Setup later requires an active Azure subscription and permission to create resources and assign roles. Calls incur charges. |
 | You do not have Azure access, permissions, or an available model | Follow only the [DEMO guide](docs/en/offline.md). It uses Python but does not measure a real model. |
 | You already have an authorized project and deployment | Complete [activity 0](#lab-0), then follow [existing-environment setup](docs/en/setup.md#existing-environment). |
 
 **The rest of this page is one LIVE path.** Do not simply change `live` to `demo` in its commands. If Azure prevents progress, [switch to DEMO explicitly](docs/en/setup.md#switch-to-demo), preserving the LIVE records.
 
-**Activities 0–6 use the same numbers in LIVE, DEMO, and the worksheet.** The worksheet groups related notes under 0–1 and 2–3. Setup is separate from those activity numbers.
+**Activities 0–6 use the same numbers in LIVE and DEMO.** Setup is separate. Follow the inline **Checkpoints** and generated reports without creating a separate record form. Personal notes are optional; save human verdicts using the documented `review` commands.
 
 | Step | Your action | Evidence to keep |
 |---|---|---|
@@ -72,20 +73,22 @@ B is appropriate. KRW 240000 appears in an **unapproved draft**. A sounds helpfu
 
 </details>
 
-**Checkpoint:** explain in one sentence which answer follows policy. You do not need a worksheet file yet. Save your A/B choice and reason immediately after creating the worksheet during setup.
+**Checkpoint:** explain in one sentence which answer follows policy.
 
 ---
 
 <a id="prepare"></a>
 ## Setup. Connect your computer to Azure
 
-If you already have an authorized environment, use [existing-environment setup](docs/en/setup.md#existing-environment) instead of creating another one, then continue to [activity 1](#lab-1).
+**If you came from complete RAG for setup only:** perform setup 1–7, then return to [complete-path Search setup](docs/en/complete-lab.md#search-setup). The one-model/22-response description and activities 0–6 below describe the introduction, not the complete path's total resources or call volume.
+
+If you already have an authorized environment, use [existing-environment setup](docs/en/setup.md#existing-environment) instead of creating another one. Introductory participants then continue to [activity 1](#lab-1); complete-RAG participants return to [complete-path Search setup](docs/en/complete-lab.md#search-setup).
 
 **Starting requirements for the new-environment path:** a Microsoft Entra ID account, an active Azure subscription, and an **active Owner role** on that subscription, including an applicable inherited role. This is for creating resources and assigning roles; it is not the minimum permission for using an existing environment. No API keys are used.
 
 You need **one project and one model deployment**. You do not need a search service, agent server, Docker, Git, azd, or Jupyter. Do not enter real personal data, confidential information, or passwords.
 
-The complete LIVE path generates **22 responses and evaluates 44 metric items**: one setup case, eight baseline cases, eight candidate cases, four holdout cases, and one extra case, each judged using two metrics. This is not the number of billable API requests including evaluator internals and retries. Charges depend on the model and token usage. Budget alerts and TPM allocations do not automatically stop spending.
+The introductory LIVE path generates **22 responses and evaluates 44 metric items**: one setup case, eight baseline cases, eight candidate cases, four holdout cases, and one extra case, each judged using two metrics. This is not the number of billable API requests including evaluator internals and retries. Charges depend on the model and token usage. Budget alerts and TPM allocations do not automatically stop spending.
 
 <a id="setup-tools"></a>
 ### Setup 1. Get the code and install tools
@@ -105,7 +108,7 @@ Use the browser to read the guide and operate Azure, and VS Code to edit local f
 | Azure CLI | [Installation instructions](https://learn.microsoft.com/cli/azure/install-azure-cli) | `az version` |
 | Editor | [VS Code](https://code.visualstudio.com/) | Open the workshop folder and a terminal |
 
-**Opening a file:** press **Ctrl+P / macOS Cmd+P**, enter a path such as `WORKSHEET.en.md`, and press Enter. If it is not found, use Explorer. For Markdown tables, run **Markdown: Open Preview to the Side** from the Command Palette. **Edit the source tab, not the preview**, and choose **File → Save**.
+**Opening a file:** press **Ctrl+P / macOS Cmd+P**, enter a path such as `docs/en/policies.md`, and press Enter. If it is not found, use Explorer. For Markdown tables, run **Markdown: Open Preview to the Side** from the Command Palette. **Edit the source tab, not the preview**, and choose **File → Save**.
 
 Run **only the block for your operating system**. `.venv` holds the workshop's Python dependencies.
 
@@ -139,21 +142,18 @@ python lab.py doctor
 
 **Checkpoint:** `LOCAL OK: Python ... , dev 8개, holdout 4개` means the local files contain eight dev and four holdout cases. It does **not** confirm Azure connectivity. Reactivate the virtual environment when opening a new terminal; do not reinstall everything.
 
-Create a `results` folder in VS Code Explorer if it does not already exist. Open [WORKSHEET.en.md](WORKSHEET.en.md), choose **File → Save As**, select `results`, and save as **`my-worksheet.md`**. Continue an existing worksheet instead of overwriting it. “Record in the worksheet” means editing this copy.
-
 <a id="working-files"></a>
-**Create these working copies only when their steps ask for them.**
+**Create these three working copies only when their steps ask for them.**
+
+This table belongs to the introduction. **Complete-RAG participants create only `config.json` in setup 6**; their own guide introduces later files.
 
 | When | Source | Save as |
 |---|---|---|
-| Now | `WORKSHEET.en.md` | `results/my-worksheet.md` |
 | Setup 6 | `config.example.json` | `config.json`, beside `lab.py` |
 | Activity 4 | `prompts/v2.txt` | `prompts/my-v2.txt` |
 | Activity 6 | `data/my-case.example.jsonl` | `data/my-case.jsonl` |
 
-The commands automatically create output subdirectories and reports such as `results/baseline`. Do not prefill them. Apart from the worksheet, treat result JSON and reports as read-only evidence. Keep original policies, questions, and prompts unchanged, and save working copies as **UTF-8**. If an example working copy already exists in your download, inspect it and record whether you reused or edited it.
-
-**Record now:** your A/B decision and policy reason in worksheet 0–1, plus the date and LIVE path in Setup. Leave the D02 entry for activity 1.
+The commands automatically create output directories and reports such as `results/baseline`. Do not prefill them. Treat generated JSON and reports as read-only evidence. Keep original policies, questions, and prompts unchanged, and save working copies as **UTF-8**. If an example working copy already exists in your download, inspect it and distinguish reuse from editing.
 
 <a id="setup-sign-in"></a>
 ### Setup 2. Sign in to the intended subscription
@@ -161,11 +161,11 @@ The commands automatically create output subdirectories and reports such as `res
 **Where: [Azure portal](https://portal.azure.com)**
 
 1. Sign in with your Entra ID account and open the intended subscription under **Subscriptions**.
-2. Record its **subscription ID and directory/tenant ID** from **Overview**.
+2. Check its **subscription ID and directory/tenant ID** in **Overview**. Use these values in the sign-in commands below.
 3. Under **Access control (IAM) → View my access**, confirm an active **Owner** role. If you only have an eligible PIM role, activate it using your organization's process.
 4. Under the subscription's **Resource providers**, check `Microsoft.CognitiveServices`. If needed, select **Register** and wait for `Registered`.
 
-**Where: VS Code terminal.** Replace `YOUR-...` with the actual recorded values, keeping the quotation marks.
+**Where: VS Code terminal.** Replace `YOUR-...` with the actual verified values, keeping the quotation marks.
 
 ```bash
 az login --tenant "YOUR-TENANT-ID"
@@ -181,7 +181,7 @@ az account set --subscription "YOUR-SUBSCRIPTION-ID"
 az account show --query "{account:user.name,subscription:name,subscriptionId:id,tenantId:tenantId,state:state}" --output json
 ```
 
-**Checkpoint:** `account` is the intended user, subscription and tenant IDs match the portal, and `state` is `Enabled`. Record the account too. **Do not rely on the subscription's display name alone.** With several signed-in identities, the default subscription may belong to another account. If the subscription is missing, check the tenant.
+**Checkpoint:** `account` is the intended user, subscription and tenant IDs match the portal, and `state` is `Enabled`. **Do not rely on the subscription's display name alone.** With several signed-in identities, the default subscription may belong to another account. If the subscription is missing, check the tenant.
 
 **The browser and CLI have separate sign-in sessions.** If Foundry or a report link shows **Pick an account**, select the same account confirmed above. New Foundry may request another selection. CLI authentication does not authenticate a different or headless browser.
 
@@ -195,7 +195,7 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 | Foundry project | Stores evaluation work and results | `eval-workshop` |
 | Model deployment | Name the code calls; created in setup 5 | `eval-model` |
 
-Replace `a7k3m9` with your own unique lowercase letters and digits. Record the names **actually created**, not just intended names.
+Replace `a7k3m9` with your own unique lowercase letters and digits. Use the names **actually created** in later steps, not just intended names.
 
 **In Azure portal:**
 
@@ -213,7 +213,7 @@ Replace `a7k3m9` with your own unique lowercase letters and digits. Record the n
 
 **Stop if the interface asks you to create a Hub first.** This workshop uses a new Foundry project under a Foundry resource, not a classic hub-based project. Their setup and SDK contracts differ.
 
-**Checkpoint:** **Manage → Project details / Resource details** identifies the project and parent resource, and their provisioning state is `Succeeded`. Record the names and location.
+**Checkpoint:** **Manage → Project details / Resource details** identifies the project and parent resource, and their provisioning state is `Succeeded`. Match the names and location.
 
 **Check the location of the group, parent resource, and project separately.** Creating a group in `swedencentral` does not put every child there automatically. Availability and quota are not guaranteed. Use the [model-availability guidance](docs/en/reference.md#model-availability) if blocked; do not silently change region or disable existing network restrictions.
 
@@ -224,8 +224,8 @@ For commands instead of portal creation, use the [Azure CLI alternative](docs/en
 
 **Owner alone does not necessarily grant model and evaluation data access.** Your terminal uses **your user identity**; cloud evaluation uses the **project's managed identity**.
 
-1. In Foundry, open the project's Azure resource from **Manage → Project details**. Its resource ID ends in **`/accounts/ACCOUNT/projects/PROJECT`**. Match the actual names to your worksheet.
-2. Under that project's **Identity → System assigned**, record its **Object (principal) ID**. Do not copy the parent account's identity. If the menu or ID is missing, use the [managed-identity help](docs/en/reference.md#managed-identity-access).
+1. In Foundry, open the project's Azure resource from **Manage → Project details**. Its resource ID ends in **`/accounts/ACCOUNT/projects/PROJECT`**. Match the names to the resources verified in setup 3.
+2. Under that project's **Identity → System assigned**, check its **Object (principal) ID** against the IAM member below. Do not copy the parent account's identity. If the menu or ID is missing, use the [managed-identity help](docs/en/reference.md#managed-identity-access).
 
 The following is an **illustration, not an actual portal screenshot**. Names and IDs are fictional; use values from your own environment.
 
@@ -236,7 +236,7 @@ Open **Azure portal → parent Foundry resource → Access control (IAM)**. The 
 | Role | Member | Scope |
 |---|---|---|
 | **Foundry User** | Your user account | Parent **Foundry resource** |
-| **Foundry User** | The **project managed identity recorded in your worksheet** | Same **Foundry resource** |
+| **Foundry User** | The **project managed identity verified above** | Same **Foundry resource** |
 
 Check **Role assignments** first. The role might appear under its previous name, **Azure AI User**. Do not duplicate an existing assignment.
 
@@ -260,6 +260,8 @@ For a missing user assignment, select **Add → Add role assignment → Foundry 
 | Resource location | **Sweden Central (`swedencentral`)** |
 | Deployment type | **Global Standard**, if supported, permitted, and quota is available |
 | Tokens per minute | Start with **30K–60K TPM** if available within the model/SKU quota |
+
+**Complete-RAG participants require version `2026-09-22`.** Check the recorded V1 comparison's [fixed-version condition](docs/en/complete-lab.md#setup). If unavailable, choose another learning path before creating Search or additional models. Choosing another offered version above applies only to the separate introduction.
 
 **Do not choose Provisioned/PTU or GPU deployment.** Global Standard is consumption-based, but a resource in `swedencentral` does **not** guarantee all inference stays in that region. If the model or quota is unavailable, follow [availability guidance](docs/en/reference.md#model-availability). Do not silently switch models/regions or reduce someone else's quota.
 
@@ -302,10 +304,11 @@ python lab.py doctor --live
 | `아직 처리 중입니다` / exit `3` | “Still processing” | Repeat the **entire same `judge` command**, including `--like`. |
 | `ERROR:` / exit `1` | An input, environment, or execution error | Stop and [troubleshoot](docs/en/reference.md#troubleshooting). |
 | `BLOCK` / exit `2` | The quality gate holds the change | Record `gate.md` reasons and continue to activity 6, after addressing missing evidence. |
+| `usage:` / `error:` with exit `2` | Missing required arguments or invalid options | Correct and rerun the command; this is not `BLOCK`. |
 
-By default, `judge` waits **up to five minutes** before returning. Repeat it **only if still processing**. It retrieves the saved remote job instead of submitting another one. Do not run it concurrently in another terminal.
+The default `judge` **status-polling budget is 300 seconds**. Authentication, submission, HTTP responses, and result collection can make total command time longer. Repeat it **only if still processing**. It retrieves the saved remote job instead of submitting another one. Do not run it concurrently in another terminal.
 
-The completion message appears only after score/reason validation and `judge.json`/`report.md` are saved. Read the count, the report path after `보고서:`, and the per-case evidence under `사례별 근거`. Missing scores are not merely low scores. Before stopping, record your checkpoint and **complete next command**.
+The completion message appears only after score/reason validation and `judge.json`/`report.md` are saved. Read the count, the report path after `보고서:`, and the per-case evidence under `사례별 근거`. Missing scores are not merely low scores. After interruption, find your next command in the [result-file resume table](docs/en/setup.md#resume-checkpoints).
 
 <a id="setup-smoke"></a>
 ### Setup 7. Verify one generated and evaluated answer
@@ -334,7 +337,7 @@ A low score does not invalidate connectivity. Authentication failures, truncated
 
 **A judge can give 5 while `citations` fails.** An answer may correctly reject the draft but also include `FAQ-DRAFT` in its citations array. That fails the exact citation-set contract. With valid JSON and complete scores/reasons, the smoke check still verifies connectivity; record the disagreement as an evaluation finding.
 
-**Setup complete. Continue to activity 1.**
+**Setup complete. Introductory participants continue to activity 1. Complete-RAG participants return to [complete-path Search setup](docs/en/complete-lab.md#search-setup).**
 
 ---
 
@@ -343,7 +346,7 @@ A low score does not invalidate connectivity. Authentication failures, truncated
 
 Read the [eight dev questions](data/dev.jsonl). **Dev** is the set used during improvement. Do not open `data/holdout.jsonl` yet; those four questions are for the final check.
 
-The expected D02 behavior is **prior approval required, limit 200000, source TRAVEL-CURRENT**. Record what the assistant must never advise: claiming immediate reimbursement or inventing existing approval.
+The expected D02 behavior is **prior approval required, limit 200000, source TRAVEL-CURRENT**. Identify what the assistant must never advise: claiming immediate reimbursement or inventing existing approval.
 
 For English readers, the dev cases cover: D01 current policy, D02 missing prior approval, D03 an earlier travel date but later claim date, D04 an unknown overseas limit, D05 a prohibited business-class flight, D06 a request to ignore policy and invent approval, D07 an exact-limit boundary, and D08 a missing travel date.
 
@@ -383,7 +386,7 @@ The answer has four fields. This is an **English explanation of the expected D02
 
 For eight cases, 80% requires **at least seven**; for four, it requires **all four**. A score of 4 is not “80% accuracy.” Do not lower thresholds after seeing results.
 
-**Checkpoint:** worksheet 0–1 records D02 expectations and risk. Keep these criteria fixed.
+**Checkpoint:** explain D02's expected behavior and risk. Keep these criteria fixed.
 
 ---
 
@@ -419,7 +422,7 @@ A FAIL is an observed result, not failure to complete the workshop. All-pass res
 python lab.py inspect results/baseline D04
 ```
 
-`Judge: 아직 미평가` is expected. Record **your pass/fail and policy-based reason first** in worksheet 2–3.
+`Judge: 아직 미평가` is expected. Decide **your pass/fail and policy-based reason first**.
 
 **Then evaluate the eight saved answers:**
 
@@ -441,9 +444,9 @@ Open the printed **Foundry report URL**, or locate the run using `foundry-job.js
 
 This asks for the Tokyo hotel limit in September 2026. Match the **same question, answer, raw scores, and reasons**, not the row position. Do not create another portal evaluation or upload the original questions again.
 
-Record both scores and why you agree or disagree. The portal may call 3 a Pass, but this workshop requires 4.
+Read both scores and explain why you agree or disagree. The portal may call 3 a Pass, but this workshop requires 4.
 
-**Checkpoint:** worksheet 2–3 contains your original judgment, two judge scores, and agreement/disagreement reasons. Keep the original judgment rather than rewriting it to match the judge.
+**Checkpoint:** explain your original judgment, the two judge scores, and agreement/disagreement reasons. Keep the original judgment rather than changing it to match the judge.
 
 A judge may penalize an appropriate refusal to invent an unknown amount. If its reason is “no specific amount was supplied,” compare that with the expected behavior. Record the disagreement; do not invent an amount or change thresholds to satisfy the judge.
 
@@ -452,7 +455,7 @@ A judge may penalize an appropriate refusal to invent an unknown amount. If its 
 <a id="lab-4"></a>
 ## 4. Change only the prompt, then compare
 
-**Write a hypothesis first:** “To reduce ___, I will change ___.” If baseline already passes, test whether the change preserves correct behavior.
+**Choose a hypothesis first:** “To reduce ___, I will change ___.” If baseline already passes, test whether the change preserves correct behavior.
 
 1. Open [V1](prompts/v1.txt) and the [V2 example](prompts/v2.txt).
 2. With V2 open, choose **Save As `prompts/my-v2.txt`**. Do not change the originals.
@@ -496,7 +499,7 @@ The prompts are `사람의 판정 (pass/fail):` (“human verdict”) and `근�
 
 For AI-operated walkthroughs, use [assistant-attributed reviews](docs/en/reference.md#assisted-review). AI review is not human approval and cannot satisfy the gate's human-review requirement.
 
-**Checkpoint:** see `검토 저장: results/candidate/reviews.json`. Record the changed instruction and improved/worsened cases, or “no change,” in worksheet 4.
+**Checkpoint:** see `검토 저장: results/candidate/reviews.json`. Use `comparison.md` and both runs' `report.md` to explain the changed instruction and improved/worsened cases, or “no change.”
 
 ---
 
@@ -521,7 +524,7 @@ Wait for **`평가 완료: 4개 답변 × 2개 지표`** and `Judge 결과: resu
 python lab.py review results/holdout H04
 ```
 
-Read H04, enter your verdict and reason, and confirm **`검토 저장: results/holdout/reviews.json`**. A note in the worksheet alone is not a saved review.
+Read H04, enter your verdict and reason, and confirm **`검토 저장: results/holdout/reviews.json`**. Save human verdicts through this command so the gate can use them.
 
 **Apply the original criteria:**
 
@@ -536,7 +539,7 @@ The gate writes `results/candidate/gate.md`.
 | **BLOCK** | Record its reasons and hold the change. **Continue to activity 6.** Exit code 2 is intentional quality blocking. |
 | **READY_FOR_HUMAN_REVIEW** | Educational criteria met; record your adoption-review recommendation and continue. **Not production approval.** |
 
-**Checkpoint:** both `gate.md` and worksheet 5 contain the result, decision, and case-based evidence. Address missing scores or omitted human review; do not turn a genuine `fail` into `pass` to remove a block. In an automated rehearsal, explicitly leave real human review incomplete.
+**Checkpoint:** use `gate.md` to explain the result, your decision, and case-based evidence. Address missing scores or omitted human review; do not turn a genuine `fail` into `pass` to remove a block. In an automated rehearsal, explicitly leave real human review incomplete.
 
 Dev and holdout have different questions and are not a before/after pair. If you change the prompt after inspecting holdout, **use a new holdout next time**.
 
@@ -562,7 +565,7 @@ Meaning: a June 15 trip costs KRW 170000 per night and is claimed in September. 
 | Hotel expense in `query` | `170000` → `180000` |
 | Expense described in `ground_truth` | `170000` → `180000` |
 
-Keep the **160000 limit**, `needs_approval`, and `TRAVEL-PREVIOUS`. The expense is not the policy limit. Record whether you edited the example, wrote your own question, or used the example unchanged.
+Keep the **160000 limit**, `needs_approval`, and `TRAVEL-PREVIOUS`. The expense is not the policy limit. In your final summary, distinguish editing the example, writing your own question, or using the example unchanged.
 
 For a new question, decide its expected behavior **before generating an answer**. Preserve all eight fields: `id`, `category`, boolean `critical`, `query`, `expected_decision`, integer-or-null `expected_limit_krw`, official-ID array `expected_citations`, and `ground_truth`. Keep ID `N02` for the commands below. Do not put another business domain into the travel-policy checker.
 
@@ -596,7 +599,7 @@ python lab.py inspect results/my-case N02
 
 This is an `extra` case. It does not change dev, holdout, or the gate.
 
-**Checkpoint:** record its intended failure mode and actual result, then complete your four-sentence report:
+**Checkpoint:** check its intended failure mode and actual result, then explain your findings in four sentences:
 
 > In case ___, I found ___. / I found no error in these questions.<br>
 > After changing ___, the same questions showed ___ and unseen questions showed ___.<br>
@@ -619,7 +622,7 @@ Completion is about **execution and evidence-based judgment**, not obtaining hig
 - [ ] Candidate D06 and holdout H04 have actual human verdicts/reasons in their `reviews.json` files.
 - [ ] You can explain `results/candidate/gate.md` and your decision, including a valid `BLOCK`.
 - [ ] `results/my-case/report.md` and `judge.json` contain the N02 answer and two scores; its creation method is recorded.
-- [ ] `results/my-worksheet.md` contains D04's original judgment, observations, and four final sentences.
+- [ ] D04's original judgment is compared with the judge scores, and you can explain the observations and final decision in the four sentences above.
 
 **Automated rehearsals** may complete execution, assistant review, and the gate, but must not mark an unperformed human review as complete. Report that remaining condition honestly.
 
@@ -631,9 +634,9 @@ Completion is about **execution and evidence-based judgment**, not obtaining hig
 1. Keep `results/` locally and record the state of remote jobs. Closing a terminal does not cancel or finish them.
 2. In the intended subscription, verify the dedicated group, parent resource, and project remain in `swedencentral`. Check `eval-model` under **Build → Models**.
 3. Check **Cost Management → Cost analysis**, scoped to the group. Reporting may lag; no visible cost does not prove free use. Retention is not a billing stop, and alerts do not automatically block spending.
-4. Record **not deleted, retention reason, next check date or condition, and cost status**. If no deletion date is planned, write **“retain until a separate request.”**
+4. Confirm **not deleted, retention reason, next check date or condition, and cost status**. With no planned deletion date, **retain until a separate request**.
 
-**Checkpoint:** actually created resources and records remain, and the retention/cost decision is recorded. Do not mark uncreated resources or unrun evaluations as completed. Skip the optional deletion path below.
+**Checkpoint:** actually created resources and records remain, and you can explain the retention conditions and cost status. Do not mark uncreated resources or unrun evaluations as completed. Skip the optional deletion path below.
 
 <a id="delete-resources"></a>
 ### Optional: only after a separate deletion decision
@@ -653,7 +656,7 @@ Successful cleanup means **`false` for the correct group/subscription** and port
 
 Record deletion status/time and reported or still-pending costs. Use the [retention and cleanup reference](docs/en/cleanup.md) if needed.
 
-**The checklist plus retention or deletion records complete the workshop. Deletion is not required.** One small, single-run evaluation is not a production-quality guarantee or deployment approval.
+**The checklist plus confirmed retention or deletion status completes the workshop. Deletion is not required.** One small, single-run evaluation is not a production-quality guarantee or deployment approval.
 
 ---
 

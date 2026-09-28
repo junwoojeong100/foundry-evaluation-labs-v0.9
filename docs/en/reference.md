@@ -6,6 +6,8 @@
 
 The main guide is self-contained. Read this reference only for a specific question or failure. In the default path, you own the dedicated environment; organizational policies and shared infrastructure remain subject to their owners.
 
+The command table below describes introductory `lab.py`. For `advanced_lab.py` status and fixed output paths, use [complete-path resumption](complete-lab.md#resume). Remote evaluation ID recovery below distinguishes each path's files.
+
 ## Eight commands
 
 | Command | Purpose | Paid calls |
@@ -26,6 +28,8 @@ python lab.py run --help
 ```
 
 Exit codes are **0** complete, **1** input/environment/execution error, **2** quality gate BLOCK, **3** evaluation still processing, and **130** interrupted. A successful `run` can contain wrong answers.
+
+Exit **2** means a quality decision only when **`BLOCK` is printed**. With `usage:` / `error:`, it instead indicates missing arguments or invalid options; correct and rerun the command.
 
 `평가 완료: N개 답변 × 2개 지표 (점수·이유 저장)` means all case IDs, scores, and reasons were validated and `judge.json`/`report.md` were saved. Low scores are valid results. Remote `completed` or file existence alone is not this checkpoint. Reusing saved results validates them but does not judge again.
 
@@ -204,7 +208,7 @@ Portal Overall score/Pass may use threshold 3. Portal **100%** can therefore coe
 | JSONL validation fails | Fix the identified line/field; retain all eight fields and valid types. |
 | Extra-case count is not one | Remove unintended extra rows; keep N02 only. |
 | `review` appears stuck | It is waiting for verdict and reason; confirm `검토 저장`. |
-| Worksheet review is not counted | Save it using `review`, not only in the worksheet. |
+| Gate reports missing human review | Use `review` for candidate D06 and holdout H04 to save actual verdicts and reasons in each `reviews.json`. |
 | Only AI reviews exist | A real human review is still required; do not relabel the AI record. |
 | 401/authentication failure | Sign in with the intended user and tenant; do not paste keys into code. |
 | 403 despite Owner | Check Foundry User for both user and project identity at parent scope; allow propagation. |
@@ -223,7 +227,7 @@ Portal Overall score/Pass may use threshold 3. Portal **100%** can therefore coe
 | Input/model/judge contract mismatch | Inspect changed settings and start a separate comparable experiment. |
 | Gate exit 2 | Read BLOCK reasons; this is an intentional quality decision. |
 | DEMO rejects edited data/prompt | It only replays fixed fixtures; use LIVE for a separate measured experiment. |
-| Forgot the last checkpoint | Use the worksheet and [resume table](setup.md#resume-checkpoints). |
+| Forgot the last checkpoint | Use the [result-file resume table](setup.md#resume-checkpoints). |
 | Deletion incomplete | Follow [scope/lock/status checks](cleanup.md); a request is not completion. |
 
 When sharing errors, include only the command, checkpoint, error type, and necessary sanitized identifiers. Do not publish credentials, full customer data, or unredacted recordings.
@@ -285,8 +289,15 @@ Use the direct virtual-environment Python path if activation is prohibited.
 
 **Ambiguous creation after disconnection:** `phase` may be `creating-eval` or `creating-run` without a saved ID. Do not automatically create another potentially billable job.
 
-1. Preserve the files. Use the local `run_id` to find `straightforward-<first 8 characters>` or `<prompt>-<split>-<first 8 characters>` in the portal. Remote `workshop_run` metadata must match.
-2. Only after positively identifying the exact job, restore missing IDs in `foundry-job.json`. Use `ready` if only the eval exists, or `submitted` if the run exists, then repeat the original judge command.
+First locate the **local correlation ID** for that evaluation. It is not the remote `run_id` in `foundry-job.json`.
+
+| Execution path | File containing local `run_id` |
+|---|---|
+| Introductory `lab.py` / minimal `rag_lab.py` | `run.json` in the relevant result folder |
+| Complete `advanced_lab.py` | `results/advanced/<stage>/evaluation-request.json`; use `calibration` for the calibration stage |
+
+1. Preserve the files. Use that local `run_id` to find `straightforward-<first 8 characters>` or `<prompt>-<split>-<first 8 characters>` in the portal. Complete-path runs use `<stage>-advanced-<first 8 characters>`, with `calibration` for calibration. Remote `workshop_run` metadata must match.
+2. Only after positively identifying the exact job, restore missing IDs in `foundry-job.json`. Use `ready` if only the eval exists, or `submitted` if the run exists, then repeat the **entire original `judge` or `calibrate` command**.
 3. If existence is uncertain, do not resubmit. Request the owner's investigation or use a separate DEMO path. Never edit scores, evidence hashes, or contracts to manufacture completion.
 
 For an explicitly terminated failed/canceled run, fix its cause first. An owner can preserve its original ID/status, verify termination, then set only `run_id` to `null` and `phase` to `ready` to resubmit the same saved responses under the same eval/contract. This is paid reevaluation, not score-shopping.
@@ -317,9 +328,11 @@ python -m unittest discover -s tests -v
 SDK tests run when dependencies are installed; otherwise only those tests are skipped. Complete your own smoke check and, for a class, [a real rehearsal](facilitator.md#rehearsal).
 
 <a id="live-verification"></a>
-### Superseded validation records
+### Evidence scope by learning path
 
-Detailed failure/validation records from the earlier core run are retired from the current guide. Use the [completed workflow](complete-lab.md#results) for the current all-metrics V2 acceptance result, including Relevance. The new lesson retains only its required V1 comparison, calibration and acceptance evidence.
+Cleanup of the author's earlier introductory failure/validation records is complete, and they are removed from the current guide. The [recorded complete-path result](complete-lab.md#results), with every final V2 metric passing including Relevance, is **one observation from a separate vector/planning/dialogue experiment**. It does not revalidate introductory LIVE or minimal RAG in the current environment.
+
+The retained V1 comparison, calibration, and acceptance evidence belongs to that complete-path run only. Use reports from your own path; do not treat another execution's scores as a reproduction target.
 
 ## Official sources
 

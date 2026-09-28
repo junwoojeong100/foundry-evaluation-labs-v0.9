@@ -2,16 +2,20 @@
 
 # Facilitator guide
 
-[Participant guide](../../README.md) · [Setup](setup.md) · [Worksheet](../../WORKSHEET.en.md)
+[Participant guide](../../README.md) · [Setup](setup.md)
 
 Teach **evidence-based judgment**, not just tool operation. A useful final statement is “D06 introduced an approval fabrication, so I would hold the change,” not just “the score increased.”
 
-Participants follow one main guide: activity 0, setup, activities 1–6, and resource retention. Use checkpoints rather than a fixed timetable. Keep LIVE and authored DEMO evidence distinct. English documentation uses the same Korean experimental inputs as the Korean guide; use the [policy translation](policies.md) to explain them without changing the experiment.
+**Scope:** the pre-class checklist, rehearsal, and 0–6 table below are for **fixed-policy introductory LIVE/DEMO**. For recommended complete RAG, use [its dedicated checkpoints](#complete-checkpoints), not the 80% gate, D06/H04 workflow, or one-model constraint.
+
+Introductory participants follow one main guide: activity 0, setup, activities 1–6, and resource retention. Use checkpoints rather than a fixed timetable. Keep LIVE and authored DEMO evidence distinct. English documentation uses the same Korean experimental inputs as the Korean guide; use the [policy translation](policies.md) to explain them without changing the experiment.
+
+Use generated reports and ask participants to explain cases and judgment reasons, rather than transcribing scores or completing a separate submission form.
 
 ## Before the workshop
 
 - [ ] Participants can access the repository or an authorized ZIP.
-- [ ] Each new-resource participant has the correct Entra account, active subscription, and active Owner permissions.
+- [ ] Each participant has the correct Entra account and active subscription. Only new-resource participants require active Owner permissions; existing-environment users need the agreed access.
 - [ ] Activity 0 occurs before installation; participants then perform their own setup without shared passwords or prefilled credentials.
 - [ ] Use one dedicated group/project and one `eval-model` deployment of **`gpt-6-luna`**, in **`swedencentral`**.
 - [ ] Check each resource's region separately and match the project identity to parent-resource IAM. Owner/model lookup alone is insufficient.
@@ -44,7 +48,7 @@ Local and SDK transport tests are **not actual Azure execution**. For a full reh
 
 **Do not require V2 to win.** V1 may already answer well, or V2 may introduce another problem. Fix environment/SDK errors before class, but never fabricate results.
 
-The [completed workflow](complete-lab.md) starts with a genuine V1 failure, completes necessary user follow-ups, and passes every required metric—including Relevance—on new final scenarios. Earlier failure/validation records are retired. Distinguish scripted evaluation-user turns from actual human production approval.
+In [one recorded complete-path run](complete-lab.md#results), genuine V1 failure was followed by completed user follow-ups and every required metric—including Relevance—passed on fresh final scenarios. This does not guarantee a participant's new result or this introductory rehearsal. Earlier failure/validation records are retired. Distinguish scripted evaluation-user turns from actual human production approval.
 
 ## Facilitate by checkpoint
 
@@ -54,13 +58,13 @@ The [completed workflow](complete-lab.md) starts with a genuine V1 failure, comp
 | Setup | Account, region, identity, and deployment names matter | A real generated and evaluated smoke answer |
 | 1 | Define expectations before results | D02 behavior and fixed thresholds |
 | 2 | Generation is separate from judging | Eight baseline answers and code checks |
-| 3 | Judge versus independent judgment | D04 before/after notes and matching portal row |
+| 3 | Judge versus independent judgment | D04 before/after judgments and matching portal row |
 | 4 | One controlled change; inspect regressions | Comparison and D06 review |
 | 5 | Test an unchanged candidate on new questions | Holdout, H04 review, and gate decision |
 | 6 | Add a well-defined case | N02 validation/result and four final sentences |
 | Finish | Preserve evidence and resources | Retention and cost records |
 
-Keep scope at one project, one deployment, two judge metrics, and one improvement loop. During cloud waits, complete the worksheet rather than expanding features.
+Keep introductory scope at one project, one deployment, two judge metrics, and one improvement loop. During cloud waits, revisit policy and the reasoning behind answers already examined rather than expanding features.
 
 ## Case explanations: let participants decide first
 
@@ -95,5 +99,23 @@ Keep scope at one project, one deployment, two judge metrics, and one improvemen
 ## Final presentations
 
 Ask for a concrete case and sentence, the changed instruction, both improvements and regressions, correct treatment of unseen questions, and a clear distinction between LIVE evidence and authored examples.
+
+<a id="complete-checkpoints"></a>
+## Dedicated complete-RAG checkpoints
+
+Participants use the checkpoints in sections 1–8 of the [complete guide](complete-lab.md) and the generated reports. After README setup 1–7, confirm they return to complete-path Search setup, not introductory activity 1.
+
+| Stage | Evidence for completion or holding |
+|---|---|
+| Setup | Check `eval-model` / `gpt-6-luna` / `2026-09-22` before adding resources. Skip creation for existing services; distinguish user, project, and Search identities |
+| Sharing scope | Reuse an authorized Basic service, but separate search-object names and local folders by participant/experiment. Do not silently update existing objects |
+| Retrieval | Actual 1536-dimensional vectors and `modelQueryPlanning` evidence. The Optional RAG index is not required |
+| Calibration | Ten positive/negative control results. Distinguish failure from waiting using [complete-path resumption](complete-lab.md#resume) |
+| Improvement | Preserve recorded V1 D02 failure; replay/planned-dev use the same candidate; personally review initial D04/D08 prose |
+| Freeze | Both dev stages meet 100% criteria with identical instructions, models, and follow-up contracts. Otherwise record failure and unperformed stages |
+| Fresh questions | Eight new template-based scenarios after freeze; N05/N06 dialogue review and the participant's own acceptance result |
+| Finish | Distinguish initial field checks from semantic judgment, and automated acceptance from production approval. Preserve failures/blocks and check costs |
+
+Do not present the author's 100% result as the participant's expected answer. `intermediate_safe` covers initial fields only, not automated proof of whole-dialogue safety.
 
 Further work is outside this introductory loop: domain-reviewed representative data, high-risk cases, repeated experiments, judge calibration, regression CI, and feedback from production failures. Retrieval, tool use, and agent operations require their own evidence; this fixed-context answer workshop does not measure them.

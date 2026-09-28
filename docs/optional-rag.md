@@ -8,7 +8,7 @@
 
 기존 계정·Foundry 프로젝트·`gpt-6-luna` 배포 `eval-model`·`swedencentral`을 재사용합니다. Azure AI Search 서비스, 인덱스, 실제 Foundry IQ Knowledge Source/Knowledge Base를 추가합니다. 생성한 리소스와 결과는 **삭제하지 않습니다**.
 
-**추가 요약 영상:** [국문·영문 Optional RAG 영상과 자막](media/optional-rag/README.md).
+**별도 완결형 경로 참고 영상:** [국문·영문 벡터·LLM 계획 RAG 영상](media/complete-rag/README.md). 이 문서의 minimal `search`/`iq` 실행 기록이나 검증 결과는 아닙니다.
 
 ## 무엇을 사용하는가
 
@@ -67,7 +67,10 @@ az search service create --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RE
 
 이 명령은 **API 키를 비활성화**합니다. 키를 조회하거나 설정 파일에 저장하지 않습니다. 생성 후 포털의 **Tags**에서 보존 의도인 `retain=true`를 기록해도 됩니다. 태그는 삭제 잠금이 아닙니다.
 
-서비스의 실제 ID를 조회합니다.
+<a id="search-access"></a>
+### 사용자 ID와 Search 역할
+
+신규·기존 서비스 모두 실제 ID를 조회합니다.
 
 ```bash
 az search service show --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --query "{id:id,location:location,sku:sku.name,state:provisioningState,disableLocalAuth:disableLocalAuth,semanticSearch:semanticSearch}" --output json
@@ -75,7 +78,13 @@ az search service show --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RESO
 
 `Succeeded/succeeded`, Sweden Central, `basic`, `disableLocalAuth: true`를 확인합니다. 아래 `YOUR-SEARCH-RESOURCE-ID`는 이 `id`이며 `/providers/Microsoft.Search/searchServices/...`로 끝납니다.
 
-기본 가이드에서 확인한 **본인 Object ID**에 다음 역할을 **Search 서비스 범위에서만**, 없는 경우에만 할당합니다.
+현재 로그인한 **본인의 사용자 Object ID**를 조회합니다. 기본 포털 준비에서 기록한 프로젝트 관리 ID와는 다릅니다.
+
+```bash
+az ad signed-in-user show --query "{account:userPrincipalName,objectId:id}" --output json
+```
+
+`account`가 사용할 테넌트의 본인인지 확인한 뒤, **`objectId`를 `YOUR-USER-OBJECT-ID`에 사용**합니다. 프로젝트나 Search 관리 ID를 넣지 않습니다. 조회가 제한되면 환경 소유자에게 같은 테넌트의 본인 ID 대조를 요청합니다. 다음 역할은 **Search 서비스 범위에서만**, 기존 역할이 없는 경우에만 할당합니다.
 
 ```bash
 az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "7ca78c08-252a-4471-8644-bb5ff32d4ba0" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
@@ -86,6 +95,8 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 ```
 
 첫 역할은 **Search Service Contributor**(인덱스·Knowledge 객체 관리), 두 번째는 **Search Index Data Contributor**(문서 업로드·조회)입니다. 구독 전체에 할당하지 않습니다. 이 사용자 애플리케이션 경로는 프로젝트 관리 ID로 검색하지 않으므로 불필요한 관리 ID 역할을 추가하지 않습니다.
+
+**완결형에서 이 절만 참고했다면 [Search 관리 ID의 모델 접근 설정](complete-lab.md#search-model-access)으로 돌아갑니다.** 아래 3절의 최소 RAG 인덱스는 완결형의 선행 필수 조건이 아닙니다.
 
 <a id="index"></a>
 ## 3. 실제 인덱스와 Foundry IQ Knowledge Base 생성
@@ -200,16 +211,16 @@ Foundry의 Judge 보고서 URL에서는 같은 사례의 **질문·답변·검�
 - 답이 틀렸거나 점수가 낮으면 그대로 기록하며, 좋은 점수를 얻으려고 다시 뽑지 않습니다.
 
 <a id="observed-results"></a>
-### 이전 최소 RAG 검증 기록의 대체
+### 이전 최소 RAG 기록과 참고 범위
 
-이전 Free 서비스의 실패·검증 결과는 새 완결형 경로로 대체하며 정리합니다. 현재는 [공용 Basic 서비스와 새 합격 결과](complete-lab.md#results)를 사용합니다. 이 기본 API 연습도 같은 Basic 서비스의 별도 인덱스에서 실행할 수 있습니다.
+작성자의 이전 Free 서비스와 해당 실패·검증 기록 정리는 완료됐습니다. [완결형의 기록된 결과](complete-lab.md#results)는 별도 벡터·계획·대화 실험의 관측값이며, 이 최소 RAG의 `search`/`iq` 비교를 재검증한 증거는 아닙니다. 이 API 연습은 같은 Basic 서비스의 별도 인덱스에서 실행하고, 본인의 `rag-comparison.md`와 각 `rag-report.md`로 판단합니다.
 
 <a id="troubleshooting"></a>
 ## 문제 해결
 
 | 증상 | 조치 |
 |---|---|
-| Free 서비스 생성 불가 | 구독의 Free 슬롯·현재 지역 지원 확인. 다른 서비스를 삭제하지 않기 |
+| Basic 서비스 생성 불가 | 허가된 기존 서비스부터 확인하고, 지역 용량·구독 제한·조직 정책을 점검. 다른 서비스를 삭제하거나 Free로 임의 대체하지 않기 |
 | 401/403 | 실제 CLI 계정·테넌트, Search 두 역할과 범위·전파 확인. API 키로 우회하지 않기 |
 | MCP 도구만 `invalid_token` | MCP와 CLI 인증이 다를 수 있음. 이 실습의 명시적 `AzureCliCredential` 경로를 확인하고 도구 인증은 별도 점검 |
 | `queryLanguage`가 유효하지 않음 | 이 API 버전의 요청에는 넣지 않음. 제공된 코드와 한국어 인덱스 분석기 사용 |

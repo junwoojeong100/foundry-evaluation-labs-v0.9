@@ -84,14 +84,8 @@ class DocumentationTests(unittest.TestCase):
                 self.assertNotIn("3시간", content)
                 self.assertNotIn("180분", content)
 
-    def test_live_demo_and_worksheet_share_steps_with_judgment_before_setup(self):
-        worksheet = (ROOT / "WORKSHEET.md").read_text(encoding="utf-8")
-        steps = [
-            str(step)
-            for first, last in re.findall(r"^## (\d+)(?:–(\d+))?\.", worksheet, re.MULTILINE)
-            for step in range(int(first), int(last or first) + 1)
-        ]
-        self.assertEqual(steps, [str(i) for i in range(7)])
+    def test_live_and_demo_share_steps_with_judgment_before_setup(self):
+        steps = [str(i) for i in range(7)]
         for document in (ROOT / "README.ko.md", ROOT / "docs" / "offline.md"):
             text = document.read_text(encoding="utf-8")
             with self.subTest(document=document.name):
@@ -103,7 +97,6 @@ class DocumentationTests(unittest.TestCase):
                 self.assertLess(warmup_start, setup_start)
                 self.assertLess(setup_start, criteria_start)
                 self.assertFalse(SHELL_BLOCKS.search(text[warmup_start:setup_start]))
-                self.assertIn("A/B", text[setup_start:criteria_start])
                 self.assertIn("실습 1로 이어갑니다", text[setup_start:criteria_start])
         setup = (ROOT / "docs" / "setup.md").read_text(encoding="utf-8")
         existing = setup.split('<a id="existing-environment"></a>')[1].split('<a id="cost"></a>')[0]
@@ -159,13 +152,107 @@ class DocumentationTests(unittest.TestCase):
                     set(re.findall(r'<a id="([^"]+)"></a>', english)),
                 )
                 self.assertNotIn("(../README.md", korean)
-        self.assertTrue((ROOT / "WORKSHEET.en.md").is_file())
         english = (ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertIn("(WORKSHEET.en.md)", english)
         self.assertIn("not an actual portal screenshot", english)
         svg = ElementTree.parse(ROOT / "docs" / "images" / "foundry-permissions.en.svg").getroot()
         self.assertEqual(svg.get("role"), "img")
         self.assertEqual(" ".join(svg.itertext()).count("PROJECT-PRINCIPAL-ID"), 2)
+
+    def test_guides_have_no_worksheet_templates_or_dependencies(self):
+        for name in ("WORKSHEET.md", "WORKSHEET.en.md"):
+            self.assertFalse((ROOT / name).exists())
+        artifacts = [*DOCUMENTS, *(ROOT / "docs").rglob("*.svg"), ROOT / "tools/media/workshop_video.py"]
+        for document in artifacts:
+            with self.subTest(document=document.relative_to(ROOT)):
+                self.assertNotRegex(
+                    document.read_text(encoding="utf-8"),
+                    re.compile(r"worksheet|실습지|워크시트", re.IGNORECASE),
+                )
+
+    def test_complete_path_returns_from_shared_setup_and_keeps_criteria_inline(self):
+        for readme, guide, setup in (
+            ("README.ko.md", "docs/complete-lab.md", "docs/setup.md"),
+            ("README.md", "docs/en/complete-lab.md", "docs/en/setup.md"),
+        ):
+            with self.subTest(guide=guide):
+                main = (ROOT / readme).read_text(encoding="utf-8")
+                preparation = main.split('<a id="prepare"></a>')[1].split('<a id="lab-1"></a>')[0]
+                self.assertIn(f"({guide}#search-setup)", preparation)
+                self.assertIn("(complete-lab.md#search-setup)", (ROOT / setup).read_text(encoding="utf-8"))
+                complete = (ROOT / guide).read_text(encoding="utf-8")
+                for required in ("100%", "4/5", "CALIBRATION PASSED: 10 controls", "intermediate_safe", "D04", "D08", "N05", "N06"):
+                    self.assertIn(required, complete)
+                self.assertIn("results/advanced/acceptance-report.md", complete)
+                self.assertIn("80%", main.split('<a id="lab-1"></a>')[1])
+
+    def test_rag_guides_keep_all_shell_commands_identical_between_languages(self):
+        for name in ("complete-lab", "optional-rag"):
+            commands = []
+            for relative in (f"docs/{name}.md", f"docs/en/{name}.md"):
+                text = (ROOT / relative).read_text(encoding="utf-8")
+                commands.append([
+                    shlex.split(line)
+                    for block in SHELL_BLOCKS.findall(text)
+                    for line in block.splitlines()
+                    if line.strip()
+                ])
+            with self.subTest(guide=name):
+                self.assertGreater(len(commands[0]), 10)
+                self.assertEqual(commands[0], commands[1])
+
+    def test_complete_model_preflight_precedes_additional_resource_creation(self):
+        fixture = read_json(ROOT / "advanced-rag/fixtures/recorded-v1.json")
+        for relative in ("docs/complete-lab.md", "docs/en/complete-lab.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(guide=relative):
+                creation = text.index("az search service create --name")
+                for field in ("name", "model_name", "model_version"):
+                    self.assertLess(text.index(fixture["model_snapshot"][field]), creation)
+                self.assertLess(text.index("az search service check-name-availability"), creation)
+                self.assertIn("(optional-rag.md#search-access)", text)
+                self.assertIn("config.advanced.json", text[:text.index("python advanced_lab.py setup")])
+
+    def test_search_roles_have_user_lookup_and_a_complete_path_return(self):
+        for relative in ("docs/optional-rag.md", "docs/en/optional-rag.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            section = text.split('<a id="search-access"></a>')[1].split('<a id="index"></a>')[0]
+            with self.subTest(guide=relative):
+                self.assertLess(
+                    section.index("az ad signed-in-user show"),
+                    section.index('az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID"'),
+                )
+                self.assertIn('"{account:userPrincipalName,objectId:id}"', section)
+                self.assertIn("(complete-lab.md#search-model-access)", section)
+
+    def test_complete_resume_distinguishes_partial_quality_failures_and_remote_ids(self):
+        for relative in ("docs/complete-lab.md", "docs/en/complete-lab.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            section = text.split('<a id="resume"></a>')[1].split('<a id="retrieval-proof"></a>')[0]
+            with self.subTest(guide=relative):
+                for required in (
+                    "calibrate", "judge --stage", "generation.json", "collecting", "pending",
+                    "initial_response", "initial clarification/handoff field checks failed",
+                    "calibration-result.json", "evaluation-request.json", "foundry-job.json",
+                    "LAB_ACCEPTANCE_BLOCKED", "300", "--out",
+                ):
+                    self.assertIn(required, section)
+        for relative in ("docs/reference.md", "docs/en/reference.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(reference=relative):
+                self.assertIn("results/advanced/<stage>/evaluation-request.json", text)
+                self.assertIn("calibration", text)
+
+    def test_recorded_results_and_initial_prose_limits_are_explicit(self):
+        for relative, observed, limitation in (
+            ("docs/complete-lab.md", "재현 보장이 아닙니다", "초기 설명 문장의 의미"),
+            ("docs/en/complete-lab.md", "not a reproduction guarantee", "initial prose received a separate semantic"),
+        ):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(guide=relative):
+                self.assertIn(observed, text)
+                self.assertIn(limitation, text)
+                self.assertIn("intermediate_safe", text)
+                self.assertIn("`search`/`iq`", text)
 
     def test_documented_json_examples_are_valid_json(self):
         for document in DOCUMENTS:
@@ -230,7 +317,7 @@ class DocumentationTests(unittest.TestCase):
 
     def test_live_guides_keep_requested_model_region_and_deployment_distinct(self):
         for relative in (
-            "README.md", "README.ko.md", "WORKSHEET.md", "WORKSHEET.en.md",
+            "README.md", "README.ko.md", "docs/complete-lab.md", "docs/en/complete-lab.md",
             "docs/setup.md", "docs/reference.md", "docs/facilitator.md",
             "docs/en/setup.md", "docs/en/reference.md", "docs/en/facilitator.md",
         ):
@@ -284,12 +371,12 @@ class DocumentationTests(unittest.TestCase):
             main.index('<a id="retain-resources"></a>'),
             main.index('<a id="delete-resources"></a>'),
         )
-        for relative in ("README.ko.md", "WORKSHEET.md", "docs/cleanup.md"):
+        for relative in ("README.ko.md", "docs/cleanup.md"):
             text = (ROOT / relative).read_text(encoding="utf-8")
             with self.subTest(document=relative):
                 self.assertIn("별도 요청 전까지 유지", text)
                 self.assertIn("보존", text)
-        for relative in ("README.md", "WORKSHEET.en.md", "docs/en/cleanup.md"):
+        for relative in ("README.md", "docs/en/cleanup.md"):
             self.assertIn("retain until a separate request", (ROOT / relative).read_text(encoding="utf-8"))
         cleanup = (ROOT / "docs" / "cleanup.md").read_text(encoding="utf-8")
         self.assertIn("3–5단계는 건너뜁니다", cleanup)
