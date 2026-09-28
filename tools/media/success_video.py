@@ -21,9 +21,10 @@ OUTPUT = ROOT / "docs" / "media" / "complete-rag"
 PREFIX = "completion-summary"
 SCENES = [
     {
-        "id": "success-01-service", "kind": "portal", "seconds": 18,
-        "en": ["One Search service for every retrieval exercise", "The same Basic service hosts the simple text index and the vector/planned knowledge base. Managed identity enables keyless embedding and planner calls."],
-        "ko": ["검색 서비스 하나로 모든 검색 실습", "같은 Basic 서비스에 기본 텍스트 인덱스와 벡터·계획형 지식 기반을 둡니다. 관리 ID로 임베딩과 계획 모델을 키 없이 호출합니다."],
+        "id": "success-01-provision", "kind": "recorded", "seconds": 18,
+        "recording_id": "rerun-00-group",
+        "en": ["Start again with a new Azure resource group", "This is the actual creation of the new group after the owner requested deletion of the old workshop group. Foundry, models and Basic Search are newly provisioned."],
+        "ko": ["새 Azure 리소스 그룹부터 다시 시작", "소유자의 요청으로 이전 실습 그룹을 삭제한 뒤 새 그룹을 실제로 생성하는 화면입니다. Foundry·모델·Basic Search도 새로 준비했습니다."],
     },
     {
         "id": "success-02-baseline", "kind": "terminal", "seconds": 24,
@@ -96,7 +97,6 @@ def context() -> dict:
             resources["account"].split("@")[0], Path.home().name,
         ],
         "urls": {
-            "success-01-service": portal + "/indexes",
             "success-05-knowledge": portal + "/knowledgeBases",
             "success-07-portal": judge["report_url"] + "?tid=" + resources["tenant"],
         },
@@ -109,6 +109,10 @@ def main() -> None:
     parser.add_argument("action", choices=("serve", "prepare", "run", "render", "verify"))
     parser.add_argument("scene", nargs="?", choices=[scene["id"] for scene in SCENES])
     args = parser.parse_args()
+    if args.scene and args.action in ("prepare", "run"):
+        scene = media.scene_for(args.scene, SCENES)
+        if "recording_id" in scene:
+            parser.error(f"This scene uses the original {scene['recording_id']} capture; do not recreate resources for a summary.")
     if args.action == "serve":
         media.serve(scenes=SCENES, private=PRIVATE)
     elif args.action == "prepare":

@@ -156,6 +156,8 @@ def redact(text: str, values: list[str]) -> str:
 
 def prepare(name: str, *, scenes=SCENES, private=PRIVATE, context=None, comparison_url: str | None = None) -> None:
     scene = scene_for(name, scenes)
+    if "recording_id" in scene:
+        raise ValueError(f"{name} uses pre-recorded footage: {scene['recording_id']}. Record the original step before rendering.")
     if comparison_url is not None:
         url = urlsplit(comparison_url)
         if (
@@ -225,6 +227,8 @@ def run_scene(name: str, *, scenes=SCENES, private=PRIVATE) -> None:
             save(work / "terminal.json", state)
         code = process.wait()
         expected = 2 if command.startswith("python lab.py gate ") else 0
+        if command == "python advanced_lab.py accept" and code == 2:
+            expected = 2
         events[-1].update({
             "finished_at_ms": round(time.time() * 1000), "exit_code": code,
             "expected_exit_code": expected,
@@ -328,7 +332,7 @@ def overlay(path: Path, language: str, scene: dict, index: int, *, total_scenes=
     image.save(path)
 
 
-def card(path: Path, language: str, closing: bool = False, *, topic="core") -> None:
+def card(path: Path, language: str, closing: bool = False, *, topic="core", recorded_on: str | None = None) -> None:
     from PIL import Image, ImageDraw, ImageFont
     image = Image.new("RGB", (1920, 1080), (9, 17, 32))
     draw = ImageDraw.Draw(image)
@@ -336,6 +340,9 @@ def card(path: Path, language: str, closing: bool = False, *, topic="core") -> N
     body = ImageFont.truetype(str(FONT), 42)
     small = ImageFont.truetype(str(FONT), 30)
     draw.rectangle((104, 145, 114, 820), fill=(58, 154, 249))
+    if recorded_on:
+        label = f"Recorded {recorded_on}" if language == "en" else f"녹화 {recorded_on}"
+        draw.text((160, 130), label, font=small, fill=(165, 185, 209))
     if topic == "success":
         if closing:
             heading = "Fresh questions.\nVerified acceptance." if language == "en" else "새 질문에서도\n실습 기준 합격"
@@ -389,7 +396,7 @@ def render(*, scenes=SCENES, private=PRIVATE, output=OUTPUT, prefix="workshop-su
     edited.mkdir(parents=True, exist_ok=True)
     encoding = ["-an", "-map_metadata", "-1", "-c:v", "libx264", "-threads", "2", "-preset", "medium", "-crf", "22", "-pix_fmt", "yuv420p", "-r", "24"]
     if recorded_on is None:
-        started = min(load(private / f"{scene['id']}.recording.json")["started_at_ms"] for scene in scenes)
+        started = min(load(private / f"{scene.get('recording_id', scene['id'])}.recording.json")["started_at_ms"] for scene in scenes)
         recorded_on = datetime.fromtimestamp(started / 1000).astimezone().date().isoformat()
     manifest = {"recorded_on": recorded_on, "source": "Actual headless Playwright screen recordings and real CLI execution", "videos": {}}
     for language in ("en", "ko"):
@@ -397,19 +404,20 @@ def render(*, scenes=SCENES, private=PRIVATE, output=OUTPUT, prefix="workshop-su
         elapsed = 0.0
         png = edited / f"intro-{language}.png"
         segment = edited / f"intro-{language}.mp4"
-        card(png, language, topic=topic)
+        card(png, language, topic=topic, recorded_on=recorded_on)
         ffmpeg(["-loop", "1", "-i", str(png), "-t", "7", *encoding, str(segment)])
         parts.append(segment)
         elapsed += 7
         for index, scene in enumerate(scenes, 1):
-            record = load(private / f"{scene['id']}.recording.json")
+            recording_id = scene.get("recording_id", scene["id"])
+            record = load(private / f"{recording_id}.recording.json")
             raw = Path(record["path"])
             duration = float(probe(raw)["format"]["duration"])
             start = max(0, record["ready_offset_ms"] / 1000 - 0.3)
             end = duration - 0.2
             if "action_end_offset_ms" in record:
                 end = min(end, record["action_end_offset_ms"] / 1000 + 0.4)
-            command_log = private / f"{scene['id']}.commands.json"
+            command_log = private / f"{recording_id}.commands.json"
             if command_log.exists():
                 commands = load(command_log)
                 start = max(start, (commands[0]["started_at_ms"] - record["started_at_ms"]) / 1000 - 1)
@@ -430,11 +438,14 @@ def render(*, scenes=SCENES, private=PRIVATE, output=OUTPUT, prefix="workshop-su
             ])
             parts.append(segment)
             subtitles.append(f"{index}\n{stamp(elapsed)} --> {stamp(elapsed + target)}\n{scene[language][0]}\n{scene[language][1]}\n")
-            chapters.append({"start": elapsed, "duration": target, "title": scene[language][0], "scene": scene["id"]})
+            chapters.append({
+                "start": elapsed, "duration": target, "title": scene[language][0],
+                "scene": scene["id"], "source_recording_id": recording_id,
+            })
             elapsed += target
         png = edited / f"outro-{language}.png"
         segment = edited / f"outro-{language}.mp4"
-        card(png, language, True, topic=topic)
+        card(png, language, True, topic=topic, recorded_on=recorded_on)
         ffmpeg(["-loop", "1", "-i", str(png), "-t", "7", *encoding, str(segment)])
         parts.append(segment)
         elapsed += 7
@@ -443,7 +454,7 @@ def render(*, scenes=SCENES, private=PRIVATE, output=OUTPUT, prefix="workshop-su
         destination = output / f"{prefix}.{language}.mp4"
         ffmpeg(["-f", "concat", "-safe", "0", "-i", str(listing), "-map_metadata", "-1", "-c", "copy", "-movflags", "+faststart", str(destination)])
         (output / f"{prefix}.{language}.srt").write_text("\n".join(subtitles), encoding="utf-8")
-        card(output / f"{prefix}.{language}.png", language, topic=topic)
+        card(output / f"{prefix}.{language}.png", language, topic=topic, recorded_on=recorded_on)
         manifest["videos"][language] = {
             "file": destination.name, "duration_seconds": elapsed, "chapters": chapters,
             "bytes": destination.stat().st_size,

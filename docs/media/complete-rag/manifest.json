@@ -9,48 +9,55 @@
         {
           "start": 7.0,
           "duration": 18,
-          "title": "One Search service for every retrieval exercise",
-          "scene": "success-01-service"
+          "title": "Start again with a new Azure resource group",
+          "scene": "success-01-provision",
+          "source_recording_id": "rerun-00-group"
         },
         {
           "start": 25.0,
           "duration": 24,
           "title": "Start with a real failure, not a fabricated one",
-          "scene": "success-02-baseline"
+          "scene": "success-02-baseline",
+          "source_recording_id": "success-02-baseline"
         },
         {
           "start": 49.0,
           "duration": 22,
           "title": "Complete the user task, not just the first turn",
-          "scene": "success-03-prompt"
+          "scene": "success-03-prompt",
+          "source_recording_id": "success-03-prompt"
         },
         {
           "start": 71.0,
           "duration": 28,
           "title": "Prove the advanced retrieval actually runs",
-          "scene": "success-04-retrieval"
+          "scene": "success-04-retrieval",
+          "source_recording_id": "success-04-retrieval"
         },
         {
           "start": 99.0,
           "duration": 18,
           "title": "Inspect the real planned knowledge base",
-          "scene": "success-05-knowledge"
+          "scene": "success-05-knowledge",
+          "source_recording_id": "success-05-knowledge"
         },
         {
           "start": 117.0,
           "duration": 28,
           "title": "Freeze first, then test fresh scenarios",
-          "scene": "success-06-acceptance"
+          "scene": "success-06-acceptance",
+          "source_recording_id": "success-06-acceptance"
         },
         {
           "start": 145.0,
           "duration": 22,
           "title": "Keep the proof and distinguish approval",
-          "scene": "success-07-portal"
+          "scene": "success-07-portal",
+          "source_recording_id": "success-07-portal"
         }
       ],
-      "bytes": 4747515,
-      "sha256": "f2386af7cd6c9190a40a9783170c23cb2c340398db9f110c59260f620f74b2bd",
+      "bytes": 5309655,
+      "sha256": "0bb1744da127da70f10551f8808562a7811f841aaf7ebbf6d9b2f3a6d3366dfe",
       "audio": "none; localized burned-in captions and separate SRT"
     },
     "ko": {
@@ -60,48 +67,55 @@
         {
           "start": 7.0,
           "duration": 18,
-          "title": "검색 서비스 하나로 모든 검색 실습",
-          "scene": "success-01-service"
+          "title": "새 Azure 리소스 그룹부터 다시 시작",
+          "scene": "success-01-provision",
+          "source_recording_id": "rerun-00-group"
         },
         {
           "start": 25.0,
           "duration": 24,
           "title": "억지 오답이 아닌 실제 실패에서 시작",
-          "scene": "success-02-baseline"
+          "scene": "success-02-baseline",
+          "source_recording_id": "success-02-baseline"
         },
         {
           "start": 49.0,
           "duration": 22,
           "title": "첫 응답이 아니라 사용자 업무를 완료",
-          "scene": "success-03-prompt"
+          "scene": "success-03-prompt",
+          "source_recording_id": "success-03-prompt"
         },
         {
           "start": 71.0,
           "duration": 28,
           "title": "벡터와 LLM 검색 계획의 실제 실행",
-          "scene": "success-04-retrieval"
+          "scene": "success-04-retrieval",
+          "source_recording_id": "success-04-retrieval"
         },
         {
           "start": 99.0,
           "duration": 18,
           "title": "실제 계획형 Knowledge Base 확인",
-          "scene": "success-05-knowledge"
+          "scene": "success-05-knowledge",
+          "source_recording_id": "success-05-knowledge"
         },
         {
           "start": 117.0,
           "duration": 28,
           "title": "먼저 고정하고 새 시나리오로 확인",
-          "scene": "success-06-acceptance"
+          "scene": "success-06-acceptance",
+          "source_recording_id": "success-06-acceptance"
         },
         {
           "start": 145.0,
           "duration": 22,
           "title": "증거를 보존하고 운영 승인과 구분",
-          "scene": "success-07-portal"
+          "scene": "success-07-portal",
+          "source_recording_id": "success-07-portal"
         }
       ],
-      "bytes": 4581976,
-      "sha256": "8920f3ec168e55a30ae08fcbbd30d5eb7d07ea51684b018fad6e236b95c3987d",
+      "bytes": 5179905,
+      "sha256": "b6fe569d75297266257820b6a1ebb70333dc063a8274b6346d88bb4d4c3d2572",
       "audio": "none; localized burned-in captions and separate SRT"
     }
   }

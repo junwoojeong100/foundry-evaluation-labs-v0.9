@@ -4,7 +4,7 @@
 
 [Repository home](../../README.md)
 
-[English/Korean recorded summaries](../media/complete-rag/README.md) show an earlier completed example by the author. Verify your own current results through the steps below.
+[English/Korean recorded summaries](../media/complete-rag/README.md) show the **September 28, 2026 rerun starting with a new resource group**. Verify your own current results through the steps below.
 
 This is the recommended complete learning path. It uses **one Basic-or-higher Azure AI Search service** for **vector/hybrid + LLM-planned Foundry IQ retrieval**. The separate optional minimal text-RAG exercise can reuse that service too.
 
@@ -318,13 +318,13 @@ If blocked, record the failure and hold recommendation, then go to section 8. Ev
 <a id="results"></a>
 ## Result interpretation
 
-**The table below is one recorded complete-path run by the author, not a reproduction guarantee.** Use your own acceptance files for your decision. Neither this table nor its videos revalidates the separate introductory LIVE or minimal-RAG `search`/`iq` comparison in the current environment.
+**The table below records one September 28, 2026 fresh-environment complete-path run, not a reproduction guarantee.** A new group, Foundry resource, models, and Basic Search were provisioned; an isolated working copy ran the shared N01 setup smoke through final validation. Use your own acceptance files for your decision. Neither this table nor its videos revalidates the entire separate introductory LIVE path or minimal-RAG `search`/`iq` comparison in the current environment.
 
-The earlier Relevance-excluded acceptance attempt is **not the final success result**. The recorded revised iteration passed all required metrics on every final V2 case:
+The four genuine earlier V1 answers were imported and **freshly judged in the new environment**. V1 Relevance passed at 50%, with D04 and D08 scoring 3; the previous run's 100% was not copied. V2 generation and judging ran live, followed by exactly one new holdout after freezing. Instructions, criteria, and the fixture were not changed, and grades were not resampled.
 
 | Stage | Business | Retrieval | Groundedness | Relevance | Policy task success |
 |---|---|---|---|---|---|
-| Recorded V1, 4 one-turn cases | 75% | 100% | 100% | 100% | 75% |
+| Recorded V1, 4 one-turn cases, freshly judged | 75% | 100% | 100% | 50% | 75% |
 | V2 completed dev, 4 scenarios | 100% | 100% | 100% | 100% | 100% |
 | V2 planned/vector dev, 4 scenarios | 100% | 100% | 100% | 100% | 100% |
 | New frozen holdout, 8 scenarios | 100% | 100% | 100% | 100% | 100% |
@@ -342,7 +342,9 @@ Keep the shared Basic Search service, embedding/planning/answer deployments, and
 
 **The following is the author's historical migration record, not a learner deletion step.** Do not delete resources without a separate decision. Never delete the resource group or shared Foundry account to clean one Search service. Do not rewrite Git history or platform audit logs, or disable organizational policies.
 
-**Migration cleanup is complete:** the former Free service, eight superseded evaluation groups, two old comparison insights, one obsolete custom-evaluator version, the old failed deployment-history entry, and the explicitly scoped local legacy results were removed. The shared Basic service and current calibration/V1/V2/holdout evidence remain. Removing a deployment-history entry does not repair or disable an organizational policy.
+**September 28, 2026 rebuild record:** the owner explicitly requested deletion of the previous dedicated workshop group. Its deletion was verified before the rerun in a new group. Previous local results and raw recordings were preserved. Retain the new Basic service, Foundry resource, three model deployments, and current calibration/V1/V2/holdout evidence **until a separate request**. No other groups or organizational policies were changed.
+
+**Cost checkpoint:** a MonthToDate Cost Management query scoped to the new group returned no cost rows yet. This is pending cost reporting, not proof of free usage; Basic capacity and model usage can continue to incur charges. Recheck after usage is posted or when a separate cleanup decision is made.
 
 Local `config*.json`, raw recordings, and `results/` remain outside Git. The versioned prompts and sanitized teaching fixture are source material for the new lesson.
 

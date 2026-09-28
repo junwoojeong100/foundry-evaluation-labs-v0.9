@@ -2,7 +2,7 @@
 
 [English guide](../en/complete-lab.md) · [국문 가이드](../complete-lab.md)
 
-These videos show **one recorded complete-path run: genuine V1 failure → improved V2 dialogue → frozen new scenarios passing every metric, including Relevance**. They do not revalidate the separate introductory LIVE or minimal `search`/`iq` exercise, and do not guarantee the viewer's result.
+These videos summarize the **September 28, 2026 fresh-environment rerun: actual resource-group creation → genuine V1 failure → improved V2 dialogue → frozen new scenarios passing every metric, including Relevance**. Shared setup included one new N01 smoke case; the separate introductory LIVE and minimal `search`/`iq` exercises were not rerun in full. These results do not guarantee the viewer's outcome.
 
 | Language | Video | Subtitles |
 |---|---|---|
@@ -15,7 +15,7 @@ Both are 1080p captioned edits of real headless portal/CLI recordings. There is 
 
 The earlier failure-only core and minimal-RAG video assets are superseded and removed from the current tree as part of the requested cleanup. They are not presented as the current outcome. Git history is not rewritten.
 
-이 영상은 **작성자가 기록한 한 번의 완결형 실행: 공용 검색 서비스 하나, 실제 벡터·LLM 계획, Relevance를 포함한 모든 최종 V2 지표 합격**을 보여줍니다. 별도 입문 LIVE·최소 `search`/`iq` 실습을 재검증하거나 시청자의 합격을 보장하지 않습니다. 이전 실패 중심·최소 RAG 파일의 현재 트리 정리는 완료했으며 Git 이력은 변경하지 않았습니다.
+이 영상은 **2026-09-28 새 리소스 그룹부터 재실행한 완결형 경로: 실제 벡터·LLM 계획, Relevance를 포함한 모든 최종 V2 지표 합격**을 요약합니다. 공통 준비에서 N01 한 건을 새로 생성·평가했으며, 별도 입문 LIVE 전체·최소 `search`/`iq` 실습을 재검증하거나 시청자의 합격을 보장하지 않습니다. 이전 로컬 결과·원본 영상은 보관했으며 Git 이력은 변경하지 않았습니다.
 
 **Legacy authoring only:** when reusing `tools/media/workshop_video.py` with your own recorded introductory run, prepare the comparison scene with `python tools/media/workshop_video.py prepare 08-portal-compare --comparison-url "VERIFIED-FOUNDRY-COMPARE-URL"`. Copy the verified URL from Foundry **Compare runs**; missing or invalid URLs stop preparation instead of recording a terminal fallback. Other scenes and the current complete-RAG profile do not need this option.
 

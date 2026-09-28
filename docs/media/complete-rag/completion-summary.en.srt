@@ -1,7 +1,7 @@
 1
 00:00:07,000 --> 00:00:25,000
-One Search service for every retrieval exercise
-The same Basic service hosts the simple text index and the vector/planned knowledge base. Managed identity enables keyless embedding and planner calls.
+Start again with a new Azure resource group
+This is the actual creation of the new group after the owner requested deletion of the old workshop group. Foundry, models and Basic Search are newly provisioned.
 
 2
 00:00:25,000 --> 00:00:49,000

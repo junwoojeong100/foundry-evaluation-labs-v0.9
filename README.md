@@ -4,7 +4,7 @@
 
 ## Microsoft Foundry Evaluation: an end-to-end, self-guided workshop
 
-**Recommended complete path:** [Failure → V2 improvement → fresh-question validation](docs/en/complete-lab.md). It uses one shared Basic Search service, real vector/hybrid retrieval and LLM query planning. **In one recorded run**, every final V2 holdout case passed Groundedness, Relevance, policy task success, business, and retrieval checks. This does not guarantee acceptance for your run; the material below is a separate introductory path.
+**Recommended complete path:** [Failure → V2 improvement → fresh-question validation](docs/en/complete-lab.md). It uses one shared Basic Search service, real vector/hybrid retrieval and LLM query planning. **In the September 28, 2026 fresh-environment run**, every final V2 holdout case passed Groundedness, Relevance, policy task success, business, and retrieval checks. This does not guarantee acceptance for your run; the material below is a separate introductory path.
 
 Find out whether the fictional **Gaon Lab travel-expense assistant** follows policy. Evaluation means **checking AI answers against criteria chosen in advance**. The code is provided; you do not need to write Python.
 
@@ -95,7 +95,7 @@ The introductory LIVE path generates **22 responses and evaluates 44 metric item
 
 **Where: browser, then VS Code**
 
-1. On the [repository page](https://github.com/junwoojeong100/foundry-evaluation-v1), choose **Code → Download ZIP** and extract it. Skip this if you already have the files. If the repository is private, request an authorized ZIP or repository access. Azure permission and GitHub permission are separate.
+1. On the [repository page](https://github.com/junwoojeong100/foundry-evaluation-labs-v1), choose **Code → Download ZIP** and extract it. Skip this if you already have the files. If the repository is private, request an authorized ZIP or repository access. Azure permission and GitHub permission are separate.
 2. Install the tools below, then open a new terminal.
 3. In VS Code, choose **File → Open Folder** and open the folder that directly contains **`lab.py` and `requirements.txt`**, not an outer ZIP extraction directory.
 4. Choose **Terminal → New Terminal**. Enter subsequent commands there.

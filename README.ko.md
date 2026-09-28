@@ -4,7 +4,7 @@
 
 ## Microsoft Foundry Evaluation — 처음부터 끝까지 따라 하는 실습
 
-**권장 완결형 경로:** [실패 → V2 개선 → 새 질문 검증](docs/complete-lab.md). 공용 Basic 검색 서비스 하나에서 실제 벡터·하이브리드 검색과 LLM 검색 계획을 사용합니다. **기록된 한 번의 실행에서는** V2의 새 최종 사례가 Groundedness·Relevance·업무 성공도·업무·검색 검사를 모두 통과했습니다. 본인 실행의 합격을 보장하지 않으며, 아래 내용은 별도의 입문 경로입니다.
+**권장 완결형 경로:** [실패 → V2 개선 → 새 질문 검증](docs/complete-lab.md). 공용 Basic 검색 서비스 하나에서 실제 벡터·하이브리드 검색과 LLM 검색 계획을 사용합니다. **2026-09-28 새 환경 재실행에서는** V2의 새 최종 사례가 Groundedness·Relevance·업무 성공도·업무·검색 검사를 모두 통과했습니다. 본인 실행의 합격을 보장하지 않으며, 아래 내용은 별도의 입문 경로입니다.
 
 가상의 **가온랩 출장비 도우미**가 규정에 맞게 답하는지 확인합니다. Evaluation은 **미리 정한 기준으로 AI 답변을 검사하는 일**입니다. 코드는 준비되어 있으므로 Python 코드를 작성할 필요는 없습니다.
 
@@ -95,7 +95,7 @@ B가 적절합니다. 240000원은 **미승인 초안**의 금액입니다. A는
 
 **실행 위치: 웹 브라우저 → VS Code**
 
-1. [저장소](https://github.com/junwoojeong100/foundry-evaluation-v1)의 **Code → Download ZIP**을 선택하고 압축을 풉니다. 이미 받았다면 생략합니다. 비공개 저장소에 접근할 수 없다면 소유자가 승인한 ZIP을 받습니다. Azure 권한과 GitHub 권한은 별개입니다.
+1. [저장소](https://github.com/junwoojeong100/foundry-evaluation-labs-v1)의 **Code → Download ZIP**을 선택하고 압축을 풉니다. 이미 받았다면 생략합니다. 비공개 저장소에 접근할 수 없다면 소유자가 승인한 ZIP을 받습니다. Azure 권한과 GitHub 권한은 별개입니다.
 2. 아래 도구를 설치합니다. 설치 후에는 새 터미널을 엽니다.
 3. VS Code에서 **File → Open Folder**로 **`lab.py`와 `requirements.txt`가 바로 보이는 폴더**를 엽니다. 압축을 푼 바깥 폴더가 아니라 실제 파일이 있는 폴더입니다.
 4. **Terminal → New Terminal**을 선택합니다. 이후 명령은 이 터미널에 입력합니다.

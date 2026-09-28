@@ -33,7 +33,7 @@ B가 적절합니다. 240000원은 미승인 초안의 금액이며, 공식 한�
 <a id="prepare"></a>
 ## 준비. 코드와 터미널 준비
 
-1. [저장소](https://github.com/junwoojeong100/foundry-evaluation-v1)의 **Code → Download ZIP**으로 코드를 받아 압축을 풉니다. 접근 권한이 없다면 소유자가 승인한 ZIP을 받습니다. 이미 받았다면 생략합니다.
+1. [저장소](https://github.com/junwoojeong100/foundry-evaluation-labs-v1)의 **Code → Download ZIP**으로 코드를 받아 압축을 풉니다. 접근 권한이 없다면 소유자가 승인한 ZIP을 받습니다. 이미 받았다면 생략합니다.
 2. [Python 3.10 이상](https://www.python.org/downloads/)과 [VS Code](https://code.visualstudio.com/)를 설치합니다. Windows에서는 Python 설치 시 PATH 추가를 선택합니다.
 3. VS Code의 **File → Open Folder**에서 `lab.py`가 바로 보이는 폴더를 열고 **Terminal → New Terminal**을 선택합니다.
 4. 아래에서 본인 운영체제의 블록만 실행합니다. 이미 LIVE 준비에서 가상환경을 만들었다면 생성은 생략하고 활성화만 합니다.

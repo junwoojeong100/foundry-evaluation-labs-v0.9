@@ -368,7 +368,7 @@ Direct dependencies are pinned, not a full transitive/hash lockfile.
 
 Current Learn examples may use `azure-ai-projects>=2.2.0` and `DefaultAzureCredential`; **this repository's contract is the exact pins above and `AzureCliCredential`**. Do not upgrade or switch authentication merely to match a general example. `beta.evaluators` is a preview API, so do not call the whole workflow GA. The separate Search paths use `2026-04-01` for minimal/extractive retrieval and `2026-08-01-preview` for LLM planning; these are not project API versions.
 
-**Recorded configuration:** the September 27, 2026 run used `gpt-6-luna` version `2026-09-22` in `swedencentral`, GlobalStandard 60K TPM. See the [complete-path result](complete-lab.md#results). Current availability, including other subscriptions/regions, must be checked separately.
+**Recorded configuration:** the September 28, 2026 fresh-environment complete-path run used `gpt-6-luna` version `2026-09-22` in `swedencentral`, GlobalStandard 60K TPM. See the [complete-path result](complete-lab.md#results). Current availability, including other subscriptions/regions, must be checked separately.
 
 Local tests check authored examples, gate behavior, missing/tampered evidence, docs/JSONL contracts, and installed SDK request/response shapes with an in-memory transport. They do not by themselves validate real permissions, capacity, billing, or current portal UI.
 
@@ -381,7 +381,7 @@ SDK tests run when dependencies are installed; otherwise only those tests are sk
 <a id="live-verification"></a>
 ### Evidence scope by learning path
 
-Cleanup of the author's earlier introductory failure/validation records is complete, and they are removed from the current guide. The [recorded complete-path result](complete-lab.md#results), with every final V2 metric passing including Relevance, is **one observation from a separate vector/planning/dialogue experiment**. It does not revalidate introductory LIVE or minimal RAG in the current environment.
+Keep the author's earlier introductory records separate. On September 28, 2026, a new group was used to rerun **the shared N01 setup smoke and the entire recommended complete path**. The [recorded complete-path result](complete-lab.md#results), with every final V2 metric passing including Relevance, is **one observation from a separate vector/planning/dialogue experiment**. It does not revalidate the entire introductory LIVE path or minimal RAG in the current environment.
 
 The retained V1 comparison, calibration, and acceptance evidence belongs to that complete-path run only. Use reports from your own path; do not treat another execution's scores as a reproduction target.
 

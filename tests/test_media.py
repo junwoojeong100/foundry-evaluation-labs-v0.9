@@ -106,6 +106,78 @@ class MediaTests(unittest.TestCase):
         self.assertIn("Relevance", dialogue["en"][1])
         self.assertEqual(stamp(65.25), "00:01:05,250")
 
+    def test_provisioning_summary_requires_the_original_creation_recording(self):
+        scene = SCENES[0]
+        self.assertEqual(scene["recording_id"], "rerun-00-group")
+        self.assertEqual(scene["kind"], "recorded")
+        with patch.object(media, "project_context") as context:
+            with self.assertRaisesRegex(ValueError, "pre-recorded footage"):
+                media.prepare(scene["id"], scenes=SCENES)
+            context.assert_not_called()
+
+    def test_recorder_accepts_quality_block_but_not_failed_calibration(self):
+        for command, allowed in (
+            ("python advanced_lab.py accept", True),
+            ("python advanced_lab.py calibrate", False),
+        ):
+            with self.subTest(command=command), tempfile.TemporaryDirectory() as temporary:
+                private = Path(temporary)
+                media.save(private / "context.json", {"group": "test", "subscription": "test", "redact": []})
+                media.save(private / "work/terminal.json", {"lines": [], "status": "Ready"})
+                scenes = [{"id": "decision", "kind": "terminal", "commands": [command]}]
+                with (
+                    patch.object(media.subprocess, "Popen") as popen,
+                    patch.object(media.time, "sleep"),
+                    redirect_stdout(io.StringIO()),
+                ):
+                    popen.return_value.stdout = io.StringIO("LAB_ACCEPTANCE_BLOCKED\n")
+                    popen.return_value.wait.return_value = 2
+                    if allowed:
+                        media.run_scene("decision", scenes=scenes, private=private)
+                    else:
+                        with self.assertRaisesRegex(RuntimeError, "exit 2"):
+                            media.run_scene("decision", scenes=scenes, private=private)
+                state = media.load(private / "work/terminal.json")
+                if allowed:
+                    self.assertEqual(state["status"], "BLOCK is a quality decision, not an execution error")
+                else:
+                    self.assertIn("Execution error", state["status"])
+
+    def test_render_uses_original_recording_timing_and_dated_cards(self):
+        scene = SCENES[0]
+        with tempfile.TemporaryDirectory() as temporary:
+            private = Path(temporary) / "private"
+            output = Path(temporary) / "output"
+            raw = private / "raw" / "original.webm"
+            media.save(private / "rerun-00-group.recording.json", {
+                "path": str(raw), "started_at_ms": 10000, "ready_offset_ms": 1000,
+                "action_end_offset_ms": 19000,
+            })
+            media.save(private / "rerun-00-group.commands.json", [{
+                "started_at_ms": 12000, "finished_at_ms": 22000,
+            }])
+            with (
+                patch.object(media, "card") as card,
+                patch.object(media, "overlay"),
+                patch.object(media, "probe", return_value={"format": {"duration": "20"}}),
+                patch.object(media, "ffmpeg", side_effect=lambda args: Path(args[-1]).write_bytes(b"test-video")) as ffmpeg,
+                redirect_stdout(io.StringIO()),
+            ):
+                media.render(
+                    scenes=[scene], private=private, output=output,
+                    prefix="test", topic="success", recorded_on="2026-09-28",
+                )
+            manifest = media.load(output / "manifest.json")
+            self.assertEqual(manifest["recorded_on"], "2026-09-28")
+            for language in ("en", "ko"):
+                chapter = manifest["videos"][language]["chapters"][0]
+                self.assertEqual(chapter["source_recording_id"], "rerun-00-group")
+                self.assertEqual(chapter["scene"], scene["id"])
+            segments = [call.args[0] for call in ffmpeg.call_args_list if str(raw) in call.args[0]]
+            self.assertEqual(len(segments), 2)
+            self.assertTrue(all(args[:4] == ["-ss", "1.000", "-t", "16.000"] for args in segments))
+            self.assertTrue(all(call.kwargs["recorded_on"] == "2026-09-28" for call in card.call_args_list))
+
     def test_current_videos_subtitles_and_posters_match_the_manifest(self):
         manifest = json.loads((MEDIA / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(set(manifest["videos"]), {"en", "ko"})
@@ -128,6 +200,7 @@ class MediaTests(unittest.TestCase):
                 for chapter, scene in zip(entry["chapters"], SCENES):
                     self.assertEqual(chapter["start"], previous_end)
                     self.assertEqual(chapter["duration"], scene["seconds"])
+                    self.assertEqual(chapter["source_recording_id"], scene.get("recording_id", scene["id"]))
                     self.assertIn(stamp(chapter["start"]), subtitle)
                     previous_end += chapter["duration"]
                 self.assertEqual(previous_end + 7, 174)
