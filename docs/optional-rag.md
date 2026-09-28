@@ -4,6 +4,8 @@
 
 [기본 실습](../README.ko.md) · [영문 기본 가이드](../README.md)
 
+**바로 이동:** [공통 준비](#prerequisites) · [두 검색 경로](#retrieval-routes) · [중단·재개](#resume) · [문제 해결](#troubleshooting)
+
 **같은 질문을 두 검색 경로로 실행하고, 검색 품질과 답변 품질을 따로 비교합니다.** 전체 규정을 전달하는 입문과 달리 **실제 검색된 문서만** 답변 모델과 Groundedness 평가기에 전달합니다.
 
 | 한눈에 보기 | 이 경로에서 할 일 |
@@ -32,7 +34,22 @@
 | [5. 생성·평가·비교](#evaluate) | 경로별 답변 4개 평가·D04 확인 | `REVIEW_REQUIRED`·비교 보고서 |
 | [6. 마무리](#evidence) | 원본 증거·자원·비용 확인 | 완료 체크리스트 |
 
-[중단·재개](#resume) · [문제 해결](#troubleshooting) · [공식 출처](#sources)
+<a id="reading-guide"></a>
+### 가이드 읽는 법
+
+**할 일 → 명령 실행 → 완료 확인 → 다음 단계** 순서로 진행합니다.
+
+| 표시 | 읽는 방법 |
+|---|---|
+| `bash` 코드 블록 | 터미널에서 실행할 명령. 한 명령씩 복사하고 입력을 다시 받을 때까지 기다림 |
+| `text` 코드 블록 | 설명용 도식. 명령으로 실행하지 않음 |
+| `YOUR-...` | 본인 환경에서 확인한 값으로 바꿀 자리. 따옴표는 유지 |
+| **완료 확인** | 다음으로 가기 전에 확인할 메시지·건수·결과 |
+| 접힌 설명 | 예외 상황·추가 배경. 필요한 항목만 펼쳐 읽기 |
+
+**실행 위치:** `rag_lab.py`가 있는 폴더의 활성화된 가상환경입니다. 긴 명령도 **한 줄 전체를 복사**하며 중간에 Enter를 넣지 않습니다. 결과 폴더는 자동 생성되고 `.md` 보고서는 VS Code의 Markdown 미리보기로 읽습니다.
+
+**지금 시작:** 아래의 [두 검색 경로](#retrieval-routes)를 읽고 [1. 공통 준비](#prerequisites)로 진행합니다. [공식 출처](#sources)는 필요할 때만 확인합니다.
 
 <a id="retrieval-routes"></a>
 ## 두 검색 경로 이해하기
@@ -74,15 +91,32 @@
 <a id="prerequisites"></a>
 ## 1. 준비와 비용
 
-[README 준비 1–7](../README.ko.md#prepare)의 가상환경·`requirements.txt`·실제 `config.json`·모델 배포와 한 건의 생성/평가 확인이 필요합니다. 기존 환경은 [기존 환경 준비](setup.md#existing-environment)를 사용합니다. **공통 준비가 끝나면 이 절로 돌아오며 입문 실습 1–6을 먼저 실행할 필요는 없습니다.** 새 에이전트 서버·Docker·Storage·임베딩 배포는 만들지 않습니다.
+### 1-1. 공통 준비 후 이 문서로 돌아오기
 
-이후 명령은 저장소 루트(`rag_lab.py`가 있는 폴더)의 활성화된 가상환경에서 한 개씩 실행합니다. 결과 폴더는 자동으로 만들어집니다.
+**본인 환경에 맞는 한 경로만 수행합니다.**
+
+| 내 환경 | 수행할 공통 준비 |
+|---|---|
+| 새 환경이 필요함 | [README 준비 1–7](../README.ko.md#prepare) |
+| 허가된 프로젝트·모델이 이미 있음 | [기존 환경 준비](setup.md#existing-environment). 신규 생성 생략 |
+
+선택한 경로에서 가상환경·패키지·`config.json`·모델 배포와 한 건의 생성·평가를 확인합니다.
+
+**공통 준비가 끝나면 이 절로 돌아옵니다.** 입문 실습 1–6을 먼저 실행할 필요는 없습니다.
+
+새 에이전트 서버·Docker·Storage·임베딩 배포는 만들지 않습니다. 가상환경을 활성화한 터미널에서 연결을 조회합니다.
 
 ```bash
 python lab.py doctor --live
 ```
 
-`gpt-6-luna`와 `eval-model`의 `LIVE 조회 OK`를 확인합니다. 이는 로그인·모델 배포 조회만 확인하며 **평가기 조회·Search 준비·실제 생성·채점 성공까지 확인하지는 않습니다.** 생성·채점은 공통 준비의 한 건 실행에서, Search는 아래 단계에서 확인합니다. 포털과 CLI가 같은 계정·테넌트·구독인지 기본 가이드에서 대조합니다.
+**완료 확인:** `gpt-6-luna`와 `eval-model`의 `LIVE 조회 OK`.
+
+이 조회는 로그인·모델 배포만 확인합니다. **평가기 조회·Search 준비·실제 생성·채점 성공까지 확인하지는 않습니다.** 생성·채점은 공통 준비의 한 건 실행에서, Search는 아래 단계에서 확인합니다.
+
+포털과 CLI가 같은 계정·테넌트·구독인지 기본 가이드에서 대조합니다.
+
+### 1-2. Search 비용과 권한 확인하기
 
 **허가된 Basic 이상 검색 서비스가 있으면 재사용**합니다. 완결형에서 만든 서비스도 가능하지만 필수는 아니며, 없다면 2절에서 하나만 만듭니다. 서비스는 공유해도 검색 객체 이름은 두 실습에서 구분합니다. semantic/knowledge retrieval의 Free 요금제와 서비스 SKU는 별개이며, **Basic 서비스는 유지 비용이 발생**합니다. 새 서비스를 자동으로 추가하지 않습니다.
 
@@ -120,6 +154,8 @@ az search service create --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RE
 <a id="search-access"></a>
 ### 2-2. 사용자 ID와 Search 역할 확인
 
+#### Search 리소스 ID 확인하기
+
 신규·기존 서비스 모두 실제 ID를 조회합니다.
 
 ```bash
@@ -128,17 +164,27 @@ az search service show --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RESO
 
 `Succeeded/succeeded`, `swedencentral`, Basic 이상 SKU, `disableLocalAuth: true`를 확인합니다. `semanticSearch`는 `free` 또는 이미 승인된 `standard`여야 합니다. 기존 설정 변경은 소유자 승인 없이 하지 않습니다. 아래 `YOUR-SEARCH-RESOURCE-ID`는 이 `id`이며 `/providers/Microsoft.Search/searchServices/...`로 끝납니다.
 
+#### 본인의 사용자 Object ID 확인하기
+
 현재 로그인한 **본인의 사용자 Object ID**를 조회합니다. 기본 포털 준비에서 기록한 프로젝트 관리 ID와는 다릅니다.
 
 ```bash
 az ad signed-in-user show --query "{account:userPrincipalName,objectId:id}" --output json
 ```
 
-`account`가 사용할 테넌트의 본인인지 확인한 뒤, **`objectId`를 `YOUR-USER-OBJECT-ID`에 사용**합니다. 프로젝트나 Search 관리 ID를 넣지 않습니다. 조회가 제한되면 환경 소유자에게 같은 테넌트의 본인 ID 대조를 요청합니다. Search의 **Access control (IAM)**에서 상속된 역할까지 확인하고, 다음 역할은 **Search 서비스 범위에서만**, 기존 역할이 없는 경우에만 할당합니다.
+`account`가 사용할 테넌트의 본인인지 확인한 뒤, **`objectId`를 `YOUR-USER-OBJECT-ID`에 사용**합니다. 프로젝트나 Search 관리 ID를 넣지 않습니다. 조회가 제한되면 환경 소유자에게 같은 테넌트의 본인 ID 대조를 요청합니다.
+
+#### 없는 역할만 Search 서비스 범위에 할당하기
+
+Search의 **Access control (IAM)**에서 상속된 역할까지 확인합니다. 다음 역할은 **Search 서비스 범위에서만**, 기존 역할이 없는 경우에만 할당합니다.
+
+**역할 1 — Search Service Contributor**
 
 ```bash
 az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "7ca78c08-252a-4471-8644-bb5ff32d4ba0" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
 ```
+
+**역할 2 — Search Index Data Contributor**
 
 ```bash
 az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "8ebe5a00-799e-43f5-93ac-243d3dce84a7" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
@@ -154,6 +200,8 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 
 <a id="index"></a>
 ## 3. 실제 인덱스와 Foundry IQ Knowledge Base 생성
+
+### 3-1. 설정 파일 만들기
 
 1. VS Code에서 [설정 예제](../optional-rag/config.example.json)를 엽니다.
 2. **File → Save As**로 **`rag_lab.py` 옆 `config.rag.json`**에 저장합니다. 이미 본인 설정이 있으면 덮어쓰지 말고 확인합니다.
@@ -175,13 +223,19 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 
 **설정 구분:** `config.json`에는 공통 준비의 프로젝트 주소(`.services.ai.azure.com/api/projects/...`), `config.rag.json`에는 Search 주소(`.search.windows.net`)가 들어갑니다. 두 파일을 합치거나 같은 주소를 양쪽에 넣지 않습니다. [JSON 편집 요령](../README.ko.md#setup-config)처럼 안내한 값만 수정하고 저장합니다.
 
+### 3-2. 검색 객체 생성하기
+
 ```bash
 python rag_lab.py setup
 ```
 
 코드는 기존 세 객체의 정의를 먼저 대조한 뒤 인덱스 생성 → 문서 업로드 → Knowledge Source → Knowledge Base 순서로 없는 객체를 만듭니다.
 
-**완료 확인:** `SETUP OK: 7 chunks, 4 evaluation cases`. `results/rag-setup.json`에 실제 인덱스, Knowledge Source, Knowledge Base 정의가 저장됩니다. 검색 성공은 다음 절의 두 질의로 별도 확인합니다.
+**완료 확인:** `SETUP OK: 7 chunks, 4 evaluation cases`.
+
+**저장 파일:** `results/rag-setup.json`에 실제 인덱스·Knowledge Source·Knowledge Base 정의가 남습니다. 검색 성공은 다음 절의 두 질의로 별도 확인합니다.
+
+### 3-3. 생성한 객체의 범위 이해하기
 
 [청크](../optional-rag/documents.jsonl)는 기본 가상 규정을 7개 문서로 나눕니다. 공식 청크 6개와 미승인 초안 1개이며, 검색 요청의 **`approved eq true`** 필터로 초안을 제외합니다. `corpus_hash` 필터는 같은 코퍼스 버전만 사용하게 합니다. 한국어 분석기와 semantic 구성이 포함됩니다.
 
@@ -204,7 +258,9 @@ python rag_lab.py setup
 python rag_lab.py query --mode search --query "2026년 9월 국내 숙박비가 220000원이고 사전 승인이 없습니다. 정산 가능한가요?" --out results/rag-query-search.json
 ```
 
-**완료 확인:** `RETRIEVAL OK: search`와 선택된 청크 ID가 보이고 `results/rag-query-search.json`이 저장됩니다. 오류라면 여기서 해결하고, 완료 후에만 같은 질문으로 IQ를 조회합니다.
+**완료 확인:** `RETRIEVAL OK: search`, 선택된 청크 ID, `results/rag-query-search.json` 저장.
+
+오류라면 여기서 해결합니다. 완료 후에만 같은 질문으로 IQ를 조회합니다.
 
 ### 4-2. 같은 질문으로 Knowledge Base 조회하기
 
@@ -212,7 +268,16 @@ python rag_lab.py query --mode search --query "2026년 9월 국내 숙박비가 
 python rag_lab.py query --mode iq --query "2026년 9월 국내 숙박비가 220000원이고 사전 승인이 없습니다. 정산 가능한가요?" --out results/rag-query-iq.json
 ```
 
-**완료 확인:** `RETRIEVAL OK: iq`, 선택된 청크 ID·공식 `source_id`·점수와 **`searchIndex` 활동**이 보이고 `results/rag-query-iq.json`이 저장됩니다. 저장한 JSON의 `raw_response`가 실제 서비스 응답이며 IQ 원본 참조/문서 데이터를 포함하고, `documents`가 모델에 전달할 선택 결과입니다. 두 질의는 답변을 생성하거나 Judge를 실행하지 않습니다.
+**완료 확인:** `RETRIEVAL OK: iq`와 `results/rag-query-iq.json` 저장.
+
+**확인할 증거:** 선택된 청크 ID·공식 `source_id`·점수와 **`searchIndex` 활동**을 확인합니다.
+
+| 저장된 JSON 항목 | 의미 |
+|---|---|
+| `raw_response` | 실제 서비스 응답. IQ 원본 참조·문서 데이터 포함 |
+| `documents` | 모델에 전달할 선택 결과 |
+
+두 질의는 **검색만 확인**하며 답변을 생성하거나 Judge를 실행하지 않습니다.
 
 | ID | 의미 |
 |---|---|
@@ -239,13 +304,17 @@ IQ는 `intents` 입력을 사용합니다. 앱은 반환된 승인 문서 중 �
 python rag_lab.py run --mode search --out results/rag-search
 ```
 
-`LIVE RAG generation complete: 4 answers`와 `results/rag-search/run.json`의 `status: complete`를 확인하고 채점합니다. 생성 완료는 업무 검사 통과와 다릅니다.
+**완료 확인:** `LIVE RAG generation complete: 4 answers`와 `results/rag-search/run.json`의 `status: complete`.
+
+생성 완료는 업무 검사 통과와 다릅니다. 이제 저장된 답변을 채점합니다.
 
 ```bash
 python lab.py judge results/rag-search
 ```
 
-**`평가 완료: 4개 답변 × 2개 지표`**까지 기다립니다. 대기 중이면 같은 명령을 재실행합니다. 중단·오류는 [재개 표](#resume)를 따릅니다.
+**완료 확인:** `평가 완료: 4개 답변 × 2개 지표`.
+
+대기 중이면 같은 명령을 재실행합니다. 중단·오류는 [재개 표](#resume)를 따릅니다.
 
 ### 5-2. IQ 답변 4개 생성·같은 Judge로 채점하기
 
@@ -253,13 +322,17 @@ python lab.py judge results/rag-search
 python rag_lab.py run --mode iq --out results/rag-iq
 ```
 
-**`LIVE RAG generation complete: 4 answers`**가 나온 뒤에만 아래 채점 명령으로 갑니다.
+**완료 확인:** `LIVE RAG generation complete: 4 answers`.
+
+완료 후에만 아래 채점 명령으로 갑니다.
 
 ```bash
 python lab.py judge results/rag-iq --like results/rag-search
 ```
 
-IQ도 4개 생성 완료 후 **`평가 완료: 4개 답변 × 2개 지표`**를 확인합니다. `--like`는 Search의 완료된 Judge 모델·평가기 계약을 유지하며, 검색 문맥이나 답변을 복사하지 않습니다.
+**완료 확인:** `평가 완료: 4개 답변 × 2개 지표`.
+
+`--like`는 Search의 완료된 Judge 모델·평가기 계약을 유지합니다. 검색 문맥이나 답변을 복사하지 않습니다.
 
 ### 5-3. 두 경로 비교하기
 
@@ -277,6 +350,8 @@ python rag_lab.py inspect results/rag-iq D04
 
 **읽는 순서:** 실제 검색 청크 → 기대 청크 누락 → 답변 JSON → 업무 검사 → Groundedness/Relevance 이유입니다. Judge에 전달되는 `context`는 **그 답변을 생성할 때 사용한 검색 문맥과 동일**합니다.
 
+#### 답변의 결정과 설명 읽기
+
 | 답변 필드 | 읽는 법 |
 |---|---|
 | `decision` | 규정상 결정 |
@@ -288,6 +363,8 @@ python rag_lab.py inspect results/rag-iq D04
 
 결정은 `allowed`(허용), `needs_approval`(사전 승인 필요), `not_allowed`(금지), `unknown`(규정에 없음), `needs_info`(질문 정보 부족) 중 하나입니다. D04처럼 규정에 없는 한도에 `unknown`으로 답하는 것이 올바를 수도 있습니다. 이 값이 실제 정산이나 승인을 실행하지는 않습니다.
 
+#### 검색 지표와 답변 지표 구분하기
+
 | 지표 | 의미와 한계 |
 |---|---|
 | Required-chunk Recall@3 | 필요한 청크 중 모델에 전달된 청크의 비율 |
@@ -297,7 +374,15 @@ python rag_lab.py inspect results/rag-iq D04
 | Relevance | 질문을 적절히 다루는가. 올바른 정보 부족 처리도 낮게 채점될 수 있음 |
 | Citation IDs linked | 인용 ID가 검색 문서에 존재하는가. 의미상 뒷받침까지 보장하지 않음 |
 
-`results/rag-iq/rag-comparison.md`·`.json`과 각 폴더의 `rag-report.md`, `retrieval-metrics.json`을 확인합니다. 비교의 종료 코드 0은 비교 파일을 만들었다는 뜻이며 **상태는 항상 `REVIEW_REQUIRED`**입니다. `issues`가 비어 있어도 출시 승인이나 IQ 우수성 증명이 아닙니다. `issues`에는 80% 미만 지표와 중요 사례 실패가 표시되고 Judge 통과 기준은 4/5입니다. 실제 문맥·채점 이유를 사람이 검토합니다.
+**읽을 파일:** `results/rag-iq/rag-comparison.md`·`.json`과 각 폴더의 `rag-report.md`, `retrieval-metrics.json`.
+
+| 결과 | 해석 |
+|---|---|
+| 비교 종료 코드 `0` | 비교 파일 생성 완료 |
+| `REVIEW_REQUIRED` | 항상 사람 검토 필요. 출시 승인이나 IQ 우수성 증명이 아님 |
+| `issues` | 80% 미만 지표·중요 사례 실패. 비어 있어도 자동 승인 아님 |
+
+Judge 통과 기준은 **4/5**입니다. 실제 문맥과 채점 이유를 사람이 검토합니다.
 
 기본 `lab.py compare/gate`는 고정 문서 실험용이므로 RAG 입력을 거부합니다. RAG는 위 전용 비교를 사용합니다. 기본 실습과 이 실습의 결과·합격률을 하나의 전후 실험처럼 합치지 않습니다.
 

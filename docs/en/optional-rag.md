@@ -4,6 +4,8 @@
 
 [Core workshop](../../README.md) · [Korean core guide](../../README.ko.md)
 
+**Jump to:** [Shared setup](#prerequisites) · [Retrieval routes](#retrieval-routes) · [Resume](#resume) · [Troubleshooting](#troubleshooting)
+
 **Run the same questions through two retrieval routes and compare retrieval and answer quality separately.** Unlike the full-policy introduction, **only actually retrieved documents** reach the answer model and Groundedness judge.
 
 | At a glance | This path |
@@ -32,7 +34,22 @@
 | [5. Generate, evaluate, compare](#evaluate) | Judge four answers per route and inspect D04 | `REVIEW_REQUIRED` and comparison report |
 | [6. Finish](#evidence) | Verify evidence, resources, and costs | Completion checklist |
 
-[Resume](#resume) · [Troubleshooting](#troubleshooting) · [Official sources](#sources)
+<a id="reading-guide"></a>
+### How to read this guide
+
+**Follow the action → command → checkpoint → next step.**
+
+| Marker | How to use it |
+|---|---|
+| `bash` code block | Terminal commands. Copy one command at a time and wait for the prompt to return |
+| `text` code block | Explanatory diagram, not a command to execute |
+| `YOUR-...` | Replace with a value verified in your environment; keep quotation marks |
+| **Checkpoint** | The message, count, or result to check before continuing |
+| Collapsed explanation | Exceptions or background; expand when needed |
+
+**Where to run:** the folder containing `rag_lab.py`, with the virtual environment active. Copy each long command as **one complete line**, without inserting Enter in the middle. Output folders are automatic; read `.md` reports in VS Code's Markdown preview.
+
+**Start here:** read the [two retrieval routes](#retrieval-routes) below, then continue to [1. Shared setup](#prerequisites). Use [official sources](#sources) only when needed.
 
 <a id="retrieval-routes"></a>
 ## Understand the two retrieval routes
@@ -74,15 +91,32 @@ The [English/Korean vector and LLM-planned RAG summaries](../media/complete-rag/
 <a id="prerequisites"></a>
 ## 1. Prerequisites and cost
 
-Complete [README setup 1–7](../../README.md#prepare): the virtual environment, `requirements.txt`, real `config.json`, model deployment, and one-case generation/evaluation check. For an existing environment, use [existing-environment setup](setup.md#existing-environment). **Return to this section after shared setup; introductory activities 1–6 are not required first.** No agent server, Docker, Storage, or embedding deployment is added.
+### 1-1. Complete shared setup and return here
 
-Run each command from the repository root containing `rag_lab.py`, with the virtual environment activated. Commands create result directories.
+**Follow only the route that matches your environment.**
+
+| Your environment | Shared setup to follow |
+|---|---|
+| You need a new environment | [README setup 1–7](../../README.md#prepare) |
+| An authorized project and model already exist | [Existing-environment setup](setup.md#existing-environment); skip creation |
+
+In your chosen route, verify the virtual environment, packages, `config.json`, model deployment, and one-case generation/evaluation check.
+
+**Return to this section after shared setup.** Introductory activities 1–6 are not prerequisites.
+
+Do not add an agent server, Docker, Storage, or an embedding deployment. With the virtual environment active, check connectivity:
 
 ```bash
 python lab.py doctor --live
 ```
 
-Confirm `LIVE 조회 OK` for `gpt-6-luna` / `eval-model`. This checks only authentication and model-deployment lookup, **not evaluator lookup, Search setup, or successful generation/judging**. The shared one-case smoke check covers generation/judging; the steps below check Search. Match the portal and CLI account, tenant, and subscription using the core guide.
+**Checkpoint:** `LIVE 조회 OK` for `gpt-6-luna` / `eval-model`.
+
+This checks only authentication and model-deployment lookup, **not evaluator lookup, Search setup, or successful generation/judging**. The shared one-case smoke check covers generation/judging; the steps below check Search.
+
+Match the portal and CLI account, tenant, and subscription using the core guide.
+
+### 1-2. Verify Search costs and permissions
 
 **Reuse an authorized Basic-or-higher Search service if available.** It can be the complete lab's service, but that is not required; otherwise create just one in section 2. Share the service, not the two exercises' object names. Free semantic/knowledge-retrieval plans are separate from the service SKU: **Basic still has ongoing service charges**. Do not automatically create another Search service.
 
@@ -120,6 +154,8 @@ This **disables API keys**. Do not retrieve or store keys. You can record `retai
 <a id="search-access"></a>
 ### 2-2. Verify user ID and Search roles
 
+#### Find the Search resource ID
+
 For both new and existing services, retrieve the actual resource ID:
 
 ```bash
@@ -128,17 +164,27 @@ az search service show --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RESO
 
 Confirm `Succeeded/succeeded`, `swedencentral`, a Basic-or-higher SKU, and `disableLocalAuth: true`. `semanticSearch` must be `free` or an already approved `standard` plan. Do not change existing settings without the owner's approval. Use the returned `id`, ending in `/providers/Microsoft.Search/searchServices/...`, as `YOUR-SEARCH-RESOURCE-ID`.
 
+#### Find your user Object ID
+
 Look up the currently signed-in **user Object ID**. It is not the project identity recorded during portal setup:
 
 ```bash
 az ad signed-in-user show --query "{account:userPrincipalName,objectId:id}" --output json
 ```
 
-Verify that `account` identifies you in the intended tenant, then use **`objectId` as `YOUR-USER-OBJECT-ID`**. Do not substitute the project or Search managed identity. If directory lookup is restricted, ask the environment owner to verify your user ID in that tenant. Check **Access control (IAM)** on Search, including inherited roles, then grant the following roles at the **Search service scope only**, and only if missing:
+Verify that `account` identifies you in the intended tenant, then use **`objectId` as `YOUR-USER-OBJECT-ID`**. Do not substitute the project or Search managed identity. If directory lookup is restricted, ask the environment owner to verify your user ID in that tenant.
+
+#### Assign only missing roles at the Search service scope
+
+Check Search **Access control (IAM)**, including inherited roles. Grant the following roles at the **Search service scope only**, and only if missing.
+
+**Role 1 — Search Service Contributor**
 
 ```bash
 az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "7ca78c08-252a-4471-8644-bb5ff32d4ba0" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
 ```
+
+**Role 2 — Search Index Data Contributor**
 
 ```bash
 az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "8ebe5a00-799e-43f5-93ac-243d3dce84a7" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
@@ -154,6 +200,8 @@ The roles are **Search Service Contributor**, which permits service configuratio
 
 <a id="index"></a>
 ## 3. Create the index and actual Foundry IQ knowledge objects
+
+### 3-1. Create the configuration file
 
 1. In VS Code, open [the configuration example](../../optional-rag/config.example.json).
 2. Use **File → Save As** to create **`config.rag.json` beside `rag_lab.py`**. Check an existing personal configuration rather than overwriting it.
@@ -175,13 +223,19 @@ The three object names above are defaults. **Before running on a shared service*
 
 **Keep the configurations distinct:** `config.json` holds the shared-setup project endpoint (`.services.ai.azure.com/api/projects/...`); `config.rag.json` holds the Search endpoint (`.search.windows.net`). Do not merge the files or put the same endpoint in both. Follow the shared [JSON editing guidance](../../README.md#setup-config), changing only the specified values and saving the file.
 
+### 3-2. Create search objects
+
 ```bash
 python rag_lab.py setup
 ```
 
 The code first compares all three existing object definitions, then creates a missing index, uploads documents, and creates any missing Knowledge Source and Knowledge Base.
 
-**Checkpoint:** `SETUP OK: 7 chunks, 4 evaluation cases`. `results/rag-setup.json` contains actual index, Knowledge Source, and Knowledge Base definitions. Verify retrieval separately with both queries in the next section.
+**Checkpoint:** `SETUP OK: 7 chunks, 4 evaluation cases`.
+
+**Saved file:** `results/rag-setup.json` contains actual index, Knowledge Source, and Knowledge Base definitions. Verify retrieval separately with both queries in the next section.
+
+### 3-3. Understand the created objects' scope
 
 The [corpus](../../optional-rag/documents.jsonl) divides the fictional policy into seven chunks: six official chunks and one unapproved draft. **`approved eq true`** excludes the draft; a `corpus_hash` filter fixes the corpus version. The index includes a Korean analyzer and semantic configuration. Both language guides use the same Korean inputs.
 
@@ -204,7 +258,9 @@ Setup resumes incomplete uploads for the same corpus, but does not overwrite obj
 python rag_lab.py query --mode search --query "2026년 9월 국내 숙박비가 220000원이고 사전 승인이 없습니다. 정산 가능한가요?" --out results/rag-query-search.json
 ```
 
-**Checkpoint:** `RETRIEVAL OK: search`, selected chunk IDs, and the saved `results/rag-query-search.json`. Resolve any error here; only after completion, query IQ with the same question.
+**Checkpoint:** `RETRIEVAL OK: search`, selected chunk IDs, and the saved `results/rag-query-search.json`.
+
+Resolve any error here. Only after completion, query IQ with the same question.
 
 ### 4-2. Query the Knowledge Base with the same question
 
@@ -214,7 +270,16 @@ python rag_lab.py query --mode iq --query "2026년 9월 국내 숙박비가 2200
 
 The question asks about a September domestic hotel expense of KRW 220000 without prior approval.
 
-**Checkpoint:** `RETRIEVAL OK: iq`, selected chunk IDs, official source IDs, scores, **`searchIndex` activity**, and the saved `results/rag-query-iq.json`. The JSON's `raw_response` is the actual service response, including IQ reference/source data; `documents` is the selection to be supplied to the model. Neither query generates an answer or runs a judge.
+**Checkpoint:** `RETRIEVAL OK: iq` and the saved `results/rag-query-iq.json`.
+
+**Evidence to inspect:** selected chunk IDs, official `source_id` values, scores, and **`searchIndex` activity**.
+
+| Saved JSON field | Meaning |
+|---|---|
+| `raw_response` | Actual service response, including IQ reference and source data |
+| `documents` | Selected documents to be supplied to the model |
+
+Both queries **check retrieval only**; neither generates an answer or runs a judge.
 
 | Identifier | Purpose |
 |---|---|
@@ -241,13 +306,17 @@ Keep questions, corpus, `optional-rag/prompt.txt`, configuration, answer/judge m
 python rag_lab.py run --mode search --out results/rag-search
 ```
 
-Confirm `LIVE RAG generation complete: 4 answers` and `status: complete` in `results/rag-search/run.json`, then judge. Generation completion does not mean the business checks passed.
+**Checkpoint:** `LIVE RAG generation complete: 4 answers` and `status: complete` in `results/rag-search/run.json`.
+
+Generation completion does not mean the business checks passed. Now evaluate the saved answers.
 
 ```bash
 python lab.py judge results/rag-search
 ```
 
-Wait for **`평가 완료: 4개 답변 × 2개 지표`**. If still processing, repeat that exact command. For interruptions/errors, use the [resume table](#resume).
+**Checkpoint:** `평가 완료: 4개 답변 × 2개 지표`.
+
+If still processing, repeat that exact command. For interruptions/errors, use the [resume table](#resume).
 
 ### 5-2. Generate four IQ answers and use the same judge
 
@@ -255,13 +324,17 @@ Wait for **`평가 완료: 4개 답변 × 2개 지표`**. If still processing, r
 python rag_lab.py run --mode iq --out results/rag-iq
 ```
 
-Wait for **`LIVE RAG generation complete: 4 answers`** before running the judge below.
+**Checkpoint:** `LIVE RAG generation complete: 4 answers`.
+
+Run the judge below only after completion.
 
 ```bash
 python lab.py judge results/rag-iq --like results/rag-search
 ```
 
-For IQ, also confirm four generated answers followed by **`평가 완료: 4개 답변 × 2개 지표`**. `--like` preserves the completed Search run's judge model/evaluator contract; it does not copy retrieved contexts or answers.
+**Checkpoint:** `평가 완료: 4개 답변 × 2개 지표`.
+
+`--like` preserves the completed Search run's judge model/evaluator contract. It does not copy retrieved contexts or answers.
 
 ### 5-3. Compare the two routes
 
@@ -279,6 +352,8 @@ python rag_lab.py inspect results/rag-iq D04
 
 Read the retrieved chunks, missing required chunks, answer, business checks, and judge reasons—in that order. **Groundedness receives exactly the per-case context used to generate that answer**, not the original full corpus.
 
+#### Read the answer's decision and explanation
+
 | Answer field | Meaning |
 |---|---|
 | `decision` | Policy decision |
@@ -290,6 +365,8 @@ Read the retrieved chunks, missing required chunks, answer, business checks, and
 
 Decisions are `allowed`, `needs_approval` (prior approval required), `not_allowed`, `unknown` (absent from policy), or `needs_info` (missing question information). D04 can correctly use `unknown` for an unspecified limit. These values do not execute reimbursement or grant approval.
 
+#### Distinguish retrieval metrics from answer metrics
+
 | Metric | Meaning and limit |
 |---|---|
 | Required-chunk Recall@3 | Fraction of required chunks included in model context |
@@ -299,7 +376,15 @@ Decisions are `allowed`, `needs_approval` (prior approval required), `not_allowe
 | Relevance | Response to the question; appropriate abstention may still score poorly |
 | Citation IDs linked | Citation IDs occur in retrieved documents; not proof of semantic support |
 
-Read `results/rag-iq/rag-comparison.md`/`.json`, and each run's `rag-report.md` and `retrieval-metrics.json`. Comparison exit code 0 means the files were produced; **the status is always `REVIEW_REQUIRED`**. Even an empty `issues` list is not release approval or proof IQ is superior. `issues` flags metrics below 80% and critical-case failures; the judge score threshold is 4/5. A person must examine contexts and scoring reasons.
+**Files to read:** `results/rag-iq/rag-comparison.md`/`.json`, and each run's `rag-report.md` and `retrieval-metrics.json`.
+
+| Result | Interpretation |
+|---|---|
+| Comparison exit code `0` | Comparison files were produced |
+| `REVIEW_REQUIRED` | Always requires human review; not release approval or proof IQ is superior |
+| `issues` | Metrics below 80% and critical-case failures; an empty list is not automatic approval |
+
+The judge score threshold is **4/5**. A person must examine actual contexts and scoring reasons.
 
 Core `lab.py compare/gate` is for fixed-context prompt experiments and rejects RAG input. Use this extension's comparison. Do not combine core and RAG results as a single before/after experiment.
 

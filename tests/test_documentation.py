@@ -179,6 +179,48 @@ class DocumentationTests(unittest.TestCase):
                             end = positions[index + 1] if index + 1 < len(positions) else len(text)
                             self.assertIn("(#lab-map)", text[positions[index]:end])
 
+    def test_reading_conventions_are_visible_before_each_learning_path(self):
+        paths = (
+            (("README.ko.md", "README.md"), "lab-0", "lab.py"),
+            (("docs/offline.md", "docs/en/offline.md"), "lab-0", "lab.py"),
+            (
+                ("docs/complete-lab.md", "docs/en/complete-lab.md"),
+                "architecture", "advanced_lab.py",
+            ),
+            (
+                ("docs/optional-rag.md", "docs/en/optional-rag.md"),
+                "prerequisites", "rag_lab.py",
+            ),
+        )
+        for guides, first_step, script in paths:
+            for relative in guides:
+                text = (ROOT / relative).read_text(encoding="utf-8")
+                opening = text.split(f'<a id="{first_step}"></a>', 1)[0]
+                visible = re.sub(r"<details>.*?</details>", "", opening, flags=re.DOTALL)
+                with self.subTest(guide=relative):
+                    self.assertIn('<a id="reading-guide"></a>', visible)
+                    conventions = visible.split('<a id="reading-guide"></a>', 1)[1]
+                    for required in ("`bash`", "`text`", f"`{script}`", f"(#{first_step})"):
+                        self.assertIn(required, conventions)
+                    self.assertIn(
+                        f"(#{first_step})",
+                        opening.split('<a id="lab-map"></a>', 1)[0],
+                    )
+
+    def test_shared_setup_steps_link_to_the_next_step_and_setup_map(self):
+        steps = (
+            "setup-tools", "setup-sign-in", "setup-project", "setup-permissions",
+            "setup-model", "setup-config", "setup-smoke",
+        )
+        for relative in ("README.ko.md", "README.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            for current, following in zip(steps, steps[1:]):
+                section = text.split(f'<a id="{current}"></a>', 1)[1]
+                section = section.split(f'<a id="{following}"></a>', 1)[0]
+                with self.subTest(guide=relative, step=current):
+                    self.assertIn(f"(#{following})", section)
+                    self.assertIn("(#setup-map)", section)
+
     def test_explicit_anchors_are_unique_within_each_document(self):
         for document in DOCUMENTS:
             anchors = re.findall(r'<a id="([^"]+)"></a>', document.read_text(encoding="utf-8"))

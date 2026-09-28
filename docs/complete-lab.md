@@ -4,6 +4,8 @@
 
 [저장소 기본 가이드](../README.ko.md)
 
+**바로 이동:** [실습 시작](#architecture) · [환경 준비](#setup) · [중단·재개](#resume) · [마무리](#retention)
+
 **규정을 찾고, 답변을 개선하고, 처음 보는 질문으로 확인합니다.** 가상의 가온랩 출장비 도우미로 **RAG(검색 증강 생성)**, 즉 검색한 근거로 답하는 방식을 실습합니다.
 
 | 한눈에 보기 | 이 경로에서 할 일 |
@@ -30,12 +32,27 @@
 | [7. 새 질문](#holdout) | 고정한 뒤 새 사례 8개를 만들고 평가 | 본인의 `acceptance-report.md` |
 | [8. 마무리](#retention) | 결과 해석·보관·비용 확인 | 완료 체크리스트 또는 중단 기록 |
 
-**명령 읽는 법:** `advanced_lab.py`가 있는 폴더의 활성화된 가상환경에서 **한 명령 → 완료 확인 → 다음 명령** 순서로 실행합니다. 결과 폴더는 자동 생성됩니다. `text` 블록은 예상 출력이므로 입력하지 않습니다. 막히면 [상태·재개 표](#resume)를 사용합니다.
+<a id="reading-guide"></a>
+### 가이드 읽는 법
+
+**할 일 → 명령 실행 → 완료 확인 → 다음 단계** 순서로 진행합니다.
+
+| 표시 | 읽는 방법 |
+|---|---|
+| `bash` 코드 블록 | 터미널에서 실행할 명령. 한 명령씩 복사하고 입력을 다시 받을 때까지 기다림 |
+| `text` 코드 블록 | 예상 출력. 명령으로 실행하지 않음 |
+| `YOUR-...` | 본인 환경에서 확인한 값으로 바꿀 자리. 따옴표는 유지 |
+| **완료 확인** | 다음으로 가기 전에 확인할 메시지·건수·결과 |
+| 접힌 설명 | 해설·예외 상황·추가 배경. 필요한 항목만 펼쳐 읽기 |
+
+**실행 위치:** `advanced_lab.py`가 있는 폴더의 활성화된 가상환경입니다. 긴 명령도 **한 줄 전체를 복사**하며 중간에 Enter를 넣지 않습니다. 결과 폴더는 자동 생성되고 `.md` 보고서는 VS Code의 Markdown 미리보기로 읽습니다. 막히면 [상태·재개 표](#resume)를 사용합니다.
 
 > [!IMPORTANT]
 > **실습 완료와 자동 합격은 다릅니다.** 낮은 점수와 중단도 그대로 보존합니다. 미실행 단계를 완료로 표시하거나 입문용 80% Gate·D06/H04 검토 절차와 섞지 않습니다.
 
 각 단계의 완료 확인과 자동 생성 결과로 진행합니다. 별도 기록 양식은 필요 없으며 개인 메모는 선택 사항입니다.
+
+**지금 시작:** [1. 규정을 먼저 읽기](#architecture). 아래 용어와 영상은 필요할 때만 봅니다.
 
 <details>
 <summary>처음 만나는 용어: 청크·벡터·Knowledge Base·Judge·holdout</summary>
@@ -66,6 +83,8 @@
 <a id="architecture"></a>
 ## 1. 규정을 먼저 읽고 구성 이해하기
 
+### 1-1. 규정에 근거해 판단하기
+
 **설치 없이 할 일:** [출장 규정](../data/policies.md)을 읽고 다음 질문에 먼저 답해 봅니다.
 
 > 2026년 9월 국내 출장 숙박비가 1박 220000원이고 사전 승인이 없습니다. 바로 정산할 수 있을까요?
@@ -77,7 +96,11 @@
 
 </details>
 
-**완료 확인:** 정산 가능 여부와 규정상 이유를 한 문장으로 설명할 수 있습니다. 이어서 아래 구성은 역할만 이해하면 됩니다. HNSW는 벡터 검색 방식의 이름이며 직접 구현하거나 설정을 바꿀 필요가 없습니다.
+**완료 확인:** 정산 가능 여부와 규정상 이유를 한 문장으로 설명할 수 있습니다.
+
+### 1-2. 구성 요소의 역할 구분하기
+
+아래 구성은 **역할만 이해하면 됩니다.** HNSW는 벡터 검색 방식의 이름이며 직접 구현하거나 설정을 바꿀 필요가 없습니다.
 
 | 구성 | 역할 |
 |---|---|
@@ -88,7 +111,9 @@
 | `rag-planner` | 지원되는 검색 계획 모델 `gpt-5.4-mini` |
 | `eval-model` | 답변·평가에 사용하는 `gpt-6-luna` |
 
-LLM 검색 계획에는 코드에 고정된 **`2026-08-01-preview`**를 사용합니다. 정식 minimal API와 달리 미리 보기 기능이며, 이를 GA 운영 환경으로 표현하지 않습니다. `low`는 실제 LLM 계획을 수행하고 벡터 필드/vectorizer는 하이브리드 검색에 사용됩니다. 공식 문서의 다른 API 버전 예제를 이 요청에 그대로 섞지 않습니다.
+**API 범위:** LLM 검색 계획에는 코드에 고정된 **`2026-08-01-preview`**를 사용합니다. 정식 minimal API와 다른 **미리 보기 기능**이며 GA 운영 환경이 아닙니다.
+
+`low`는 실제 LLM 계획을 수행하고 벡터 필드/vectorizer는 하이브리드 검색에 사용됩니다. 공식 문서의 다른 API 버전 예제를 이 요청에 섞지 않습니다.
 
 Free 서비스에는 여기서 필요한 아웃바운드 관리 ID 제약이 있습니다. 허가받은 Basic 이상 서비스가 있다면 재사용합니다. **Basic은 유지 중에도 비용이 발생**하며 임베딩·계획·생성·채점 사용량 비용도 발생할 수 있습니다.
 
@@ -170,6 +195,8 @@ Free 서비스에는 여기서 필요한 아웃바운드 관리 ID 제약이 있
 | `YOUR-SEARCH-PRINCIPAL-ID` | 아래 Search 조회에서 확인할 `identity.principalId`. 사용자·프로젝트 ID가 아님 |
 | `YOUR-USER-OBJECT-ID` | 2-4의 사용자 조회 결과 중 `objectId`. 본인 계정의 ID |
 
+#### 답변 모델의 고정 버전 확인하기
+
 먼저 **이미 배포한 답변 모델**을 읽기 전용으로 확인합니다.
 
 ```bash
@@ -177,6 +204,8 @@ az cognitiveservices account deployment show --name "YOUR-FOUNDRY-ACCOUNT" --res
 ```
 
 **완료 확인:** `name: eval-model`, `state: Succeeded`, `model: gpt-6-luna`, `version: 2026-09-22`. 다르면 추가 자원을 만들지 않고 위 경로 선택으로 돌아갑니다.
+
+#### 추가 모델을 재사용할지 새로 배포할지 확인하기
 
 **임베딩·계획 배포도 모두 재사용한다면** 소유자와 Foundry **Build → Models**에서 두 배포의 모델·버전을 확인하고 아래 두 조회는 건너뜁니다. 새 배포를 만들지 않는 참가자에게 신규 할당량이나 구독 쿼터 조회 권한을 요구하지 않습니다.
 
@@ -190,12 +219,26 @@ az cognitiveservices model list --location swedencentral --subscription "YOUR-SU
 az cognitiveservices usage list --location swedencentral --subscription "YOUR-SUBSCRIPTION-ID" --query "[?name.value=='OpenAI.GlobalStandard.text-embedding-3-small' || name.value=='OpenAI.GlobalStandard.gpt-5.4-mini'].{name:name.value,current:currentValue,limit:limit}" --output json
 ```
 
-첫 결과의 `model.name`별 **`model.version`과 `GlobalStandard` 지원**을 확인합니다. 선택한 버전을 각각 아래 배포 명령의 **`YOUR-EMBEDDING-VERSION`·`YOUR-PLANNER-VERSION`**에 사용합니다. 두 번째 결과의 남은 쿼터(`limit - current`)가 신규 임베딩 **40**, 계획 **60**의 용량 설정을 수용해야 합니다. 기존 배포를 재사용하면 그 배포의 할당량을 다시 더하지 않습니다. 쿼터·capacity 단위도 모델/SKU별로 확인하며 빈 목록·403을 쿼터 0으로 해석하지 않습니다. 막히면 [가용성·권한 도움말](reference.md#model-availability)을 따릅니다.
+**조회 결과에서 확인할 두 가지**
+
+1. **버전·SKU:** 첫 결과에서 `model.name`별 `model.version`과 `GlobalStandard` 지원을 확인합니다. 선택한 버전은 뒤의 배포 명령에 사용합니다.
+2. **남은 쿼터:** 두 번째 결과의 `limit - current`가 아래 신규 용량을 수용해야 합니다. 재사용하는 배포의 할당량을 다시 더하지 않습니다.
+
+| 새로 배포할 모델 | 버전을 넣을 자리 | 필요한 용량 |
+|---|---|---|
+| 임베딩 | `YOUR-EMBEDDING-VERSION` | 40 |
+| 검색 계획 | `YOUR-PLANNER-VERSION` | 60 |
+
+쿼터·capacity 단위는 모델/SKU별로 확인합니다. **빈 목록·403은 쿼터 0이라는 뜻이 아닙니다.** 막히면 [가용성·권한 도움말](reference.md#model-availability)을 따릅니다.
+
+**다음:** [2-3. Search 서비스](#search-service) · [환경 준비 순서](#setup)
 
 <a id="search-service"></a>
 ### 2-3. Search 서비스 준비
 
 **허가된 Basic 이상 서비스를 재사용하거나 이미 생성했다면 아래 두 생성 준비 명령을 건너뜁니다.** 신규 서비스가 필요할 때만 고유한 이름으로 실행합니다. `az search service create`는 기존 서비스도 갱신하므로, 재사용할 서비스에 실행하면 복제본·인증 설정 등을 바꿀 수 있습니다. 이 경로를 위해 별도 Free Search를 만들지 않습니다.
+
+#### 새 서비스가 필요한 경우에만 생성하기
 
 **신규 생성 전에:** Azure 포털 → **Subscriptions → 사용할 구독 → Resource providers**에서 **`Microsoft.Search`**를 확인합니다. 미등록이면 권한 있는 담당자가 **Register**를 선택하고 `Registered`를 확인합니다. 공통 준비의 `Microsoft.CognitiveServices`와는 다른 공급자이며, Search를 만들지 않는 입문·DEMO에는 추가 등록이 필요 없습니다. [공급자 등록 공식 안내](https://learn.microsoft.com/azure/azure-resource-manager/management/resource-providers-and-types)를 참고하며 권한이 없으면 우회하지 않습니다.
 
@@ -209,16 +252,34 @@ az search service check-name-availability --name "YOUR-SHARED-SEARCH" --type sea
 az search service create --name "YOUR-SHARED-SEARCH" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --location swedencentral --sku basic --replica-count 1 --partition-count 1 --identity-type SystemAssigned --semantic-search free --disable-local-auth true
 ```
 
+#### 모든 참가자: 실제 서비스 확인하기
+
 신규·기존 서비스 모두 실제 ID·지역·SKU·인증·시스템 할당 관리 ID를 확인합니다. 기존 설정을 바꿔야 한다면 소유자의 승인이 먼저 필요합니다.
 
 ```bash
 az search service show --name "YOUR-SHARED-SEARCH" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --query "{id:id,identity:identity,location:location,sku:sku.name,state:provisioningState,disableLocalAuth:disableLocalAuth,semanticSearch:semanticSearch}" -o json
 ```
 
-**완료 확인:** `Succeeded/succeeded`, `swedencentral`, Basic 이상 SKU, `disableLocalAuth: true`, `identity.principalId`가 있습니다. `semanticSearch`는 `free` 또는 이미 승인된 `standard`여야 합니다. 다음 단계에서는 **전체 `id`를 `YOUR-SEARCH-RESOURCE-ID`**, **`identity.principalId`를 `YOUR-SEARCH-PRINCIPAL-ID`**로 사용합니다. 전자는 권한을 줄 자원의 주소, 후자는 Search의 신원입니다.
+**완료 확인:** 아래 값이 모두 맞습니다.
+
+| 항목 | 확인할 값 |
+|---|---|
+| 상태·지역·SKU | `Succeeded/succeeded` · `swedencentral` · Basic 이상 |
+| 키 인증 | `disableLocalAuth: true` |
+| 관리 ID | `identity.principalId`가 있음 |
+| Semantic Search | `free` 또는 이미 승인된 `standard` |
+
+**다음 단계에 사용할 ID를 구분합니다.**
+
+- 전체 **`id` → `YOUR-SEARCH-RESOURCE-ID`**: 권한을 적용할 Search 자원의 주소.
+- **`identity.principalId` → `YOUR-SEARCH-PRINCIPAL-ID`**: 모델을 호출하는 Search의 신원.
+
+**다음:** [2-4. 접근 권한](#search-access) · [환경 준비 순서](#setup)
 
 <a id="search-access"></a>
 ### 2-4. 본인과 Search 관리 ID의 권한 설정
+
+#### 본인 계정 → Search 접근
 
 먼저 **본인 → Search** 접근을 준비합니다. 현재 로그인한 사용자 ID를 조회합니다.
 
@@ -230,9 +291,13 @@ az ad signed-in-user show --query "{account:userPrincipalName,objectId:id}" --ou
 
 Search의 **Access control (IAM) → Role assignments**에서 상속된 역할까지 확인합니다. 다음 두 역할 중 **없는 역할만**, 할당 권한이 있는 사람이 **Search 서비스 범위**에 부여합니다. 이미 두 역할이 있으면 두 명령 모두 건너뜁니다.
 
+**역할 1 — Search Service Contributor**
+
 ```bash
 az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "7ca78c08-252a-4471-8644-bb5ff32d4ba0" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
 ```
+
+**역할 2 — Search Index Data Contributor**
 
 ```bash
 az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "8ebe5a00-799e-43f5-93ac-243d3dce84a7" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
@@ -241,6 +306,8 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 첫 역할은 **Search Service Contributor**(검색 객체·서비스 설정 관리·키 조회 포함), 두 번째는 **Search Index Data Contributor**(문서 업로드·검색)입니다. **이 권한은 서비스의 다른 참가자 객체에도 적용**되므로 승인된 공동 실습 범위에서만 사용합니다. 객체 이름을 나누는 것은 보안 격리가 아니며, 구독 전체에 할당하지 않습니다.
 
 <a id="search-model-access"></a>
+#### Search 관리 ID → 모델 접근
+
 이어서 **Search 관리 ID → 모델** 접근을 준비합니다. 조회 결과의 **`identity.principalId`인 Search 관리 ID**에 상위 Foundry 리소스 범위의 **Cognitive Services OpenAI User**가 있는지 IAM에서 확인하고, 없는 경우에만 할당합니다. `YOUR-FOUNDRY-RESOURCE-ID`는 `/accounts/실제리소스이름`까지이며 `/projects/...`가 붙지 않습니다. 프로젝트나 사용자 ID로 대신하지 않습니다.
 
 ```bash
@@ -266,10 +333,14 @@ az role assignment create --assignee-object-id "YOUR-SEARCH-PRINCIPAL-ID" --assi
 
 </details>
 
+**다음:** [2-5. 추가 모델](#extra-models) · [환경 준비 순서](#setup)
+
 <a id="extra-models"></a>
 ### 2-5. 추가 모델 배포
 
 앞서 확인한 실제 버전으로 `YOUR-EMBEDDING-VERSION`·`YOUR-PLANNER-VERSION`을 바꾸고 두 모델을 **순서대로** 배포합니다. 같은 Foundry 계정에 동시 쓰기를 하면 충돌할 수 있습니다. 이미 허가된 배포가 있다면 실제 모델·버전을 확인하고 해당 생성 명령은 건너뜁니다. 공유 배포를 임의 갱신하지 않습니다.
+
+**배포 1 — 임베딩 모델 `rag-embedding`**
 
 ```bash
 az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --deployment-name rag-embedding --model-name text-embedding-3-small --model-version "YOUR-EMBEDDING-VERSION" --model-format OpenAI --sku-name GlobalStandard --sku-capacity 40 --subscription "YOUR-SUBSCRIPTION-ID"
@@ -277,18 +348,37 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 
 **다음 명령 전에:** Foundry **Build → Models**에서 방금 만든 `rag-embedding`이 `Succeeded`이고 모델이 `text-embedding-3-small`인지 확인합니다. 배포 오류는 먼저 해결합니다.
 
+**배포 2 — 검색 계획 모델 `rag-planner`**
+
 ```bash
 az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --deployment-name rag-planner --model-name gpt-5.4-mini --model-version "YOUR-PLANNER-VERSION" --model-format OpenAI --sku-name GlobalStandard --sku-capacity 60 --subscription "YOUR-SUBSCRIPTION-ID"
 ```
 
-**완료 확인:** Foundry의 **Build → Models**에서 `rag-embedding`·`rag-planner` 모두 성공 상태와 의도한 모델·버전인지 확인합니다. 기록된 실행의 추가 모델 버전은 임베딩 `1`, 계획 모델 `2026-03-17`입니다. 이 두 모델은 현재 지원 버전을 선택할 수 있지만 `setup` 이후 같은 실험에서는 바꾸지 않습니다. 답변 모델은 앞서 확인한 V1의 고정 버전을 유지합니다.
+**완료 확인:** Foundry **Build → Models**에서 `rag-embedding`·`rag-planner` 모두 성공 상태이며, 의도한 모델·버전입니다.
+
+기록된 추가 모델 버전은 임베딩 `1`, 계획 모델 `2026-03-17`입니다. 이 두 모델은 현재 지원 버전을 선택할 수 있지만 **`setup` 이후 같은 실험에서는 바꾸지 않습니다.** 답변 모델은 앞서 확인한 V1의 고정 버전을 유지합니다.
+
+**다음:** [2-6. 설정·연결](#configure) · [환경 준비 순서](#setup)
 
 <a id="configure"></a>
 ### 2-6. 설정 파일 작성과 검색 객체 생성
 
-**VS Code에서** `advanced-rag/config.example.json`을 열고 **File → Save As**로 **`advanced_lab.py`와 같은 폴더에 `config.advanced.json`**을 만듭니다. `advanced-rag/` 안이나 `config.advanced.json.txt`로 저장하지 않습니다. 이미 본인 설정이 있다면 덮어쓰지 말고 실제 값부터 확인합니다.
+#### 설정 파일 만들기
 
-두 설정 파일은 용도가 다릅니다. **`config.json`은 프로젝트·답변·Judge 연결**, **`config.advanced.json`은 Search·임베딩·검색 계획 연결**입니다. 둘 다 필요합니다.
+1. **VS Code에서** `advanced-rag/config.example.json`을 엽니다.
+2. **File → Save As**로 **`advanced_lab.py` 옆에 `config.advanced.json`**을 만듭니다.
+3. 아래 예제와 주소 표를 보고 본인 값을 넣은 뒤 저장합니다.
+
+`advanced-rag/` 안이나 `config.advanced.json.txt`로 저장하지 않습니다. 이미 본인 설정이 있다면 덮어쓰지 말고 실제 값부터 확인합니다.
+
+**두 설정 파일 모두 필요합니다.**
+
+| 파일 | 연결하는 대상 |
+|---|---|
+| `config.json` | 프로젝트·답변 모델·Judge |
+| `config.advanced.json` | Search·임베딩·검색 계획 |
+
+#### 예제에서 본인 값으로 바꾸기
 
 아래는 [원본 설정 예제](../advanced-rag/config.example.json)의 전체 내용입니다. **두 주소와 세 검색 객체 이름을 본인 값으로 바꾸고 저장**합니다. 재사용 배포의 이름이 다르면 `embedding_deployment`·`planner_deployment`도 실제 배포 이름에 맞춥니다.
 
@@ -324,11 +414,13 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 
 임베딩은 계정의 `/openai/v1/embeddings` 주소에서 Entra 인증으로 호출합니다. 설정에는 위 표의 **리소스 주소까지만** 넣습니다. `/openai/v1/embeddings`는 코드가 붙이므로 직접 덧붙이지 않습니다.
 
+#### 저장 후 검색 객체 생성하기
+
 **실행 전 확인**
 
-- 두 설정 파일을 저장했고, 예시 주소 `YOUR-...`가 남아 있지 않습니다.
-- 본인·프로젝트·Search 관리 ID의 역할을 각각 확인했습니다.
-- 이후 같은 실험에서는 제공된 지침·질문·정답·설정을 수정하지 않습니다.
+- [ ] 두 설정 파일을 저장했고, 예시 주소 `YOUR-...`가 남아 있지 않습니다.
+- [ ] 본인·프로젝트·Search 관리 ID의 역할을 각각 확인했습니다.
+- [ ] 이후 같은 실험에서는 제공된 지침·질문·정답·설정을 수정하지 않습니다.
 
 ```bash
 python advanced_lab.py setup
@@ -336,7 +428,14 @@ python advanced_lab.py setup
 
 `setup`은 기존 객체 계약 확인 → 임베딩 캐시 준비 → 누락 인덱스 생성·문서 업로드 → Knowledge Source → 계획형 Knowledge Base 순서로 진행합니다.
 
-**완료 확인:** `VECTOR SETUP OK: 7 documents, 1536 dimensions`. `results/advanced/setup.json`은 모델 snapshot·업로드 대상 건수·서버의 HNSW/vectorizer·지식 객체 정의를, `embedding-cache.json`은 문서 벡터를 보존합니다. 설정 성공만으로 검색·답변 품질을 검증한 것은 아니므로 3절의 실제 질의를 이어갑니다.
+**완료 확인:** `VECTOR SETUP OK: 7 documents, 1536 dimensions`.
+
+| 저장 파일 (`results/advanced/` 기준) | 남는 증거 |
+|---|---|
+| `setup.json` | 모델 snapshot·업로드 대상 건수·서버의 HNSW/vectorizer·지식 객체 정의 |
+| `embedding-cache.json` | 재사용할 문서 벡터 |
+
+설정 성공은 검색·답변 품질의 합격이 아닙니다. **3절의 실제 질의로 이어갑니다.**
 
 <a id="resume"></a>
 ### 명령 상태·중단·재개
@@ -416,7 +515,13 @@ python advanced_lab.py setup
 python advanced_lab.py query --mode vector --query "해외 출장 호텔 숙박비 상한을 확인하고 싶습니다." --out results/advanced/vector-query.json
 ```
 
-**완료 확인:** `RETRIEVAL OK: vector`, `query_vector_dimensions: 1536`, `vector_fields: content_vector`, `text_query: false`와 실제 청크 ID가 보입니다. `results/advanced/vector-query.json`에 저장됩니다.
+**완료 확인:** `RETRIEVAL OK: vector`.
+
+**확인할 증거:** `results/advanced/vector-query.json`에서 다음을 확인합니다.
+
+- `query_vector_dimensions: 1536` — 실제 질의 벡터.
+- `vector_fields: content_vector`, `text_query: false` — 텍스트 검색이 아닌 벡터 검색.
+- 반환된 실제 청크 ID — 검색된 규정 조각.
 
 ### 3-2. LLM 검색 계획 확인하기
 
@@ -426,7 +531,15 @@ python advanced_lab.py query --mode vector --query "해외 출장 호텔 숙박�
 python advanced_lab.py query --mode planned --query "2026년 6월 30일과 7월 1일 국내 출장 숙박 한도를 비교하고, 한도를 초과할 때 필요한 절차와 해외 숙박 한도가 있는지도 알려주세요." --out results/advanced/planned-query.json
 ```
 
-**완료 확인:** `RETRIEVAL OK: planned`, `llm_query_planning: true`, 실제 생성된 `planned_queries`, `modelQueryPlanning`·`searchIndex` 활동이 보입니다. `results/advanced/planned-query.json`에 저장됩니다. 작성자의 기록에서는 세 하위 질의가 관측됐지만 개수·문구는 고정 출력이 아닙니다. 계획 증거가 없으면 코드가 오류로 중단하며 일반 검색을 계획형이라고 부르지 않습니다.
+**완료 확인:** `RETRIEVAL OK: planned`.
+
+**확인할 증거:** `results/advanced/planned-query.json`에서 다음을 확인합니다.
+
+- `llm_query_planning: true` — LLM 계획 실행 여부.
+- `planned_queries` — 실제 생성된 하위 질의.
+- `modelQueryPlanning`·`searchIndex` — 계획·검색 활동 기록.
+
+작성자 기록의 세 하위 질의는 고정 출력이 아닙니다. 개수·문구가 달라도 됩니다. **계획 증거가 없으면 코드가 오류로 중단**하며 일반 검색을 계획형이라고 부르지 않습니다.
 
 **다음:** [4. Judge 교정](#calibration) · [진행표](#lab-map)
 
@@ -442,7 +555,13 @@ python advanced_lab.py query --mode planned --query "2026년 6월 30일과 7월 
 
 [acceptance.json](../advanced-rag/acceptance.json)의 기준은 새 질문을 보기 전에 고정합니다.
 
-**업무 검사**는 답변의 형식·결정·금액·출처가 정답과 맞는지, **검색 검사**는 필요한 규정 조각을 찾았는지 확인합니다. Judge의 **Groundedness**는 근거 충실도, **Relevance**는 질문 관련성, **`policy_task_success`**는 규정에 맞게 사용자의 일을 해결했는지를 봅니다. 답변 모델에는 정답을 주지 않습니다. 정답은 코드 검사에 사용하며, 업무 성공도 Judge에는 평가용 기대 행동도 전달됩니다.
+**세 가지를 따로 확인합니다.**
+
+- **업무 검사:** 답변의 형식·결정·금액·출처가 정답과 맞는가.
+- **검색 검사:** 필요한 규정 조각을 찾았는가.
+- **Judge:** Groundedness는 근거 충실도, Relevance는 질문 관련성, `policy_task_success`는 규정에 맞는 업무 해결 여부.
+
+**답변 모델에는 정답을 주지 않습니다.** 정답은 코드 검사에 사용하며, 업무 성공도 Judge에는 평가용 기대 행동도 전달됩니다.
 
 | 대상 | 합격 조건 |
 |---|---|
@@ -457,7 +576,14 @@ python advanced_lab.py query --mode planned --query "2026년 6월 30일과 7월 
 
 **기본 Relevance도 필수 합격 지표로 유지합니다.** 최종 답변은 실제 완료된 사용자 요청을 해결해야 합니다. 추가 정보 질문은 중간 단계이지 완료 답변으로 표시하지 않습니다.
 
-V2는 평가 데이터에 미리 정한 사용자 후속 응답을 사용합니다. 날짜 누락 사례는 질문 후 사용자의 실제 출장일을 받고, 해외 한도 부재 사례는 금액을 꾸미는 대신 사용자가 재무팀 문의 체크리스트를 요청하는 단계를 거칩니다. 사용자 정보를 모델이 만들어 내지 않습니다. 최종 대화를 Judge에 전달하되, **초기 응답의 자동 검사는 JSON 형식·결정·금액·출처 필드에 한정**됩니다.
+**V2의 후속 대화는 평가 데이터에 미리 정해져 있습니다.**
+
+| 사례 | 후속 대화 |
+|---|---|
+| 출장일 누락 | 모델이 날짜를 물은 뒤 사용자의 실제 출장일을 받음 |
+| 해외 한도 없음 | 금액을 꾸미지 않고, 사용자가 재무팀 문의 체크리스트를 요청 |
+
+사용자 정보를 모델이 만들어 내지 않습니다. 최종 대화를 Judge에 전달하되, **초기 응답의 자동 검사는 JSON 형식·결정·금액·출처 필드에 한정**됩니다.
 
 결과의 `intermediate_safe`는 이 필드 검사의 통과 여부이지 **초기 설명 문장의 의미나 안전성을 별도로 채점했다는 뜻이 아닙니다**. 예를 들어 `unknown`·`null`·`SCOPE` 필드가 맞아도 설명에 해외 한도를 지어낸 오류가 남을 수 있습니다. 5·7절의 `inspect --dialogue`로 초기 설명까지 직접 읽고 판단을 기록합니다.
 
@@ -474,7 +600,11 @@ V2는 평가 데이터에 미리 정한 사용자 후속 응답을 사용합니�
 python advanced_lab.py calibrate
 ```
 
-**완료 확인:** `CALIBRATION PASSED: 10 controls`. 정상 4개와 오답 6개를 모두 구분해야 합니다. 오답에는 채점 지침 무시 요청과 불필요한 인용도 있습니다. 정답/오답 **통과 라벨은 Judge 입력으로 보내지 않습니다**. 교정은 사람이 작성한 응답과 기대 행동으로 **`policy_task_success`만** 점검하며, 실제 모델의 holdout 성능이나 기본 Groundedness/Relevance의 별도 교정 결과가 아닙니다.
+**완료 확인:** `CALIBRATION PASSED: 10 controls`.
+
+**확인한 범위:** 정상 4개와 오답 6개를 모두 구분해야 합니다. 오답에는 채점 지침 무시 요청과 불필요한 인용도 있습니다. 정답/오답 **통과 라벨은 Judge 입력으로 보내지 않습니다**.
+
+**해석의 한계:** 사람이 작성한 응답과 기대 행동으로 **`policy_task_success`만** 점검합니다. 실제 모델의 holdout 성능이나 기본 Groundedness/Relevance의 별도 교정 결과는 아닙니다.
 
 평가기 버전·지침·모델·합격 기준은 `results/advanced/judge-contract.json`에 고정됩니다. Holdout 결과를 보고 Judge를 바꿔도 된다는 뜻이 아닙니다.
 
@@ -503,25 +633,40 @@ python advanced_lab.py calibrate
 
 ### 5-1. 이전 V1 답변을 가져와 현재 Judge로 채점하기
 
-먼저 로컬 V1 기록을 가져옵니다.
+**실행 1 — 로컬 V1 기록 가져오기**
 
 ```bash
 python advanced_lab.py baseline
 ```
 
-**완료 확인:** `Imported four genuine recorded V1 answers.`가 보입니다. 다음 `judge`는 과거 점수를 복사하지 않고 **현재 고정한 Judge로 수행하는 유료 LIVE 평가**입니다.
+**완료 확인:** `Imported four genuine recorded V1 answers.`
+
+**실행 2 — 현재 Judge로 채점**
+
+과거 점수를 복사하지 않고 **현재 고정한 Judge로 유료 LIVE 평가**를 수행합니다.
 
 ```bash
 python advanced_lab.py judge --stage v1-recorded
 ```
 
-**완료 확인:** `Evaluation complete: 4 cases × 3 metrics`가 나온 뒤에만 아래 `inspect`로 갑니다. 대기 중이면 같은 `judge --stage v1-recorded` 명령을 재실행합니다.
+**완료 확인:** `Evaluation complete: 4 cases × 3 metrics`.
+
+대기 중이면 같은 `judge --stage v1-recorded` 명령을 재실행합니다. 완료 후에만 다음으로 갑니다.
+
+**실행 3 — D02의 실패 확인**
 
 ```bash
 python advanced_lab.py inspect --stage v1-recorded --case-id D02
 ```
 
-**완료 확인:** `Business checks`의 D02 `citations: false`와 `Scores`를 확인합니다. 기대 출처는 `["TRAVEL-CURRENT"]`인데 기록된 V1은 `["TRAVEL-CURRENT", "SCOPE"]`를 인용해 엄격한 출처 집합 검사에 실패합니다. **출처가 검색됐다는 사실과 답변에 꼭 필요한 출처라는 판단은 다릅니다.** Judge의 이유는 `results/advanced/v1-recorded/report.md`에서 읽습니다.
+**완료 확인:** D02의 `Business checks`에 `citations: false`가 보이며 `Scores`를 읽을 수 있습니다.
+
+| 비교할 값 | 출처 |
+|---|---|
+| 기대 출처 | `["TRAVEL-CURRENT"]` |
+| 기록된 V1의 출처 | `["TRAVEL-CURRENT", "SCOPE"]` |
+
+불필요한 `SCOPE`를 포함해 엄격한 출처 집합 검사에 실패합니다. **출처가 검색됐다는 사실과 답변에 꼭 필요하다는 판단은 다릅니다.** Judge의 이유는 `results/advanced/v1-recorded/report.md`에서 읽습니다.
 
 <a id="read-case"></a>
 ### 5-2. 한 사례의 기대값과 실제값 읽기
@@ -544,7 +689,8 @@ python advanced_lab.py inspect --stage v1-recorded --case-id D02
 | 출력 | 확인할 것 |
 |---|---|
 | `Case result` | 이 사례의 자동 기준 통과 여부. `FAIL`은 답변/검색/점수의 기준 미달이며 명령 실패가 아님. `PASS`도 운영 승인이 아님 |
-| `Question`, `Expected decision / limit / citations`, `Expected behavior` | 질문과 사람이 미리 정한 결정·한도·최소 출처·기대 행동. **기대값은 모델이 만든 답이 아님** |
+| `Question` | 지금 읽는 사례의 질문 |
+| `Expected decision / limit / citations`, `Expected behavior` | 사람이 미리 정한 결정·한도·최소 출처·기대 행동. **모델이 만든 답이 아님** |
 | `Actual answer`, `Business checks` | 실제 답변과 기대값 비교. `true`는 해당 검사 통과, `false`는 실패. 예: D02의 `citations: false` |
 | `Required chunks` → `Chunks` → `Required chunks found` | 필수 규정 조각 → 실제 검색 조각 → 필수 조각을 모두 찾았는지. 검색 조각 ID와 답변의 공식 출처 ID는 다름 |
 | `Scores` / `Final scores` | 세 지표 각각 **4 이상**인지 확인. Judge가 높게 채점해도 업무·검색 검사 실패는 남음 |
@@ -564,17 +710,27 @@ python advanced_lab.py inspect --stage v1-recorded --case-id D02
 
 **이번에는 제공된 V2를 그대로 사용합니다.** 지침 파일을 직접 수정하지 않고 차이를 설명한 뒤 실행합니다. 개인 지침 변경은 이 실행을 보존한 다음 [별도 실험](#resume)으로 구분합니다.
 
+**실행 1 — 같은 초기 검색 문맥에서 V2 생성**
+
 ```bash
 python advanced_lab.py run --stage v2-replay
 ```
 
-**완료 확인:** `GENERATION COMPLETE: v2-replay; 4 answers.`. 필요한 후속 대화를 포함해 **최종 답변이 4개**라는 뜻이며, 모든 중간 응답까지 합한 호출 횟수는 아닙니다.
+**완료 확인:** `GENERATION COMPLETE: v2-replay; 4 answers.`
+
+필요한 후속 대화를 마친 **최종 답변이 4개**라는 뜻입니다. 중간 응답까지 합한 호출 횟수는 아닙니다.
+
+**실행 2 — V2 채점**
 
 ```bash
 python advanced_lab.py judge --stage v2-replay
 ```
 
-**완료 확인:** `Evaluation complete: 4 cases × 3 metrics`. 대기 중이면 같은 채점 명령을 재실행하고, 완료 후 D02를 V1과 대조합니다.
+**완료 확인:** `Evaluation complete: 4 cases × 3 metrics`.
+
+대기 중이면 같은 채점 명령을 재실행합니다.
+
+**실행 3 — D02를 V1과 대조**
 
 ```bash
 python advanced_lab.py inspect --stage v2-replay --case-id D02
@@ -600,7 +756,9 @@ python advanced_lab.py inspect --stage v2-replay --case-id D08 --dialogue
 | `Final answer` → `Final scores` | 후속 요청까지 처리한 최종 답변 → 그 최종 응답의 세 점수 |
 | `Initial field checks (not prose evaluation)` | 초기 응답의 필드 검사만 의미. 초기 설명의 의미까지 통과한 것이 아님 |
 
-**완료 확인:** D02의 출처가 어떻게 달라졌는지, D04·D08이 추가 요청 이후 어떻게 마무리되는지 설명할 수 있습니다. 같은 초기 저장 문맥·답변 모델·생성 설정·Judge에서 시작하되 필요한 사용자 후속 대화를 추가로 완료합니다. **지침과 대화 완료 절차를 개선한 것**이며 지침 문구만의 효과라고 주장하지 않습니다. V1을 일부러 약화하거나 실패할 때까지 다시 뽑지 않습니다.
+**완료 확인:** D02의 출처 변화와 D04·D08의 후속 대화 결과를 설명할 수 있습니다.
+
+**비교 해석:** 같은 초기 저장 문맥·답변 모델·생성 설정·Judge에서 시작하고 필요한 사용자 후속 대화를 추가로 완료합니다. **지침과 대화 완료 절차를 개선한 것**이지 지침 문구만의 효과는 아닙니다. V1을 일부러 약화하거나 실패할 때까지 다시 뽑지 않습니다.
 
 **다음:** [6. 전체 파이프라인과 고정](#freeze) · [진행표](#lab-map)
 
@@ -623,7 +781,9 @@ python advanced_lab.py run --stage planned-dev
 python advanced_lab.py judge --stage planned-dev
 ```
 
-**완료 확인:** `Evaluation complete: 4 cases × 3 metrics`. 대기 중이면 같은 채점 명령을 재실행합니다. 초기 질문과 필요한 후속 대화 모두 정해진 검색 절차를 사용합니다. 채점 명령의 종료 코드 0만으로 dev 합격을 판단하지 않습니다.
+**완료 확인:** `Evaluation complete: 4 cases × 3 metrics`.
+
+대기 중이면 같은 채점 명령을 재실행합니다. 초기 질문과 필요한 후속 대화 모두 정해진 검색 절차를 사용합니다. **채점 종료 코드 0만으로 dev 합격을 판단하지 않습니다.**
 
 ### 6-2. 통과한 후보의 조건 고정하기
 
@@ -633,7 +793,15 @@ python advanced_lab.py judge --stage planned-dev
 python advanced_lab.py freeze
 ```
 
-**완료 확인:** `FROZEN`과 계약 해시. 해시는 실험 조건이 바뀌었는지 확인하는 지문이며 다른 명령에 복사해 넣을 필요는 없습니다. 실제 V1 실패가 있어야 하며 V2 동일 문맥 및 계획형 dev가 기준을 통과해야 합니다. 지침·Judge·모델 버전·검색 설정·소스 정의·코퍼스를 새 질문 생성 전에 고정합니다. 실패하면 holdout으로 넘어가지 않고 [재개 표](#resume)에 따라 원인과 미실행 단계를 보존합니다.
+**완료 확인:** `FROZEN`과 계약 해시.
+
+| 확인할 것 | 의미 |
+|---|---|
+| 고정 조건 | 실제 V1 실패가 있고, V2 동일 문맥·계획형 dev가 모두 기준 통과 |
+| 고정 대상 | 지침·Judge·모델 버전·검색 설정·소스 정의·코퍼스 |
+| 계약 해시 | 실험 조건의 변경을 감지하는 지문. 다른 명령에 복사할 필요 없음 |
+
+**실패하면 holdout으로 넘어가지 않습니다.** [재개 표](#resume)에 따라 원인과 미실행 단계를 보존합니다.
 
 **`Dev acceptance is not met`라면** 터미널에 실패한 stage·사례 ID, 해당 `report.md`, 그대로 실행할 수 있는 `inspect --context` 명령이 나옵니다. 그 명령으로 [기대값과 실제값](#read-case)을 대조합니다. 입력 오류와 달리 dev의 품질 차단은 같은 생성·채점을 반복해 해결하지 않습니다.
 
@@ -650,9 +818,15 @@ python advanced_lab.py freeze
 python advanced_lab.py create-holdout
 ```
 
-새 난수 시드로 **미리 정의된 8개 시나리오의 날짜·도시·금액을 새로 채웁니다**. 현재/과거 한도, 한도 초과 승인, 해외 범위, 날짜 누락, 금지 좌석, 경계값을 포함합니다. 새로운 매개변수 사례이지 광범위한 블라인드 일반화 검증은 아닙니다. 날짜 누락과 해외 이관 사례에는 명시적인 평가용 사용자 후속 응답이 있습니다. 질문·후속 응답·정답·생성 근거는 `results/advanced/holdout-data/`에 저장합니다.
+새 난수 시드로 **미리 정의된 8개 시나리오의 날짜·도시·금액을 새로 채웁니다**. 현재/과거 한도, 한도 초과 승인, 해외 범위, 날짜 누락, 금지 좌석, 경계값을 포함합니다.
 
-**완료 확인:** `HOLDOUT REGISTERED: 8 new cases`와 `holdout-registration.json`. 이 명령은 모델 호출 없이 질문 생성과 등록을 함께 수행합니다. 이미 있으면 덮어쓰지 않습니다. 합격하려고 질문을 다시 뽑지 않으며 중단 시에는 [재개 표](#resume)를 따릅니다.
+**범위와 한계:** 새로운 매개변수 사례이지 광범위한 블라인드 일반화 검증은 아닙니다. 날짜 누락·해외 이관에는 평가용 사용자 후속 응답이 있습니다.
+
+**저장 위치:** `results/advanced/holdout-data/`에 질문·후속 응답·정답·생성 근거가 남습니다.
+
+**완료 확인:** `HOLDOUT REGISTERED: 8 new cases`와 `holdout-registration.json`.
+
+모델 호출 없이 질문 생성과 등록을 함께 수행하며 기존 파일은 덮어쓰지 않습니다. **합격하려고 질문을 다시 뽑지 않습니다.** 중단 시에는 [재개 표](#resume)를 따릅니다.
 
 ### 7-2. 고정된 후보로 생성·채점하기
 
@@ -666,9 +840,13 @@ python advanced_lab.py run --stage holdout
 python advanced_lab.py judge --stage holdout
 ```
 
-**완료 확인:** `Evaluation complete: 8 cases × 3 metrics`. 대기 중이면 같은 채점 명령을 재실행합니다. 완료된 두 후속 대화에서 [앞서 본 출력 순서](#dialogue-check)대로 초기 설명과 최종 답을 함께 읽고 판단을 기록합니다.
+**완료 확인:** `Evaluation complete: 8 cases × 3 metrics`.
+
+대기 중이면 같은 채점 명령을 재실행합니다. 완료 후 아래에서 두 후속 대화를 읽습니다.
 
 ### 7-3. N05·N06의 대화 검토하기
+
+[앞서 본 출력 순서](#dialogue-check)대로 **초기 설명과 최종 답을 함께** 읽고 판단을 기록합니다.
 
 ```bash
 python advanced_lab.py inspect --stage holdout --case-id N05 --dialogue
@@ -692,7 +870,11 @@ python advanced_lab.py accept
 | `acceptance-result.json` | `rows`의 N01–N08 → `business_checks`, `required_chunks_found`, `scores`, `passed`. 중간 대화 사례는 `intermediate_safe`도 확인 |
 | `holdout/report.md` | 같은 ID의 실제 답변과 각 Judge 점수의 이유 |
 
-`LAB_ACCEPTANCE_PASSED`는 새 시나리오 8개의 **Relevance를 포함한 모든 최종 응답 지표와 초기 필드 검사**가 통과했을 때만 나옵니다. `LAB_ACCEPTANCE_BLOCKED`와 종료 코드 `2`는 품질 보류이며 실습 명령을 잘못 입력했다는 뜻이 아닙니다. `ERROR:`·`usage:`로 끝난 실행은 별도로 해결하며 완료로 기록하지 않습니다.
+| 출력 | 의미와 다음 행동 |
+|---|---|
+| `LAB_ACCEPTANCE_PASSED` | 새 8개 사례의 **Relevance를 포함한 모든 최종 응답 지표와 초기 필드 검사** 통과. 사람의 운영 승인은 별도 |
+| `LAB_ACCEPTANCE_BLOCKED` / 종료 코드 `2` | 품질 보류. 실패 이유를 남기고 8절로 진행 |
+| `ERROR:` / `usage:` | 실행·입력 오류. 먼저 해결하며 완료로 기록하지 않음 |
 
 차단되면 실패와 보류 이유를 기록하고 8절로 이동합니다. 자동 합격이어도 직접 읽은 초기 설명에 모순이 있다면 그 판단을 따로 기록하고 운영 적용은 보류합니다. 고정된 지침·Judge를 바꾸거나 합격 사례만 고르지 않습니다. 다음 개선은 [별도 작업 복사본의 새 실험](#resume)과 새로운 holdout으로 진행합니다.
 

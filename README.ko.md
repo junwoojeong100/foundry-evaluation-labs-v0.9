@@ -4,6 +4,8 @@
 
 **Microsoft Foundry Evaluation — 처음부터 끝까지 따라 하는 실습**
 
+**바로 이동:** [경로 선택](#choose-path) · [입문 시작](#lab-0) · [환경 준비](#setup-map) · [중단·재개](docs/setup.md#resume)
+
 가상의 **가온랩 출장비 도우미**가 규정에 맞게 답하는지 확인합니다. Evaluation은 **미리 정한 기준으로 AI 답변을 검사하는 일**입니다. 제공된 명령을 실행하고 답변을 읽으며 배우므로 **Python 코드를 작성할 필요는 없습니다.**
 
 **권장 경로:** [완결형 RAG — 실패 → V2 개선 → 새 질문 검증](docs/complete-lab.md). 실제 검색과 답변 개선까지 배우려면 해당 가이드의 **1–8절**을 따릅니다. 이 README의 본문은 **검색 없이 평가부터 익히는 입문 LIVE**입니다.
@@ -57,11 +59,24 @@ Azure나 터미널이 처음이라면 DEMO로 진행 방식을 먼저 익혀도 
 
 > **실습 완료 ≠ AI 답변 합격.** 점수가 낮거나 최종 결과가 `BLOCK`이어도, 원인을 설명하고 보류 판단을 남겼다면 실습을 완료한 것입니다.
 
-### 진행할 때 지킬 세 가지
+<a id="reading-guide"></a>
+### 가이드 읽는 법
 
-1. **시간 제한 없이, 한 명령씩 실행합니다.** 코드 블록 안의 명령만 복사하고 Enter를 누릅니다. 터미널에서 입력을 다시 받을 때까지 기다리고 각 단계의 **완료 확인**을 읽습니다. 예상 출력인 `text` 블록은 명령이 아닙니다.
-2. **명령은 항상 `lab.py`가 있는 폴더에서 실행합니다.** 별도 표시가 없으면 macOS/Linux 터미널과 Windows PowerShell에서 같은 명령을 사용합니다.
-3. **파일명과 결과 폴더명은 안내대로 유지합니다.** `results/baseline` 같은 경로는 현재 실습 폴더 기준입니다. Windows 출력에서 `/` 대신 `\`가 보여도 같은 경로입니다. `.md` 결과는 VS Code 왼쪽 탐색기에서 열면 됩니다. 이전 결과가 있다면 지우지 말고 [재개 방법](docs/setup.md#resume)을 따릅니다.
+**시간 제한 없이, 할 일 → 명령 실행 → 완료 확인 → 다음 단계** 순서로 진행합니다.
+
+| 표시 | 읽는 방법 |
+|---|---|
+| `bash` / `powershell` 코드 블록 | 터미널에서 실행할 명령. 한 명령씩 복사하고 입력을 다시 받을 때까지 기다림 |
+| `text` 코드 블록 | 예상 출력 또는 입력 예시. 명령으로 실행하지 않음 |
+| `YOUR-...` | 본인 환경에서 확인한 값으로 바꿀 자리. 따옴표는 유지 |
+| **완료 확인** | 다음으로 가기 전에 확인할 메시지·건수·결과 |
+| 접힌 설명 | 해설·예외 상황·추가 배경. 필요한 항목만 펼쳐 읽기 |
+
+**실행 위치:** 항상 `lab.py`가 있는 폴더입니다. 별도 표시가 없으면 macOS/Linux와 Windows PowerShell에서 같은 명령을 사용합니다. 긴 명령도 **한 줄 전체를 복사**하며 중간에 Enter를 넣지 않습니다.
+
+**파일 읽기:** 파일명·결과 폴더명은 안내대로 유지합니다. `results/baseline`은 현재 실습 폴더 기준이며, Windows의 `\`도 같은 경로입니다. `.md` 결과는 VS Code의 Markdown 미리보기로 읽습니다. 이전 결과가 있다면 지우지 말고 [재개 방법](docs/setup.md#resume)을 따릅니다.
+
+**지금 시작:** [0. 그럴듯한 오답 찾기](#lab-0)
 
 ---
 
@@ -72,9 +87,10 @@ Azure나 터미널이 처음이라면 DEMO로 진행 방식을 먼저 익혀도 
 
 > 2026년 9월 국내 출장 숙박비가 1박 220000원입니다. 사전 승인은 없는데 바로 정산 가능한가요?
 
-| 답변 A | 답변 B |
+| 선택 | 답변 |
 |---|---|
-| 네, 한도는 240000원이므로 바로 정산하세요. | 공식 한도 200000원을 초과하므로 재무팀 사전 승인이 필요합니다. |
+| **A** | 네, 한도는 240000원이므로 바로 정산하세요. |
+| **B** | 공식 한도 200000원을 초과하므로 재무팀 사전 승인이 필요합니다. |
 
 **할 일:** 먼저 선호하는 답과 이유를 정한 뒤, [출장 규정](data/policies.md)을 읽고 판단을 확인합니다. 규정은 브라우저에서 읽어도 됩니다.
 
@@ -139,14 +155,21 @@ Owner는 한 사람이 자원 생성과 역할 할당을 진행하도록 선택�
 
 **실행 위치: 웹 브라우저 → VS Code**
 
+#### 폴더와 터미널 열기
+
 1. [저장소](https://github.com/junwoojeong100/foundry-evaluation-labs-v1)의 **Code → Download ZIP**을 선택하고 압축을 풉니다. 이미 받았다면 생략합니다. 비공개 저장소에 접근할 수 없다면 소유자가 승인한 ZIP을 받습니다. Azure 권한과 GitHub 권한은 별개입니다.
 2. 아래 도구를 설치합니다. 설치 후에는 새 터미널을 엽니다.
 3. VS Code에서 **File → Open Folder**로 **`lab.py`와 `requirements.txt`가 바로 보이는 폴더**를 엽니다. 압축을 푼 바깥 폴더가 아니라 실제 파일이 있는 폴더입니다.
 4. **Terminal → New Terminal**을 선택합니다. 이후 명령은 이 터미널에 입력합니다.
 
-**내 PC의 VS Code 터미널을 사용합니다.** Azure 포털의 **Azure Cloud Shell**이나 노트북 셀이 아닙니다. Windows는 **PowerShell**, macOS/Linux는 **zsh 또는 bash**를 사용합니다. Windows에서 다른 셸이 열렸다면 터미널의 `+` 옆 화살표 → **Select Default Profile → PowerShell**을 선택하고 새 터미널을 엽니다.
+**내 PC의 VS Code 터미널을 사용합니다.** Azure 포털의 **Azure Cloud Shell**이나 노트북 셀이 아닙니다.
 
-브라우저는 가이드 읽기·Azure 화면 조작에, VS Code는 **내 PC의 파일 수정·명령 실행**에 사용합니다. 브라우저의 파일 링크를 읽었다고 로컬 파일이 수정되지는 않습니다. Python 파일의 실행 버튼이나 `>>>`가 표시된 Python 대화창에는 명령을 넣지 않습니다. `>>>`에 들어갔다면 `exit()` 후 같은 터미널에서 진행합니다.
+- **Windows:** PowerShell. 다른 셸이 열리면 터미널의 `+` 옆 화살표 → **Select Default Profile → PowerShell**을 선택하고 새 터미널을 엽니다.
+- **macOS/Linux:** zsh 또는 bash.
+
+브라우저는 가이드 읽기·Azure 화면 조작에, VS Code는 **내 PC의 파일 수정·명령 실행**에 사용합니다. 브라우저의 파일 링크를 읽어도 로컬 파일은 바뀌지 않습니다.
+
+**`>>>`가 보이면** Python 대화창입니다. `exit()`로 나온 뒤 명령을 실행합니다. Python 파일의 실행 버튼은 사용하지 않습니다.
 
 | 도구 | 설치 | 설치 확인 |
 |---|---|---|
@@ -163,16 +186,18 @@ Owner는 한 사람이 자원 생성과 역할 할당을 진행하도록 선택�
 
 </details>
 
+#### 가상환경 만들기
+
 **아래 두 블록 중 본인 운영체제 것만 실행합니다.** `.venv`는 이 실습의 Python 패키지를 담는 전용 폴더입니다.
 
-macOS / Linux:
+**macOS / Linux**
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Windows — PowerShell:
+**Windows — PowerShell**
 
 ```powershell
 py -3 -m venv .venv
@@ -186,6 +211,8 @@ py -3 -m venv .venv
 
 </details>
 
+#### 패키지 설치 후 로컬 파일 확인하기
+
 이제 운영체제와 관계없이 패키지를 설치합니다. Windows 활성화가 실패했다면 위 **“Windows에서 Activate.ps1 실행이 차단될 때”**를 펼쳐 대체 실행 방법부터 적용합니다.
 
 ```bash
@@ -198,9 +225,18 @@ python -m pip install -r requirements.txt
 python lab.py doctor
 ```
 
-**완료 확인:** `LOCAL OK: Python ... , dev 8개, holdout 4개`가 보입니다. 이는 로컬 파일 확인이며 아직 Azure 연결 성공을 뜻하지 않습니다. 새 터미널에서는 이 폴더로 돌아와 macOS/Linux의 `source .venv/bin/activate` 또는 PowerShell의 `.\.venv\Scripts\Activate.ps1`만 다시 실행합니다. 활성화가 막히면 가상환경 Python 직접 실행 방식을 유지합니다. 가상환경 생성이나 패키지 설치부터 반복하지 않습니다.
+**완료 확인:** `LOCAL OK: Python ... , dev 8개, holdout 4개`.
+
+로컬 파일 확인까지 끝났습니다. **아직 Azure 연결 성공을 뜻하지는 않습니다.**
+
+<details>
+<summary>새 터미널이나 폴더 변경 후 다시 시작할 때</summary>
+
+이 폴더로 돌아와 macOS/Linux의 `source .venv/bin/activate` 또는 PowerShell의 `.\.venv\Scripts\Activate.ps1`만 다시 실행합니다. 활성화가 막히면 가상환경 Python 직접 실행 방식을 유지합니다. 가상환경 생성이나 패키지 설치부터 반복하지 않습니다.
 
 **폴더를 옮기거나 이름을 바꾼 뒤 가상환경이 실행되지 않을 때만** [가상환경 복구](docs/reference.md#moved-folder)를 따릅니다. 기존 결과·설정·직접 수정한 파일은 유지합니다.
+
+</details>
 
 <a id="working-files"></a>
 **직접 편집할 로컬 작업 파일은 아래 세 개입니다. 해당 단계에서만 수정합니다.**
@@ -216,6 +252,8 @@ python lab.py doctor
 **저장소에는 `prompts/my-v2.txt`와 `data/my-case.jsonl`이 이미 포함되어 있습니다.** 파일이 있다는 사실이 직접 수정하거나 실행했다는 뜻은 아닙니다. 해당 단계에서 먼저 열어 확인하고, 이전에 작성한 본인 작업은 덮어쓰지 않습니다.
 
 `results/baseline` 같은 **결과 폴더와 보고서는 명령이 자동으로 만듭니다.** 생성된 JSON·보고서는 미리 채우거나 직접 수정하지 않고 증거로 읽습니다. 원본 규정·질문·프롬프트는 유지하고, 작업 파일은 VS Code 기본 **UTF-8**로 저장합니다.
+
+**다음:** [준비 2. 로그인](#setup-sign-in) · [준비 진행표](#setup-map)
 
 <a id="setup-sign-in"></a>
 ### 준비 2. 사용할 구독으로 로그인
@@ -243,9 +281,17 @@ az account set --subscription "YOUR-SUBSCRIPTION-ID"
 az account show --query "{account:user.name,subscription:name,subscriptionId:id,tenantId:tenantId,state:state}" --output json
 ```
 
-**완료 확인:** `account`가 이번 실습에 사용할 본인 계정이고, 포털과 터미널의 구독 ID·테넌트 ID가 같으며 `state`가 `Enabled`입니다. **구독 이름만 보고 진행하지 않습니다.** 여러 계정으로 로그인했다면 기본 구독이 다른 계정을 가리킬 수 있습니다. 구독이 안 보이면 사용할 구독의 테넌트로 로그인했는지 먼저 확인합니다.
+**완료 확인:** 아래 세 가지가 모두 맞습니다.
+
+- `account`는 이번 실습에 사용할 본인 계정입니다.
+- 구독 ID·테넌트 ID는 포털과 터미널에서 같습니다. **구독 이름만으로 판단하지 않습니다.**
+- `state`는 `Enabled`입니다.
+
+여러 계정으로 로그인했다면 기본 구독이 다른 계정을 가리킬 수 있습니다. 구독이 안 보이면 사용할 구독의 테넌트로 로그인했는지 먼저 확인합니다.
 
 **브라우저와 Azure CLI는 로그인 세션이 별개입니다.** Foundry나 보고서 URL에서 **Pick an account / 계정 선택**이 다시 나오면 위 `account`와 같은 계정을 선택합니다. New Foundry로 전환할 때 다시 선택할 수도 있습니다. CLI에서 로그인했다고 다른 브라우저나 headless 브라우저까지 인증된 것은 아닙니다.
+
+**다음:** [준비 3. 프로젝트](#setup-project) · [준비 진행표](#setup-map)
 
 <a id="setup-project"></a>
 ### 준비 3. 본인 전용 그룹과 Foundry 프로젝트 만들기
@@ -261,13 +307,15 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 
 `a7k3m9`는 예시입니다. 본인 고유 영문·숫자로 바꾸고, 이후 단계에는 **화면에 실제로 만들어진 이름**을 사용합니다.
 
-**Azure 포털에서:**
+#### Azure 포털에서 전용 그룹 만들기
 
 1. **Resource groups → Create**에서 준비 2의 구독을 선택합니다.
 2. 위 표처럼 **새 전용 그룹** 이름을 입력하고 지역은 **Sweden Central (`swedencentral`)**을 선택합니다.
 3. **Review + create → Create**를 선택하고 완료를 기다립니다.
 
-**[Microsoft Foundry](https://ai.azure.com)에서:**
+#### Microsoft Foundry에서 프로젝트 만들기
+
+[Microsoft Foundry](https://ai.azure.com)를 엽니다.
 
 1. 같은 계정으로 로그인합니다. **New Foundry** 전환이 보이면 켭니다.
 2. **Create project**, 또는 왼쪽 위 프로젝트 이름 → **Create new project**를 선택합니다.
@@ -283,6 +331,8 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 
 포털 대신 명령으로 준비하려면 [Azure CLI 신규 환경 경로](docs/setup.md#cli-provision)를 사용합니다. **준비 3–5의 대체 경로**이며 두 경로로 자원을 중복 생성하지 않습니다.
 
+**다음:** [준비 4. 권한](#setup-permissions) · [준비 진행표](#setup-map)
+
 <a id="setup-permissions"></a>
 ### 준비 4. 모델 호출과 평가 권한 확인
 
@@ -290,7 +340,9 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 
 아래 상위 리소스 역할 할당은 **본인 전용 실습 환경의 공통 시작 구성**이며, 모든 평가·기존 프로젝트의 유일한 최소 범위는 아닙니다. 권한은 하위 프로젝트에도 상속됩니다. 공유·기존 환경은 [권한 계약](docs/reference.md#permissions-contract)에 따라 소유자와 필요한 범위를 확인합니다.
 
-**먼저 프로젝트에서 ID 확인 → 다음 상위 리소스에서 역할 확인**, 두 대상을 구분합니다.
+#### 프로젝트에서 관리 ID 확인하기
+
+**프로젝트에서 ID 확인 → 상위 리소스에서 역할 확인** 순서입니다. 두 대상을 구분합니다.
 
 1. Foundry의 **Manage → Project details**에서 프로젝트의 Azure 리소스를 엽니다. 리소스 ID가 **`/accounts/실제리소스이름/projects/실제프로젝트이름`**으로 끝나는지 준비 3에서 확인한 이름과 대조합니다. 기본 경로의 프로젝트 이름은 `eval-workshop`이며, 기존 환경에서는 허가받은 실제 이름을 사용합니다.
 2. 그 프로젝트의 **Identity → System assigned → Object (principal) ID**를 확인해 아래 IAM 대상과 대조합니다. 상위 Foundry 리소스의 관리 ID를 복사하지 않습니다. 메뉴나 ID가 없으면 [관리 ID 선택 도움말](docs/reference.md#managed-identity-access)을 봅니다.
@@ -299,7 +351,9 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 
 ![프로젝트 화면의 Object (principal) ID를 상위 Foundry 리소스 IAM의 프로젝트 관리 ID와 대조하고, 같은 리소스 범위에서 본인과 프로젝트에 각각 Foundry User가 있는지 확인하는 그림](docs/images/foundry-permissions.svg)
 
-**이제 Azure 포털 → 상위 Foundry 리소스 → Access control (IAM)**을 엽니다. 이 화면의 리소스 ID는 **`/accounts/실제리소스이름`**으로 끝나며 `/projects/...`가 붙지 않습니다.
+#### 상위 Foundry 리소스에서 역할 확인하기
+
+**Azure 포털 → 상위 Foundry 리소스 → Access control (IAM)**을 엽니다. 이 화면의 리소스 ID는 **`/accounts/실제리소스이름`**으로 끝나며 `/projects/...`가 붙지 않습니다.
 
 | 역할 | 누구에게 | 어느 범위에 |
 |---|---|---|
@@ -313,6 +367,8 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 목록에서 찾지 못하면 [관리 ID 선택 도움말](docs/reference.md#managed-identity-access)을 사용합니다. 같은 이름의 다른 ID로 대체하지 않습니다.
 
 **완료 확인:** 본인 계정과 **확인한 프로젝트 ID** 모두 **Foundry 리소스 범위**의 Foundry User가 있습니다. 구독 전체에 추가하지 않습니다. 권한 반영이 늦어도 같은 역할을 중복 생성하지 않습니다.
+
+**다음:** [준비 5. 모델](#setup-model) · [준비 진행표](#setup-map)
 
 <a id="setup-model"></a>
 ### 준비 5. 모델 하나 배포
@@ -339,6 +395,8 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 
 이 배포 하나를 답변 생성과 AI 채점에 함께 사용합니다. **카탈로그 조회나 배포 성공만으로 Chat Completions·Structured Outputs(JSON Schema)·클라우드 Judge가 모두 동작한다고 판단하지 않습니다.** [준비 7의 한 건 생성·평가](#setup-smoke)로 실제 호환성을 확인합니다. 호출은 별개이고 같은 모델도 잘못 채점할 수 있으므로 뒤에서 사람 판단과 대조합니다.
 
+**다음:** [준비 6. 설정 파일](#setup-config) · [준비 진행표](#setup-map)
+
 <a id="setup-config"></a>
 ### 준비 6. 설정 파일에 프로젝트 주소 넣기
 
@@ -348,7 +406,11 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 2. VS Code에서 [config.example.json](config.example.json)을 엽니다. **File → Save As**로 **`lab.py` 옆에 `config.json`**을 만듭니다.
 3. 아래 `project_endpoint`의 예시 주소를 복사한 실제 주소로 바꾸고 저장합니다.
 
-**JSON 편집 요령:** 왼쪽 항목 이름은 그대로 두고, 안내한 오른쪽 값만 바꿉니다. 큰따옴표 `"`·쉼표·중괄호를 유지하고 마지막 항목 뒤에는 쉼표를 추가하지 않습니다. 아래 내용을 복사한다면 `{`부터 `}`까지만 파일에 넣으며 설명문이나 코드 블록의 테두리는 넣지 않습니다.
+**JSON 편집 요령**
+
+- 왼쪽 항목 이름은 두고, 안내한 **오른쪽 값만** 바꿉니다.
+- 큰따옴표 `"`·쉼표·중괄호를 유지합니다. 마지막 항목 뒤에는 쉼표를 넣지 않습니다.
+- 복사할 때는 **`{`부터 `}`까지만** 넣습니다. 설명문이나 코드 블록 테두리는 제외합니다.
 
 ```json
 {
@@ -373,6 +435,8 @@ python lab.py doctor --live
 ```
 
 **완료 확인:** `model_deployment`와 `judge_deployment`에 각각 **`LIVE 조회 OK`**가 나오고 모델 이름이 **`gpt-6-luna`**인지 확인합니다. 같은 `eval-model`이 두 번 나오는 것이 정상입니다. 이는 조회 확인이며, 실제 생성·평가는 다음 단계에서 확인합니다.
+
+**다음:** [준비 7. 연결 확인](#setup-smoke) · [명령 상태 읽기](#command-status) · [준비 진행표](#setup-map)
 
 <a id="command-status"></a>
 ### 명령 결과를 보고 다음 행동 고르기
@@ -408,17 +472,27 @@ python lab.py doctor --live
 
 **실행 위치: VS Code 터미널. 여기부터 유료 생성·평가 호출이 발생합니다.**
 
+#### 답변 한 개 생성하기
+
 ```bash
 python lab.py run --mode live --prompt v1 --data data/my-case.example.jsonl --out results/setup-smoke
 ```
 
-**`1/1  N01 저장`**이 보이면 채점합니다. `run`은 답변을 만드는 명령이고, `judge`는 **그 답변을 그대로 채점**하는 명령입니다.
+**완료 확인:** `1/1  N01 저장`.
+
+#### 저장한 답변 채점하기
+
+`run`은 답변을 만들고, `judge`는 **그 답변을 그대로 채점**합니다.
 
 ```bash
 python lab.py judge results/setup-smoke
 ```
 
-`아직 처리 중입니다`로 끝나면 위 `judge`를 그대로 재실행합니다. 오류·중단은 [명령 상태와 재개 안내](#command-status)를 따릅니다. **`평가 완료: 1개 답변 × 2개 지표`**가 나오면 답변 한 건을 엽니다.
+**완료 확인:** `평가 완료: 1개 답변 × 2개 지표`.
+
+`아직 처리 중입니다`로 끝나면 위 `judge`를 그대로 재실행합니다. 오류·중단은 [명령 상태와 재개 안내](#command-status)를 따릅니다.
+
+#### 답변·점수·이유 확인하기
 
 ```bash
 python lab.py inspect results/setup-smoke N01
@@ -444,11 +518,15 @@ python lab.py inspect results/setup-smoke N01
 <a id="lab-1"></a>
 ## 1. 답변을 보기 전에 기준 정하기
 
+### 1-1. 질문과 기대 행동 읽기
+
 **할 일:** [dev 질문 8개](data/dev.jsonl)를 읽습니다. `dev`는 **개선에 사용하는 질문 묶음**입니다. 아직 `data/holdout.jsonl`은 열지 않습니다. 그 4개는 마지막 확인용입니다.
 
 `D02`의 기대 행동은 **사전 승인 필요, 한도 200000원, 근거는 TRAVEL-CURRENT**입니다. 이 사례에서 절대 안내하면 안 되는 행동도 먼저 판단합니다. 다른 질문에는 과거 규정·모르는 내용·금지 항목·규정 무시 요청·경계값·정보 부족이 있습니다.
 
 모든 질문에 같은 출장 규정을 제공합니다. **질문과 규정은 모델에 주지만 정답은 주지 않습니다.** JSONL은 한 줄에 JSON 객체 하나인 파일입니다. `id`는 사례 번호, `query`는 질문, `expected_*`는 코드로 확인할 정답, `ground_truth`는 사람이 읽는 정답 설명입니다.
+
+### 1-2. 답변의 네 필드 이해하기
 
 답변은 아래 네 필드로 저장됩니다. **D02의 기대 답변을 설명하기 위한 예이며 실제 모델 출력은 아닙니다.**
 
@@ -472,7 +550,7 @@ python lab.py inspect results/setup-smoke N01
 
 `limit_krw`는 청구 금액이 아닙니다. `null`이면 한도를 결정할 수 없거나 숙박 한도와 무관한 질문이며 0원이라는 뜻이 아닙니다. `unknown`·`needs_info`도 상황에 따라 올바른 답일 수 있고, 결정 값이 실제 정산이나 승인을 실행하지는 않습니다.
 
-### 평가는 세 가지를 함께 봅니다
+### 1-3. 세 가지 평가 방법 구분하기
 
 | 방법 | 확인하는 것 | 한계 |
 |---|---|---|
@@ -480,7 +558,7 @@ python lab.py inspect results/setup-smoke N01
 | **Foundry의 LLM judge** | AI 채점자. **Groundedness(근거 충실도)**: 규정에 근거하는가? **Relevance(질문 관련성)**: 질문에 적절한가? | AI의 채점도 틀릴 수 있음 |
 | **사람 검토** | 규정과 실제 답변을 대조했을 때 업무에 써도 되는가? | 모든 답변을 사람이 볼 수는 없음 |
 
-### 이번 실습의 합격선
+### 1-4. 합격선 고정하기
 
 | 항목 | 기준 |
 |---|---|
@@ -586,17 +664,25 @@ V2는 공식 규정과 날짜를 먼저 확인하고, 모르는 값이나 없는
 
 각 명령의 완료를 확인하며 순서대로 실행합니다.
 
+**실행 1 — 후보 답변 생성**
+
 ```bash
 python lab.py run --mode live --prompt prompts/my-v2.txt --out results/candidate
 ```
 
-`candidate`는 **변경 후 후보 결과**입니다. `8/8  D08 저장`을 확인한 뒤 채점합니다.
+**완료 확인:** `8/8  D08 저장`. `candidate`는 **변경 후 후보 결과**입니다.
+
+**실행 2 — 같은 Judge로 채점**
 
 ```bash
 python lab.py judge results/candidate --like results/baseline
 ```
 
-`--like`는 변경 전과 **같은 Judge 모델·평가기 버전**을 사용합니다. `아직 처리 중입니다`로 끝나면 `--like`까지 포함한 위 명령을 그대로 재실행합니다. **`평가 완료: 8개 답변 × 2개 지표`**와 `Judge 결과: results/candidate/judge.json`을 확인한 뒤 비교합니다.
+**완료 확인:** `평가 완료: 8개 답변 × 2개 지표`와 `Judge 결과: results/candidate/judge.json`.
+
+`--like`는 변경 전과 **같은 Judge 모델·평가기 버전**을 사용합니다. `아직 처리 중입니다`로 끝나면 `--like`까지 포함한 위 명령을 그대로 재실행합니다.
+
+**실행 3 — 전후 결과 비교**
 
 ```bash
 python lab.py compare results/baseline results/candidate
@@ -622,9 +708,13 @@ Holdout·연결 확인·추가 사례는 전후 비교에 섞지 않습니다.
 python lab.py review results/candidate D06
 ```
 
-이 명령은 **입력을 기다립니다.** 답변을 읽은 뒤 소문자 `pass` 또는 `fail`을 입력하고 Enter, 이어서 **규정과 대조한 이유를 5자 이상** 입력하고 Enter를 누릅니다.
+이 명령은 **입력을 기다립니다.** 멈춘 것이 아닙니다.
 
-**판정할 때는 `answer` 문장까지 읽습니다.** [출장 규정](data/policies.md)과 비교해 금액·날짜·사전 승인 조건이 맞는지, 없는 승인을 만들어 내지 않았는지 확인합니다. 코드의 `PASS`나 Judge의 4점 이상을 그대로 사람의 `pass`로 옮기지 않습니다.
+1. **`answer` 문장까지 읽고** [출장 규정](data/policies.md)과 금액·날짜·사전 승인 조건을 대조합니다. 없는 승인을 만들지 않았는지도 확인합니다.
+2. 소문자 **`pass` 또는 `fail`**을 입력하고 Enter를 누릅니다.
+3. **규정과 대조한 이유를 5자 이상** 입력하고 Enter를 누릅니다.
+
+코드의 `PASS`나 Judge의 4점 이상을 그대로 사람의 `pass`로 옮기지 않습니다.
 
 아래는 **실제 답변이 없는 승인을 만들지 않고 사전 승인이 필요하다고 안내한 경우에만** 쓸 수 있는 입력 예입니다. 그대로 통과시키지 말고 본인 답변에 맞게 판단합니다.
 
@@ -681,7 +771,13 @@ python lab.py gate results/baseline results/candidate results/holdout
 | **BLOCK** | `gate.md`의 실패 이유를 확인하고 보류합니다. **실습 6으로 계속 진행합니다.** 종료 코드 2는 의도한 품질 차단입니다. |
 | **READY_FOR_HUMAN_REVIEW** | 교육용 기준 충족. 채택 검토 의견을 남기고 실습 6으로 진행합니다. **자동 배포 승인은 아닙니다.** |
 
-**완료 확인:** `results/candidate/gate.md`를 근거로 **결과·내 판단·문제 사례**를 설명할 수 있습니다. 점수 누락이나 사람 검토 미실행 때문에 차단됐다면 해당 단계를 완료한 뒤 **같은 `gate` 명령을 다시 실행**해 판단을 갱신합니다. 검토 저장만으로 `gate.md`가 바뀌지는 않습니다. 품질 실패라면 통과시키려고 판정을 바꾸지 않습니다. 자동 리허설에서는 실제 사람 검토 미완료를 그대로 기록합니다.
+**완료 확인:** `results/candidate/gate.md`를 근거로 **결과·내 판단·문제 사례**를 설명할 수 있습니다.
+
+**차단됐다면 원인을 구분합니다.**
+
+- **점수·사람 검토 누락:** 해당 단계를 완료한 뒤 **같은 `gate` 명령을 다시 실행**합니다. 검토 저장만으로 `gate.md`가 바뀌지는 않습니다.
+- **실제 품질 실패:** 실패와 보류 판단을 유지합니다. 통과시키려고 판정을 바꾸지 않습니다.
+- **자동 리허설:** 실제 사람 검토 미완료를 그대로 기록합니다.
 
 Dev와 holdout은 질문이 달라 전후 점수처럼 비교하지 않습니다. Holdout을 보고 프롬프트를 수정한다면 **다음에는 새 holdout이 필요**합니다.
 
@@ -740,7 +836,9 @@ Dev와 holdout은 질문이 달라 전후 점수처럼 비교하지 않습니다
 
 </details>
 
-**파일은 JSON 객체 하나가 한 줄에 있는 형태**여야 합니다. 화면에서 자동 줄바꿈되어 보이는 것은 괜찮지만 Enter로 객체를 여러 줄로 나누거나 빈 줄을 넣지 않습니다. 숫자에 쉼표·따옴표를 붙이지 않고, `null`·`true`·`false`는 소문자로 씁니다. 필드를 추가하거나 삭제하지 않습니다.
+**파일은 JSON 객체 하나를 한 줄에 저장합니다.** 긴 줄은 VS Code의 **View → Word Wrap**으로 읽습니다. 화면의 자동 줄바꿈은 괜찮지만 Enter로 객체를 나누거나 빈 줄을 넣지 않습니다.
+
+숫자에 쉼표·따옴표를 붙이지 않고, `null`·`true`·`false`는 소문자로 씁니다. 필드를 추가하거나 삭제하지 않습니다.
 
 <a id="validate-extra"></a>
 ### 6-3. 유료 호출 전에 파일 확인하기

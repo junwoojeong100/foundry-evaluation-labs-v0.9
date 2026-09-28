@@ -4,6 +4,8 @@
 
 [Main guide](../../README.md)
 
+**Jump to:** [Start](#lab-0) · [Setup](#prepare) · [Resume](#resume) · [Finish](#finish)
+
 **Learn the evaluation workflow without Azure.** Set criteria for the fictional Gaon Lab travel-expense assistant, inspect answers and judge examples, and decide whether to adopt or hold a change. **Follow this page only.**
 
 | At a glance | DEMO |
@@ -35,6 +37,22 @@ Activities 0–6 match LIVE. Follow **one command → checkpoint → next step**
 
 **Producing a report is not the same as passing answers.** Example scores are not expected LIVE scores.
 
+<a id="reading-guide"></a>
+### How to read this guide
+
+**Follow the action → command → checkpoint → next step.**
+
+| Marker | How to use it |
+|---|---|
+| `bash` / `powershell` code block | Terminal commands. Copy one command at a time and wait for the prompt to return |
+| `text` code block | Expected output, not a command to execute |
+| **Checkpoint** | The message, count, or result to check before continuing |
+| Collapsed explanation | Answers, exceptions, or optional exercises; expand when needed |
+
+**Where to run:** always use the folder containing `lab.py`. Copy each long command as **one complete line**, without inserting Enter in the middle. Output folders are automatic; read `.md` reports in VS Code's Markdown preview.
+
+**Start here:** [0. Spot a plausible wrong answer](#lab-0). Installation comes next.
+
 ---
 
 <a id="lab-0"></a>
@@ -42,9 +60,10 @@ Activities 0–6 match LIVE. Follow **one command → checkpoint → next step**
 
 Before installation, consider a September 2026 domestic hotel expense of KRW 220000 per night with no prior approval.
 
-| Answer A | Answer B |
+| Choice | Answer |
 |---|---|
-| The limit is KRW 240000; submit the claim. | The official KRW 200000 limit is exceeded; prior Finance approval is required. |
+| **A** | The limit is KRW 240000; submit the claim. |
+| **B** | The official KRW 200000 limit is exceeded; prior Finance approval is required. |
 
 Choose one, then read the [English policy translation](policies.md) or [Korean source](../../data/policies.md).
 
@@ -64,23 +83,40 @@ B is appropriate. KRW 240000 is an unapproved draft proposal. Exceeding the offi
 <a id="prepare"></a>
 ## Setup. Prepare files and a terminal
 
+### Setup 1. Open the folder and terminal
+
 1. On the [repository page](https://github.com/junwoojeong100/foundry-evaluation-labs-v1), choose **Code → Download ZIP** and extract it, or obtain an authorized copy. Skip this if you already have the files.
 2. Install [Python 3.10+](https://www.python.org/downloads/) and [VS Code](https://code.visualstudio.com/). On Windows, enable Python PATH setup.
 3. Open the folder containing `lab.py` and choose **Terminal → New Terminal**.
 4. Use only your operating system's block. If a virtual environment already exists, activate rather than recreate it.
 
-**Use your computer's terminal, not Azure Cloud Shell.** Use **PowerShell on Windows**, or **zsh/bash on macOS/Linux**. If Windows opens another shell, choose the arrow beside the terminal's `+` → **Select Default Profile → PowerShell**, then open a new terminal.
+**Use your computer's terminal, not Azure Cloud Shell.**
 
-Open local files with **Ctrl+P / macOS Cmd+P** and save with **File → Save**. Browser links do not edit local files. Use Markdown preview for reading and the source tab for editing. Enter commands in the terminal, not at Python's `>>>` prompt; type `exit()` first if necessary.
+- **Windows:** PowerShell. If another shell opens, choose the arrow beside the terminal's `+` → **Select Default Profile → PowerShell**, then open a new terminal.
+- **macOS/Linux:** zsh or bash.
 
-macOS / Linux:
+**Browser file links are for reading.** Edit local files in VS Code.
+
+| File task | Action in VS Code |
+|---|---|
+| Open | Enter the path with Ctrl+P / macOS Cmd+P; use Explorer if needed |
+| Read a report | **View → Command Palette → Markdown: Open Preview to the Side** |
+| Edit and save | Edit the source tab, not the preview → **File → Save** |
+
+**Enter commands in VS Code's terminal.** Do not use a Python file's Run button or the Python `>>>` prompt; type `exit()` first if necessary.
+
+### Setup 2. Create the virtual environment
+
+**Run only your operating system's block.** Activate an existing environment rather than recreating it.
+
+**macOS / Linux**
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Windows / PowerShell:
+**Windows / PowerShell**
 
 ```powershell
 py -3 -m venv .venv
@@ -96,6 +132,10 @@ Use `.\.venv\Scripts\python.exe` in place of `python`; do not weaken organizatio
 
 </details>
 
+### Setup 3. Check local files
+
+Run this in the same terminal.
+
 ```bash
 python lab.py doctor
 ```
@@ -103,7 +143,16 @@ python lab.py doctor
 **Checkpoint:** `LOCAL OK` and `dev 8개, holdout 4개`.
 
 <a id="working-files"></a>
-**The only file you edit is `data/my-case.jsonl` in activity 6.** The repository already includes an N02 example working copy; inspect it at that step. Its presence does not mean you wrote or executed it. No `config.json` is needed. Commands create result directories automatically. Keep the original policy, questions, prompts, and generated evidence unchanged. Save working files as UTF-8. If switching from LIVE, preserve your question, prompt, results, and Azure resources.
+### Distinguish working files from results
+
+| Category | What to do |
+|---|---|
+| Edit yourself | Only **`data/my-case.jsonl` in activity 6**; save it as UTF-8 |
+| Not needed | `config.json`; DEMO does not use it |
+| Generated automatically | Result folders, JSON, and reports; read without editing |
+| Keep unchanged | Supplied policy, questions, and prompts |
+
+The N02 example working copy is already included; **inspect it in activity 6**. Its presence does not mean you wrote or executed it. If switching from LIVE, preserve your question, prompt, results, and Azure resources.
 
 Run one command at a time from the `lab.py` folder; use only `demo-*` result folders for this path. **Errors and low scores are different:** resolve `ERROR:` before continuing; treat FAIL and low scores as observations. Do not switch to `--mode live` to work around a DEMO error.
 
@@ -130,13 +179,15 @@ In a new terminal, return to the `lab.py` folder and run only `source .venv/bin/
 <a id="lab-1"></a>
 ## 1. Choose criteria before seeing answers
 
+### 1-1. Distinguish expected behavior and evaluation methods
+
 Read [the dev cases](../../data/dev.jsonl). Do not open holdout yet. JSONL contains one question/expectation object per line.
 
 D02 requires `needs_approval`, limit 200000, and `TRAVEL-CURRENT`. Do not advise immediate reimbursement or invent approval. Identify the expected behavior and risk first.
 
 Code checks format, decision, limit, and citations. Groundedness asks whether policy supports the answer; Relevance asks whether it addresses the question. **Here their scores are examples, not fresh AI judgments.** A person still checks the explanation.
 
-**Fix these criteria before seeing results**
+### 1-2. Fix the thresholds before seeing results
 
 | Criterion | Requirement |
 |---|---|
@@ -198,7 +249,11 @@ Decisions are `allowed`, `needs_approval` (prior approval required), `not_allowe
 python lab.py judge results/demo-baseline
 ```
 
-This reads authored scores/reasons, with no AI call. Wait for **`평가 완료: 8개 답변 × 2개 지표`** and `Judge 결과: results/demo-baseline/judge.json`. Completion confirms validated saved evidence, not passing answers. Read `report.md` and `사례별 근거` for per-case evidence.
+**Checkpoint:** `평가 완료: 8개 답변 × 2개 지표` and `Judge 결과: results/demo-baseline/judge.json`.
+
+This reads **authored scores and reasons**, with no AI call. After completion, inspect D04 again below.
+
+Completion confirms validated saved evidence, not passing answers. Read the summary table in `report.md`, then `사례별 근거` for each answer and its scoring reasons.
 
 ### 3-3. Compare the same D04 again
 
@@ -219,17 +274,25 @@ python lab.py inspect results/demo-baseline D04
 
 Choose a hypothesis. Read [V1](../../prompts/v1.txt) and [V2](../../prompts/v2.txt), noting official policy, travel dates, and missing-information handling. **Do not edit them.** DEMO cannot measure a new prompt; it replays the provided V2 examples.
 
+**Action 1 — read the V2 answer examples**
+
 ```bash
 python lab.py run --mode demo --prompt v2 --out results/demo-candidate
 ```
 
-**Checkpoint:** `8/8  D08 저장` and business **8/8 (100%)**. These are code-check results for the authored V2 answers; judge scores are not loaded yet. Read the score examples next:
+**Checkpoint:** `8/8  D08 저장` and business **8/8 (100%)**.
+
+These are code-check results for authored V2 answers; judge scores are not loaded yet.
+
+**Action 2 — read score examples using the same judging contract**
 
 ```bash
 python lab.py judge results/demo-candidate --like results/demo-baseline
 ```
 
-`--like` preserves the judging contract. Confirm **`평가 완료: 8개 답변 × 2개 지표`** and `Judge 결과: results/demo-candidate/judge.json`.
+**Checkpoint:** `평가 완료: 8개 답변 × 2개 지표` and `Judge 결과: results/demo-candidate/judge.json`.
+
+`--like` preserves the baseline judging contract.
 
 ### 4-2. Check newly passing cases and regressions
 
@@ -245,7 +308,13 @@ Read newly passing cases, business regressions, and judge regressions in `compar
 python lab.py review results/demo-candidate D06
 ```
 
-Enter `pass` or `fail`, then a policy-based reason of at least five characters. Read the `answer` text and check amounts, dates, and approval claims; do not copy the code or judge verdict. Save human verdicts through this command so the gate can use them.
+The command **waits for your input**; it has not stalled.
+
+1. Read the **`answer` text** and compare amounts, dates, and approval conditions with the [policy translation](policies.md). Check that it does not invent approval.
+2. Enter lowercase **`pass` or `fail`**, then press Enter.
+3. Enter a **policy-based reason of at least five characters**, then press Enter.
+
+Save through this command so the gate can use the verdict. Do not copy a code `PASS` or a judge score of 4 or higher into your human verdict.
 
 Automated walkthroughs must use [assistant-attributed reviews](reference.md#assisted-review). Do not save an AI verdict as human approval; leave unperformed human review incomplete.
 
@@ -288,7 +357,13 @@ python lab.py gate results/demo-baseline results/demo-candidate results/demo-hol
 
 **Checkpoint:** business **3/4 (75%)**, **BLOCK**, expected exit code **2**. If H04 is reviewed as `fail`, human rejection is another reason. Read `results/demo-candidate/gate.md`, record your decision, and **continue to activity 6**.
 
-This example's quality BLOCK is not a failure to complete the workshop. **Missing scores or human review can also cause BLOCK.** Complete those missing steps, then rerun the same `gate` command; saving a review alone does not refresh `gate.md`. Resolve `ERROR:` first, but do not change real quality failures into passes. Dev and holdout are different sets. If you change the prompt after examining holdout, use a new holdout next time.
+**This example's quality BLOCK is not a failure to complete the workshop.** Distinguish the cause.
+
+- **Missing scores or human review:** finish those steps and rerun the same `gate` command. Saving a review alone does not refresh `gate.md`.
+- **Genuine quality failure:** record the hold reason and continue. Do not change a failure into a pass.
+- **`ERROR:`:** resolve it first.
+
+Dev and holdout are different question sets, not a before/after pair. If you change the prompt after examining holdout, use a new holdout next time.
 
 **Next:** [6. Your question](#lab-6) · [Progress map](#lab-map)
 
@@ -317,7 +392,11 @@ Open `data/my-case.jsonl` first. The repository includes an N02 example with an 
 
 Change **`170000` → `180000`** in both `query` and `ground_truth`, but keep the **160000** policy limit, `needs_approval`, and `TRAVEL-PREVIOUS`. The question concerns a June 15 trip claimed in September; travel date determines the limit.
 
-Distinguish editing the example, writing your own question, using the example unchanged, or reusing your previous question in your final summary. For your own question, define all eight required fields and expectations from policy first; keep ID N02. Save one JSON object per line with no blank lines, integer or `null` limits, and lowercase booleans.
+Distinguish editing the example, writing your own question, using the example unchanged, or reusing your previous question in your final summary. For your own question, define all eight required fields and expectations from policy first; keep ID N02.
+
+**Save one JSON object on one line.** Use VS Code's **View → Word Wrap** to read the long line. Visual wrapping is fine; do not insert Enter inside the object or add blank lines.
+
+Preserve all eight fields, use integer or `null` limits, and keep `null`, `true`, and `false` lowercase.
 
 <a id="validate-extra"></a>
 ### 6-3. Validate the file format
@@ -328,7 +407,14 @@ This local check does not modify files or call a model.
 python lab.py validate-data data/my-case.jsonl
 ```
 
-**Checkpoint:** `DATA OK: 1 case(s)`. Fix field/line errors locally. The checker validates format, not the truth of the expectation. **DEMO does not generate or judge N02.** Do not add LIVE calls to this path.
+**Checkpoint:** `DATA OK: 1 case(s)`.
+
+**If the result differs:** fix the field or line identified by `ERROR:` and repeat only this check. If more than one case is found, keep only the N02 line.
+
+The checker validates JSONL syntax, required fields, and value formats. **It does not validate the expected answer or model performance**; compare expectations with policy yourself.
+
+> [!IMPORTANT]
+> **DEMO does not generate or judge N02.** Do not add LIVE calls to this path.
 
 Distinguish “N02 generation/judge not executed in this DEMO path” from completed work. Keep any previous LIVE results as separate records; do not count them as DEMO execution. Explain your findings in four sentences:
 

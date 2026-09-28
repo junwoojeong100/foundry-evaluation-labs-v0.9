@@ -4,6 +4,8 @@
 
 [Repository home](../../README.md)
 
+**Jump to:** [Start](#architecture) · [Setup](#setup) · [Resume](#resume) · [Finish](#retention)
+
 **Retrieve policy, improve answers, then check fresh questions.** Use the fictional Gaon Lab travel-expense assistant to learn **RAG (retrieval-augmented generation)**: answering from retrieved evidence.
 
 | At a glance | This path |
@@ -32,12 +34,27 @@ The policy inputs, example queries, and model answers remain **Korean** so both 
 | [7. Fresh questions](#holdout) | Create and evaluate eight new cases after freezing | Your own `acceptance-report.md` |
 | [8. Finish](#retention) | Interpret and retain results; check costs | Completion checklist or interruption record |
 
-**Reading commands:** from the folder containing `advanced_lab.py`, activate the virtual environment and follow **one command → checkpoint → next command**. Output folders are automatic. `text` blocks show output, not commands. If blocked, use the [status/resume table](#resume).
+<a id="reading-guide"></a>
+### How to read this guide
+
+**Follow the action → command → checkpoint → next step.**
+
+| Marker | How to use it |
+|---|---|
+| `bash` code block | Terminal commands. Copy one command at a time and wait for the prompt to return |
+| `text` code block | Expected output, not a command to execute |
+| `YOUR-...` | Replace with a value verified in your environment; keep quotation marks |
+| **Checkpoint** | The message, count, or result to check before continuing |
+| Collapsed explanation | Answers, exceptions, or background; expand when needed |
+
+**Where to run:** the folder containing `advanced_lab.py`, with the virtual environment active. Copy each long command as **one complete line**, without inserting Enter in the middle. Output folders are automatic; read `.md` reports in VS Code's Markdown preview. If blocked, use the [status/resume table](#resume).
 
 > [!IMPORTANT]
 > **Lab completion is not the same as automated acceptance.** Preserve low scores and stopped runs. Do not mark unperformed stages complete or apply the introduction's 80% gate and D06/H04 review workflow here.
 
 Use each checkpoint and the generated results. No separate record form is needed; personal notes are optional.
+
+**Start here:** [1. Read the policy](#architecture). The glossary and videos below are optional references.
 
 <details>
 <summary>Terms: chunks, vectors, Knowledge Base, judge, and holdout</summary>
@@ -68,6 +85,8 @@ Videos are optional. The [English/Korean summaries](../media/complete-rag/README
 <a id="architecture"></a>
 ## 1. Read the policy and understand the components
 
+### 1-1. Make a policy-based judgment
+
 **Before installing anything:** read the [English policy translation](policies.md), or the [Korean source](../../data/policies.md), and answer:
 
 > A domestic business-trip hotel costs KRW 220000 per night in September 2026, without prior approval. Can the employee claim it immediately?
@@ -79,7 +98,11 @@ The current official limit is KRW 200000. KRW 220000 exceeds it, so prior Financ
 
 </details>
 
-**Checkpoint:** explain the decision and policy-based reason in one sentence. For the components below, understand their roles only. HNSW names a vector-search algorithm; you do not need to implement it or change its settings.
+**Checkpoint:** explain the decision and policy-based reason in one sentence.
+
+### 1-2. Distinguish the component roles
+
+Understand **the roles only**. HNSW names a vector-search algorithm; you do not need to implement it or change its settings.
 
 | Component | Purpose |
 |---|---|
@@ -90,7 +113,9 @@ The current official limit is KRW 200000. KRW 220000 exceeds it, so prior Financ
 | `rag-planner` | Supported `gpt-5.4-mini` planner; not the answer model |
 | `eval-model` | `gpt-6-luna` for answers and evaluation |
 
-The full IQ path uses **`2026-08-01-preview`, pinned in the code**, because LLM query planning is not in the minimal GA API. It is not presented as a GA production deployment. The `low` effort setting performs actual LLM planning; vectors and a vectorizer enable hybrid retrieval. Do not mix examples for other API versions into these requests.
+**API scope:** LLM query planning uses **`2026-08-01-preview`, pinned in the code**. This is a **preview feature**, not the minimal GA API or a GA production deployment.
+
+The `low` effort setting performs actual LLM planning; vectors and a vectorizer enable hybrid retrieval. Do not mix examples for other API versions into these requests.
 
 Free Search does not provide the outbound managed identity needed here. Reuse an existing authorized Basic-or-higher service when available. **Basic has ongoing charges while retained**, and embedding, planning, generation, and judging can incur usage charges.
 
@@ -172,6 +197,8 @@ You should now have `config.json` and one generated, evaluated N01 answer. Repla
 | `YOUR-SEARCH-PRINCIPAL-ID` | `identity.principalId` from the Search lookup below, not the user or project ID |
 | `YOUR-USER-OBJECT-ID` | Your account's `objectId` from the user lookup in 2-4 |
 
+#### Verify the fixed answer-model version
+
 First, read the **already deployed answer model** without changing it:
 
 ```bash
@@ -179,6 +206,8 @@ az cognitiveservices account deployment show --name "YOUR-FOUNDRY-ACCOUNT" --res
 ```
 
 **Checkpoint:** `name: eval-model`, `state: Succeeded`, `model: gpt-6-luna`, and `version: 2026-09-22`. If different, return to the path-selection guidance above without creating more resources.
+
+#### Decide whether to reuse or create additional deployments
 
 **If reusing both embedding and planner deployments too**, verify their models/versions with the owner and under Foundry **Build → Models**, then skip both queries below. Participants not creating deployments do not need new quota allocations or subscription quota-read permission.
 
@@ -192,12 +221,26 @@ az cognitiveservices model list --location swedencentral --subscription "YOUR-SU
 az cognitiveservices usage list --location swedencentral --subscription "YOUR-SUBSCRIPTION-ID" --query "[?name.value=='OpenAI.GlobalStandard.text-embedding-3-small' || name.value=='OpenAI.GlobalStandard.gpt-5.4-mini'].{name:name.value,current:currentValue,limit:limit}" --output json
 ```
 
-In the first result, check **`model.version` and `GlobalStandard` support** for each `model.name`. Use the chosen versions as **`YOUR-EMBEDDING-VERSION` and `YOUR-PLANNER-VERSION`** in the later deployment commands. The second result's remaining quota (`limit - current`) must accommodate capacity **40** for a new embedding deployment and **60** for a new planner. Do not allocate an existing deployment's quota a second time when reusing it. Check model/SKU-specific quota and capacity units; an empty result or 403 does not mean zero quota. Use [availability and permission help](reference.md#model-availability) if blocked.
+**Check two things in these results**
+
+1. **Version and SKU:** in the first result, check `model.version` and `GlobalStandard` support for each `model.name`. Use those versions in the later deployment commands.
+2. **Remaining quota:** the second result's `limit - current` must accommodate the new capacities below. Do not allocate a reused deployment's quota a second time.
+
+| New deployment | Version placeholder | Required capacity |
+|---|---|---|
+| Embedding | `YOUR-EMBEDDING-VERSION` | 40 |
+| Query planning | `YOUR-PLANNER-VERSION` | 60 |
+
+Check model/SKU-specific quota and capacity units. **An empty result or 403 does not mean zero quota.** Use [availability and permission help](reference.md#model-availability) if blocked.
+
+**Next:** [2-3. Search service](#search-service) · [Setup map](#setup)
 
 <a id="search-service"></a>
 ### 2-3. Prepare the Search service
 
 **If reusing an authorized Basic-or-higher service, or if you already created it, skip both creation-preparation commands below.** Use a unique name only when a new service is needed. `az search service create` can also update an existing service, changing settings such as replicas or authentication. Do not create another Free Search service for this path.
+
+#### Create only if a new service is needed
 
 **Before creating a new service:** in Azure portal, open **Subscriptions → intended subscription → Resource providers** and check **`Microsoft.Search`**. If unregistered, an authorized administrator selects **Register** and confirms `Registered`. This is separate from shared setup's `Microsoft.CognitiveServices`; introductory/DEMO participants not creating Search do not need this additional registration. Follow [official provider-registration guidance](https://learn.microsoft.com/azure/azure-resource-manager/management/resource-providers-and-types); do not bypass missing permission.
 
@@ -211,16 +254,34 @@ Create only if `nameAvailable: true`.
 az search service create --name "YOUR-SHARED-SEARCH" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --location swedencentral --sku basic --replica-count 1 --partition-count 1 --identity-type SystemAssigned --semantic-search free --disable-local-auth true
 ```
 
+#### Everyone: verify the actual service
+
 For both new and existing services, inspect the actual ID, region, SKU, authentication, and system-assigned identity. Obtain the owner's authorization before changing existing settings.
 
 ```bash
 az search service show --name "YOUR-SHARED-SEARCH" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --query "{id:id,identity:identity,location:location,sku:sku.name,state:provisioningState,disableLocalAuth:disableLocalAuth,semanticSearch:semanticSearch}" -o json
 ```
 
-**Checkpoint:** confirm `Succeeded/succeeded`, `swedencentral`, Basic-or-higher SKU, `disableLocalAuth: true`, and `identity.principalId`. `semanticSearch` must be `free` or an already approved `standard` plan. In the next step, use **the full `id` as `YOUR-SEARCH-RESOURCE-ID`** and **`identity.principalId` as `YOUR-SEARCH-PRINCIPAL-ID`**. The first identifies the resource receiving permissions; the second identifies Search as a caller.
+**Checkpoint:** every value below matches.
+
+| Field | Required value |
+|---|---|
+| State, region, SKU | `Succeeded/succeeded` · `swedencentral` · Basic or higher |
+| Key authentication | `disableLocalAuth: true` |
+| Managed identity | `identity.principalId` is present |
+| Semantic Search | `free` or an already approved `standard` plan |
+
+**Distinguish the IDs used next.**
+
+- Full **`id` → `YOUR-SEARCH-RESOURCE-ID`**: the Search resource receiving the role assignments.
+- **`identity.principalId` → `YOUR-SEARCH-PRINCIPAL-ID`**: Search's identity when calling models.
+
+**Next:** [2-4. Permissions](#search-access) · [Setup map](#setup)
 
 <a id="search-access"></a>
 ### 2-4. Set user and Search-identity permissions
+
+#### User identity → Search access
 
 First prepare **user → Search** access. Retrieve the currently signed-in user's ID:
 
@@ -232,9 +293,13 @@ Verify that `account` identifies you in the intended tenant, then use **`objectI
 
 In Search **Access control (IAM) → Role assignments**, check inherited roles too. An authorized role assigner grants **only missing roles**, at the **Search service scope**. Skip both commands if both roles already apply.
 
+**Role 1 — Search Service Contributor**
+
 ```bash
 az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "7ca78c08-252a-4471-8644-bb5ff32d4ba0" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
 ```
+
+**Role 2 — Search Index Data Contributor**
 
 ```bash
 az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "8ebe5a00-799e-43f5-93ac-243d3dce84a7" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
@@ -243,6 +308,8 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 The first role is **Search Service Contributor**, covering search-object/service management and key retrieval. The second is **Search Index Data Contributor**, for document upload and retrieval. **These permissions also cover other participants' objects on the service**: use only the approved shared-workshop scope. Distinct object names are not a security boundary; do not assign subscription-wide roles.
 
 <a id="search-model-access"></a>
+#### Search managed identity → model access
+
 Next prepare **Search identity → model** access. Check IAM for **Cognitive Services OpenAI User** on the parent Foundry account for the **Search identity from `identity.principalId`**, and assign it only if missing. `YOUR-FOUNDRY-RESOURCE-ID` ends at `/accounts/ACTUAL-ACCOUNT`, without `/projects/...`. Do not substitute the project or user identity:
 
 ```bash
@@ -268,10 +335,14 @@ Retain Foundry User access for your user and project. A successful role assignme
 
 </details>
 
+**Next:** [2-5. Additional models](#extra-models) · [Setup map](#setup)
+
 <a id="extra-models"></a>
 ### 2-5. Deploy the additional models
 
 Replace `YOUR-EMBEDDING-VERSION`/`YOUR-PLANNER-VERSION` with the versions verified earlier, then deploy the models **sequentially**. Concurrent writes to the same Foundry account can conflict. If an authorized deployment already exists, verify its model/version and skip its creation command. Do not silently update shared deployments.
+
+**Deployment 1 — `rag-embedding` embedding model**
 
 ```bash
 az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --deployment-name rag-embedding --model-name text-embedding-3-small --model-version "YOUR-EMBEDDING-VERSION" --model-format OpenAI --sku-name GlobalStandard --sku-capacity 40 --subscription "YOUR-SUBSCRIPTION-ID"
@@ -279,18 +350,37 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 
 **Before the next command:** in Foundry **Build → Models**, confirm the newly created `rag-embedding` is `Succeeded` and uses `text-embedding-3-small`. Resolve any deployment error first.
 
+**Deployment 2 — `rag-planner` query-planning model**
+
 ```bash
 az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --deployment-name rag-planner --model-name gpt-5.4-mini --model-version "YOUR-PLANNER-VERSION" --model-format OpenAI --sku-name GlobalStandard --sku-capacity 60 --subscription "YOUR-SUBSCRIPTION-ID"
 ```
 
-**Checkpoint:** in Foundry **Build → Models**, confirm both `rag-embedding` and `rag-planner` succeeded with the intended models/versions. The recorded additional-model versions were embedding `1` and planner `2026-03-17`. You can select currently supported versions for these two models, but must keep them unchanged after `setup` within this experiment. Keep the answer model at the recorded V1 version verified earlier.
+**Checkpoint:** Foundry **Build → Models** shows both `rag-embedding` and `rag-planner` succeeded with the intended models and versions.
+
+The recorded additional-model versions were embedding `1` and planner `2026-03-17`. You can select currently supported versions for these two models, but **keep them unchanged after `setup` within this experiment**. Keep the answer model at the recorded V1 version verified earlier.
+
+**Next:** [2-6. Configuration and connectivity](#configure) · [Setup map](#setup)
 
 <a id="configure"></a>
 ### 2-6. Write the configuration and create search objects
 
-**In VS Code**, open `advanced-rag/config.example.json`, then use **File → Save As** to create **`config.advanced.json` beside `advanced_lab.py`**. Do not save it inside `advanced-rag/` or as `config.advanced.json.txt`. If your configuration already exists, check its actual values rather than overwriting it.
+#### Create the configuration file
 
-The two files have different purposes: **`config.json` connects the project, answer model, and judge**; **`config.advanced.json` connects Search, embeddings, and query planning**. Keep both.
+1. **In VS Code**, open `advanced-rag/config.example.json`.
+2. Use **File → Save As** to create **`config.advanced.json` beside `advanced_lab.py`**.
+3. Use the example and endpoint table below to enter your values, then save.
+
+Do not save it inside `advanced-rag/` or as `config.advanced.json.txt`. If your configuration already exists, check its actual values rather than overwriting it.
+
+**Keep both configuration files.**
+
+| File | Connects |
+|---|---|
+| `config.json` | Project, answer model, and judge |
+| `config.advanced.json` | Search, embeddings, and query planning |
+
+#### Replace the example values
 
 The complete [configuration template](../../advanced-rag/config.example.json) follows. **Replace both endpoints and the three search-object names with your values, then save.** If reusing differently named deployments, also update `embedding_deployment`/`planner_deployment` to match their actual names.
 
@@ -326,11 +416,13 @@ Keep the template's `top_k: 4`, 1536 embedding dimensions, and `low` planning ef
 
 Embeddings use the account's `/openai/v1/embeddings` endpoint with Entra authentication. Store **only the resource endpoint** from the table above. The code appends `/openai/v1/embeddings`; do not append it yourself.
 
+#### Save the files and create search objects
+
 **Before running**
 
-- Save both files and replace every endpoint placeholder `YOUR-...`.
-- Verify the user, project, and Search identities' roles separately.
-- Keep the supplied instructions, questions, labels, and settings unchanged during this experiment.
+- [ ] Save both files and replace every endpoint placeholder `YOUR-...`.
+- [ ] Verify the user, project, and Search identities' roles separately.
+- [ ] Keep the supplied instructions, questions, labels, and settings unchanged during this experiment.
 
 ```bash
 python advanced_lab.py setup
@@ -338,7 +430,14 @@ python advanced_lab.py setup
 
 `setup` checks existing object contracts, prepares the embedding cache, creates a missing index/uploads documents, and then creates the Knowledge Source and planned Knowledge Base.
 
-**Checkpoint:** `VECTOR SETUP OK: 7 documents, 1536 dimensions`. `results/advanced/setup.json` retains model snapshots, intended upload count, and server HNSW/vectorizer/knowledge-object definitions; `embedding-cache.json` retains document vectors. Successful setup alone does not validate retrieval or answer quality: continue with the actual queries in section 3.
+**Checkpoint:** `VECTOR SETUP OK: 7 documents, 1536 dimensions`.
+
+| Saved file, relative to `results/advanced/` | Evidence |
+|---|---|
+| `setup.json` | Model snapshots, intended upload count, and server HNSW/vectorizer/knowledge-object definitions |
+| `embedding-cache.json` | Reusable document vectors |
+
+Successful setup is not a retrieval or answer-quality pass. **Continue with the actual queries in section 3.**
 
 <a id="resume"></a>
 ### Command status, interruption, and resumption
@@ -418,7 +517,13 @@ Find semantically similar policy chunks using vectors.
 python advanced_lab.py query --mode vector --query "해외 출장 호텔 숙박비 상한을 확인하고 싶습니다." --out results/advanced/vector-query.json
 ```
 
-**Checkpoint:** `RETRIEVAL OK: vector`, `query_vector_dimensions: 1536`, `vector_fields: content_vector`, `text_query: false`, and actual chunk IDs. Results are saved in `results/advanced/vector-query.json`.
+**Checkpoint:** `RETRIEVAL OK: vector`.
+
+**Evidence to inspect:** check `results/advanced/vector-query.json` for:
+
+- `query_vector_dimensions: 1536` — the actual query vector.
+- `vector_fields: content_vector`, `text_query: false` — vector retrieval, not text search.
+- Returned chunk IDs — the policy fragments actually retrieved.
 
 ### 3-2. Check LLM query planning
 
@@ -428,7 +533,15 @@ Send a multi-part question to the query-planning model.
 python advanced_lab.py query --mode planned --query "2026년 6월 30일과 7월 1일 국내 출장 숙박 한도를 비교하고, 한도를 초과할 때 필요한 절차와 해외 숙박 한도가 있는지도 알려주세요." --out results/advanced/planned-query.json
 ```
 
-**Checkpoint:** `RETRIEVAL OK: planned`, `llm_query_planning: true`, actual `planned_queries`, and `modelQueryPlanning`/`searchIndex` activity. Results are saved in `results/advanced/planned-query.json`. The author's recorded request produced three subqueries, but their count and wording are not fixed outputs. The code rejects a response without planning evidence rather than calling ordinary search “planned retrieval.”
+**Checkpoint:** `RETRIEVAL OK: planned`.
+
+**Evidence to inspect:** check `results/advanced/planned-query.json` for:
+
+- `llm_query_planning: true` — whether LLM planning ran.
+- `planned_queries` — the actual generated subqueries.
+- `modelQueryPlanning`/`searchIndex` — planning and retrieval activity.
+
+The author's three subqueries are not fixed outputs; their number and wording can differ. **Missing planning evidence makes the code stop with an error**; ordinary search is not called “planned retrieval.”
 
 **Next:** [4. Judge calibration](#calibration) · [Progress map](#lab-map)
 
@@ -444,7 +557,13 @@ python advanced_lab.py query --mode planned --query "2026년 6월 30일과 7월 
 
 The acceptance criteria in [acceptance.json](../../advanced-rag/acceptance.json) are fixed before the fresh holdout:
 
-**Business checks** compare answer format, decision, amount, and citations with expectations; **retrieval checks** verify that required policy chunks were found. **Groundedness** measures support from evidence, **Relevance** measures relevance to the question, and **`policy_task_success`** checks whether the user's task was resolved according to policy. The answer model does not receive expected answers. Code checks use them; the task-success judge also receives expected behavior for evaluation.
+**Keep three checks separate.**
+
+- **Business checks:** do answer format, decision, amount, and citations match expectations?
+- **Retrieval checks:** were the required policy chunks found?
+- **Judge:** Groundedness measures support, Relevance measures relevance to the question, and `policy_task_success` checks policy-based task resolution.
+
+**The answer model does not receive expected answers.** Code checks use them; the task-success judge also receives expected behavior for evaluation.
 
 | Target | Passing condition |
 |---|---|
@@ -459,7 +578,14 @@ The acceptance criteria in [acceptance.json](../../advanced-rag/acceptance.json)
 
 **Builtin Relevance remains a required metric.** The final answer must resolve the actual completed user interaction. A request for missing information is an intermediate step, not falsely labeled as a completed answer.
 
-V2 uses explicit, scripted user follow-ups from evaluation data: a missing-date case receives the user's actual travel date after asking; an unavailable overseas-limit case receives a user request for a Finance inquiry checklist rather than a fabricated number. The model does not invent those user facts. The final conversation is supplied to the judge, but **automated initial-response checks cover only JSON format, decision, amount, and citation fields**.
+**V2's user follow-ups are predefined in evaluation data.**
+
+| Case | Follow-up interaction |
+|---|---|
+| Missing travel date | The model asks, then receives the user's actual travel date |
+| Unavailable overseas limit | Instead of a fabricated number, the user requests a Finance inquiry checklist |
+
+The model does not invent those user facts. The final conversation is supplied to the judge, but **automated initial-response checks cover only JSON format, decision, amount, and citation fields**.
 
 The result field `intermediate_safe` means those field checks passed, **not that the initial prose received a separate semantic or safety evaluation**. Correct `unknown`, `null`, and `SCOPE` fields can coexist with a fabricated overseas limit in the explanation. Read the initial prose using `inspect --dialogue` in sections 5 and 7, and record your judgment.
 
@@ -476,7 +602,11 @@ If calibration below is still processing or errors, use the **calibration row** 
 python advanced_lab.py calibrate
 ```
 
-**Checkpoint:** `CALIBRATION PASSED: 10 controls`. Four correct controls and six incorrect controls—including a grading-instruction attack and extra citations—must be classified correctly. The pass/fail labels are not sent to the judge. Calibration tests **only `policy_task_success`** with authored responses and expected behavior; it is not held-out model performance or separate calibration of builtin Groundedness/Relevance.
+**Checkpoint:** `CALIBRATION PASSED: 10 controls`.
+
+**What was checked:** four correct controls and six incorrect controls, including a grading-instruction attack and extra citations, must be classified correctly. **Pass/fail labels are not sent to the judge.**
+
+**Limit:** calibration tests **only `policy_task_success`** with authored responses and expected behavior. It is not held-out model performance or separate calibration of builtin Groundedness/Relevance.
 
 The resulting evaluator version, rubric, model, and acceptance criteria are fixed in `results/advanced/judge-contract.json`. This is not permission to alter the judge after seeing holdout results.
 
@@ -505,25 +635,40 @@ After **both generation and judging** for `--stage v2-replay` finish, read `resu
 
 ### 5-1. Import V1 answers and evaluate them with the current judge
 
-First import the local V1 record:
+**Action 1 — import the local V1 record**
 
 ```bash
 python advanced_lab.py baseline
 ```
 
-**Checkpoint:** `Imported four genuine recorded V1 answers.`. The next `judge` command is a **paid LIVE evaluation using the currently fixed judge**, not a copy of historical scores.
+**Checkpoint:** `Imported four genuine recorded V1 answers.`
+
+**Action 2 — evaluate with the current judge**
+
+This is a **paid LIVE evaluation using the currently fixed judge**, not a copy of historical scores.
 
 ```bash
 python advanced_lab.py judge --stage v1-recorded
 ```
 
-**Checkpoint:** wait for `Evaluation complete: 4 cases × 3 metrics` before `inspect` below. If still processing, repeat the identical `judge --stage v1-recorded` command.
+**Checkpoint:** `Evaluation complete: 4 cases × 3 metrics`.
+
+If still processing, repeat the identical `judge --stage v1-recorded` command. Continue only after completion.
+
+**Action 3 — inspect D02's failure**
 
 ```bash
 python advanced_lab.py inspect --stage v1-recorded --case-id D02
 ```
 
-**Checkpoint:** find D02's `citations: false` under `Business checks`, then read `Scores`. Expected citations are `["TRAVEL-CURRENT"]`, but recorded V1 cites `["TRAVEL-CURRENT", "SCOPE"]`, failing the exact citation-set check. **A source being retrieved does not mean it is necessary to cite in the answer.** Read the judge's reasons in `results/advanced/v1-recorded/report.md`.
+**Checkpoint:** find D02's `citations: false` under `Business checks` and read `Scores`.
+
+| Value to compare | Citations |
+|---|---|
+| Expected | `["TRAVEL-CURRENT"]` |
+| Recorded V1 | `["TRAVEL-CURRENT", "SCOPE"]` |
+
+The unnecessary `SCOPE` citation fails the exact citation-set check. **A retrieved source is not necessarily required in the answer.** Read the judge's reasons in `results/advanced/v1-recorded/report.md`.
 
 <a id="read-case"></a>
 ### 5-2. Read a case's expectations and actual evidence
@@ -546,7 +691,8 @@ Then compare expectations, retrieval, and scores for the same case:
 | Output | What to check |
 |---|---|
 | `Case result` | Whether this case meets the automated criteria. `FAIL` means answer/retrieval/score criteria were missed, not that the inspection command failed. `PASS` is not production approval |
-| `Question`, `Expected decision / limit / citations`, `Expected behavior` | The question and predefined decision, limit, minimum citations, and expected behavior. **Expectations are not model-generated answers** |
+| `Question` | The question for the case being inspected |
+| `Expected decision / limit / citations`, `Expected behavior` | Predefined decision, limit, minimum citations, and expected behavior. **Not model-generated answers** |
 | `Actual answer`, `Business checks` | Compare the answer with expectations. `true` passes that check; `false` fails it, such as D02's `citations: false` |
 | `Required chunks` → `Chunks` → `Required chunks found` | Required policy fragments → retrieved fragments → whether every required fragment was found. Chunk IDs differ from the answer's official citation IDs |
 | `Scores` / `Final scores` | Each of the three metrics must be **at least 4**. High judge scores do not cancel business or retrieval failures |
@@ -566,17 +712,27 @@ Compare [V1](../../advanced-rag/instructions.v1.txt) and [V2](../../advanced-rag
 
 **Use the supplied V2 unchanged in this run.** Explain the differences without editing the instructions, then execute. Personal prompt changes belong to a [separate experiment](#resume) after preserving this run.
 
+**Action 1 — generate V2 using the same initial retrieval context**
+
 ```bash
 python advanced_lab.py run --stage v2-replay
 ```
 
-**Checkpoint:** `GENERATION COMPLETE: v2-replay; 4 answers.`. This counts **four final answers** after necessary follow-ups, not every intermediate model call.
+**Checkpoint:** `GENERATION COMPLETE: v2-replay; 4 answers.`
+
+This counts **four final answers** after necessary follow-ups, not every intermediate model call.
+
+**Action 2 — evaluate V2**
 
 ```bash
 python advanced_lab.py judge --stage v2-replay
 ```
 
-**Checkpoint:** `Evaluation complete: 4 cases × 3 metrics`. If pending, repeat the same judging command; only then compare D02 with V1.
+**Checkpoint:** `Evaluation complete: 4 cases × 3 metrics`.
+
+If pending, repeat the same judging command.
+
+**Action 3 — compare D02 with V1**
 
 ```bash
 python advanced_lab.py inspect --stage v2-replay --case-id D02
@@ -602,7 +758,9 @@ python advanced_lab.py inspect --stage v2-replay --case-id D08 --dialogue
 | `Final answer` → `Final scores` | Answer completing the follow-up request → its three final-response scores |
 | `Initial field checks (not prose evaluation)` | Initial field checks only, not a semantic pass for initial prose |
 
-**Checkpoint:** explain how D02's citations changed and how D04/D08 finish after a follow-up. V1 and V2 start from identical saved contexts and use the same answer model/settings/judge, with explicit user follow-ups completed where needed. This is a **prompt-and-dialogue workflow improvement**, not a claim that prompt wording alone explains the result. Keep the V1 failure; do not weaken V1 or reroll it.
+**Checkpoint:** explain D02's changed citations and D04/D08's follow-up outcomes.
+
+**Interpretation:** V1 and V2 start from identical saved contexts and use the same answer model/settings/judge, with explicit user follow-ups completed where needed. This is a **prompt-and-dialogue workflow improvement**, not an effect attributable only to prompt wording. Keep the V1 failure; do not weaken V1 or reroll it.
 
 **Next:** [6. Full pipeline and freeze](#freeze) · [Progress map](#lab-map)
 
@@ -625,7 +783,9 @@ python advanced_lab.py run --stage planned-dev
 python advanced_lab.py judge --stage planned-dev
 ```
 
-**Checkpoint:** `Evaluation complete: 4 cases × 3 metrics`. If pending, repeat the same judging command. Both initial questions and necessary follow-up turns use the declared retrieval workflow. Judge exit code 0 alone does not mean dev acceptance.
+**Checkpoint:** `Evaluation complete: 4 cases × 3 metrics`.
+
+If pending, repeat the same judging command. Both initial questions and necessary follow-up turns use the declared retrieval workflow. **Judge exit code 0 alone does not mean dev acceptance.**
 
 ### 6-2. Freeze the passing candidate's conditions
 
@@ -635,7 +795,15 @@ python advanced_lab.py judge --stage planned-dev
 python advanced_lab.py freeze
 ```
 
-**Checkpoint:** `FROZEN` and a contract hash. The hash is a fingerprint for detecting changed experiment conditions; you do not copy it into another command. V1 must contain a real failure; V2 replay and planned dev must meet the required criteria. The prompt, judge, model versions, retrieval configuration, source definitions, and corpus are fixed before fresh cases are created. If blocked, do not continue to holdout; preserve the cause and unperformed stages using the [resume table](#resume).
+**Checkpoint:** `FROZEN` and a contract hash.
+
+| Check | Meaning |
+|---|---|
+| Freeze conditions | V1 has a real failure; V2 replay and planned dev both meet the criteria |
+| Frozen inputs | Prompt, judge, model versions, retrieval configuration, source definitions, and corpus |
+| Contract hash | A fingerprint for detecting changed conditions; do not copy it into another command |
+
+**If blocked, do not continue to holdout.** Preserve the cause and unperformed stages using the [resume table](#resume).
 
 **If you see `Dev acceptance is not met`**, the error prints each failed stage/case ID, its `report.md`, and ready-to-run `inspect --context` commands. Use them to [compare expectations and actual evidence](#read-case). Unlike an input typo, dev quality blocking is not resolved by repeatedly generating or judging the same experiment.
 
@@ -652,9 +820,15 @@ python advanced_lab.py freeze
 python advanced_lab.py create-holdout
 ```
 
-A new random seed **fills in new dates, cities, and amounts in eight predefined scenarios**. They cover current/previous limits, over-limit approval, overseas scope, missing dates, prohibited flight class, and the exact boundary. These are fresh parameterized cases, not broad blind generalization testing. The missing-date and overseas-handoff scenarios include explicit evaluation-user follow-ups. Inputs, follow-ups, expectations, and provenance are stored privately under `results/advanced/holdout-data/`.
+A new random seed **fills in new dates, cities, and amounts in eight predefined scenarios**. They cover current/previous limits, over-limit approval, overseas scope, missing dates, prohibited flight class, and the exact boundary.
 
-**Checkpoint:** `HOLDOUT REGISTERED: 8 new cases` and `holdout-registration.json`. This command creates and registers questions together, without a model call. It refuses to replace existing holdout files. Do not resample to obtain a pass; follow the [resume table](#resume) after interruption.
+**Scope and limit:** these are fresh parameterized cases, not broad blind generalization testing. Missing-date and overseas-handoff cases include explicit evaluation-user follow-ups.
+
+**Saved under:** `results/advanced/holdout-data/`, containing inputs, follow-ups, expectations, and provenance.
+
+**Checkpoint:** `HOLDOUT REGISTERED: 8 new cases` and `holdout-registration.json`.
+
+The command creates and registers questions without a model call and refuses to replace existing files. **Do not resample to obtain a pass.** Follow the [resume table](#resume) after interruption.
 
 ### 7-2. Generate and evaluate with the frozen candidate
 
@@ -668,9 +842,13 @@ python advanced_lab.py run --stage holdout
 python advanced_lab.py judge --stage holdout
 ```
 
-**Checkpoint:** `Evaluation complete: 8 cases × 3 metrics`. If pending, repeat the same judging command. Read both completed follow-up dialogues using the [output labels explained earlier](#dialogue-check), including initial prose and final answers, and record your judgment:
+**Checkpoint:** `Evaluation complete: 8 cases × 3 metrics`.
+
+If pending, repeat the same judging command. After completion, read both follow-up dialogues below.
 
 ### 7-3. Review the N05 and N06 dialogues
+
+Use the [output labels explained earlier](#dialogue-check) to read **both initial prose and final answers**, then record your judgment.
 
 ```bash
 python advanced_lab.py inspect --stage holdout --case-id N05 --dialogue
@@ -694,7 +872,11 @@ python advanced_lab.py accept
 | `acceptance-result.json` | N01–N08 under `rows` → `business_checks`, `required_chunks_found`, `scores`, `passed`; also `intermediate_safe` for multi-turn cases |
 | `holdout/report.md` | Actual answer and reasons for each judge score, matched by case ID |
 
-`LAB_ACCEPTANCE_PASSED` requires all eight fresh scenarios to pass **every final-answer metric, including Relevance, plus the initial field checks**. `LAB_ACCEPTANCE_BLOCKED` with exit code `2` is a quality hold, not a mistyped command. Resolve `ERROR:`/`usage:` separately; do not mark those runs complete.
+| Output | Meaning and next action |
+|---|---|
+| `LAB_ACCEPTANCE_PASSED` | All eight fresh cases pass **every final-answer metric, including Relevance, plus the initial field checks**. Human production approval remains separate |
+| `LAB_ACCEPTANCE_BLOCKED` / exit `2` | A quality hold. Record the failure and continue to section 8 |
+| `ERROR:` / `usage:` | Execution or input error. Resolve it first; do not mark the run complete |
 
 If blocked, record the failure and hold recommendation, then go to section 8. Even with an automated pass, record any contradiction you find in the initial prose and withhold production adoption. Do not edit the frozen prompt/rubric or select only passing cases. A subsequent improvement uses a [new experiment in a separate working copy](#resume) with new held-out cases.
 

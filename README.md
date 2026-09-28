@@ -4,6 +4,8 @@
 
 **Microsoft Foundry Evaluation: an end-to-end, self-guided workshop**
 
+**Jump to:** [Choose a path](#choose-path) · [Start the introduction](#lab-0) · [Setup](#setup-map) · [Resume](docs/en/setup.md#resume)
+
 Find out whether the fictional **Gaon Lab travel-expense assistant** follows policy. Evaluation means **checking AI answers against criteria chosen in advance**. Run the provided commands and read the answers; **you do not need to write Python**.
 
 **Recommended path:** [Complete RAG — failure → V2 improvement → fresh-question validation](docs/en/complete-lab.md). Follow **sections 1–8 there** for real retrieval and answer improvement. This README contains **introductory LIVE, without retrieval**.
@@ -59,11 +61,24 @@ Activities 0–6 share numbers across LIVE and DEMO; setup is separate. Follow e
 
 > **Workshop completion ≠ passing AI answers.** Low scores or a final `BLOCK` are valid outcomes when you can explain the evidence and record why the change is on hold.
 
-### Three working rules
+<a id="reading-guide"></a>
+### How to read this guide
 
-1. **No time limit: execute one command at a time.** Copy only commands inside code blocks, press Enter, and wait for the prompt to return. Read the **Checkpoint** before continuing. A `text` block shows expected output, not a command.
-2. **Run commands from the folder containing `lab.py`.** Unless stated otherwise, commands work in macOS/Linux terminals and Windows PowerShell.
-3. **Keep the documented filenames and output directories.** Paths such as `results/baseline` are relative to the workshop folder. Windows may show `\` rather than `/`. Open `.md` reports in VS Code. If results already exist, [resume them](docs/en/setup.md#resume) instead of deleting them.
+**No time limit: follow the action → command → checkpoint → next step.**
+
+| Marker | How to use it |
+|---|---|
+| `bash` / `powershell` code block | Terminal commands. Copy one command at a time and wait for the prompt to return |
+| `text` code block | Expected output or example input, not a command to execute |
+| `YOUR-...` | Replace with a value verified in your environment; keep quotation marks |
+| **Checkpoint** | The message, count, or result to check before continuing |
+| Collapsed explanation | Answers, exceptions, or background; expand when needed |
+
+**Where to run:** always use the folder containing `lab.py`. Unless stated otherwise, commands work in macOS/Linux and Windows PowerShell. Copy each long command as **one complete line**, without inserting Enter in the middle.
+
+**Reading files:** keep the documented filenames and output directories. `results/baseline` is relative to the workshop folder; Windows may show `\` instead of `/`. Read `.md` reports in VS Code's Markdown preview. If results already exist, [resume them](docs/en/setup.md#resume) instead of deleting them.
+
+**Start here:** [0. Spot a plausible wrong answer](#lab-0)
 
 ---
 
@@ -74,9 +89,10 @@ Activities 0–6 share numbers across LIVE and DEMO; setup is separate. Follow e
 
 > My domestic business-trip hotel costs KRW 220000 per night in September 2026. I have no prior approval. Can I claim it immediately?
 
-| Answer A | Answer B |
+| Choice | Answer |
 |---|---|
-| Yes. The limit is KRW 240000, so submit the claim. | The official KRW 200000 limit is exceeded; prior Finance approval is required. |
+| **A** | Yes. The limit is KRW 240000, so submit the claim. |
+| **B** | The official KRW 200000 limit is exceeded; prior Finance approval is required. |
 
 **Do this:** choose an answer and explain why. Then read the [English policy translation](docs/en/policies.md), or the [Korean source used by the model](data/policies.md), and check your judgment.
 
@@ -141,14 +157,21 @@ The path generates **22 responses and evaluates 44 metric items**: one setup cas
 
 **Where: browser, then VS Code**
 
+#### Open the folder and terminal
+
 1. On the [repository page](https://github.com/junwoojeong100/foundry-evaluation-labs-v1), choose **Code → Download ZIP** and extract it. Skip this if you already have the files. If the repository is private, request an authorized ZIP or repository access. Azure permission and GitHub permission are separate.
 2. Install the tools below, then open a new terminal.
 3. In VS Code, choose **File → Open Folder** and open the folder that directly contains **`lab.py` and `requirements.txt`**, not an outer ZIP extraction directory.
 4. Choose **Terminal → New Terminal**. Enter subsequent commands there.
 
-**Use VS Code's terminal on your own computer**, not **Azure Cloud Shell** in the portal or a notebook cell. Use **PowerShell on Windows**, or **zsh/bash on macOS/Linux**. If Windows opens another shell, choose the arrow beside the terminal's `+` → **Select Default Profile → PowerShell**, then open a new terminal.
+**Use VS Code's terminal on your own computer**, not **Azure Cloud Shell** in the portal or a notebook cell.
 
-Use the browser to read the guide and operate Azure, and VS Code to edit local files and run commands. Reading a GitHub file does not change your local copy. Do not use a Python file's Run button or enter shell commands at the Python `>>>` prompt. If you see `>>>`, type `exit()` first.
+- **Windows:** PowerShell. If another shell opens, choose the arrow beside the terminal's `+` → **Select Default Profile → PowerShell**, then open a new terminal.
+- **macOS/Linux:** zsh or bash.
+
+Use the browser to read the guide and operate Azure, and VS Code to **edit local files and run commands**. Reading a GitHub file does not change your local copy.
+
+**If you see `>>>`**, you are in Python's interactive prompt. Type `exit()` before running commands. Do not use a Python file's Run button.
 
 | Tool | Installation | Check |
 |---|---|---|
@@ -165,16 +188,18 @@ Use the browser to read the guide and operate Azure, and VS Code to edit local f
 
 </details>
 
+#### Create the virtual environment
+
 Run **only the block for your operating system**. `.venv` holds the workshop's Python dependencies.
 
-macOS / Linux:
+**macOS / Linux**
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Windows / PowerShell:
+**Windows / PowerShell**
 
 ```powershell
 py -3 -m venv .venv
@@ -188,6 +213,8 @@ Do not relax organizational policy. Replace every subsequent `python`, including
 
 </details>
 
+#### Install packages and check local files
+
 Install the packages:
 
 ```bash
@@ -200,9 +227,18 @@ When installation finishes without errors, check the local files:
 python lab.py doctor
 ```
 
-**Checkpoint:** `LOCAL OK: Python ... , dev 8개, holdout 4개` means the local files contain eight dev and four holdout cases. It does **not** confirm Azure connectivity. In a new terminal, return to this folder and run only `source .venv/bin/activate` (macOS/Linux) or `.\.venv\Scripts\Activate.ps1` (PowerShell). If activation is blocked, keep using the virtual environment's Python directly. Do not recreate the environment or reinstall packages.
+**Checkpoint:** `LOCAL OK: Python ... , dev 8개, holdout 4개`.
+
+The local files contain eight dev and four holdout cases. This does **not yet confirm Azure connectivity**.
+
+<details>
+<summary>Starting again in a new terminal or after moving the folder</summary>
+
+Return to this folder and run only `source .venv/bin/activate` (macOS/Linux) or `.\.venv\Scripts\Activate.ps1` (PowerShell). If activation is blocked, keep using the virtual environment's Python directly. Do not recreate the environment or reinstall packages.
 
 **Only if moving or renaming the folder broke the virtual environment**, follow [environment recovery](docs/en/reference.md#moved-folder). Keep your existing results, configuration, and edited files.
+
+</details>
 
 <a id="working-files"></a>
 **Edit only these three local working files, when their steps ask for them.**
@@ -218,6 +254,8 @@ This table belongs to the introduction. **Complete and Optional RAG participants
 **The repository already includes `prompts/my-v2.txt` and `data/my-case.jsonl`.** Their presence does not mean you edited or ran them. Inspect them at the relevant step; do not overwrite your previous work.
 
 The commands automatically create output directories and reports such as `results/baseline`. Do not prefill or manually edit generated JSON and reports; read them as evidence. Keep original policies, questions, and prompts unchanged, and save working files as **UTF-8**.
+
+**Next:** [Setup 2. Sign-in](#setup-sign-in) · [Setup map](#setup-map)
 
 <a id="setup-sign-in"></a>
 ### Setup 2. Sign in to the intended subscription
@@ -245,9 +283,17 @@ az account set --subscription "YOUR-SUBSCRIPTION-ID"
 az account show --query "{account:user.name,subscription:name,subscriptionId:id,tenantId:tenantId,state:state}" --output json
 ```
 
-**Checkpoint:** `account` is the intended user, subscription and tenant IDs match the portal, and `state` is `Enabled`. **Do not rely on the subscription's display name alone.** With several signed-in identities, the default subscription may belong to another account. If the subscription is missing, check the tenant.
+**Checkpoint:** all three conditions match.
+
+- `account` is the intended user.
+- Subscription and tenant IDs match the portal. **Do not rely on the subscription's display name alone.**
+- `state` is `Enabled`.
+
+With several signed-in identities, the default subscription may belong to another account. If the subscription is missing, check the tenant.
 
 **The browser and CLI have separate sign-in sessions.** If Foundry or a report link shows **Pick an account**, select the same account confirmed above. New Foundry may request another selection. CLI authentication does not authenticate a different or headless browser.
+
+**Next:** [Setup 3. Project](#setup-project) · [Setup map](#setup-map)
 
 <a id="setup-project"></a>
 ### Setup 3. Create a dedicated group and Foundry project
@@ -261,13 +307,15 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 
 Replace `a7k3m9` with your own unique lowercase letters and digits. Use the names **actually created** in later steps, not just intended names.
 
-**In Azure portal:**
+#### Create the dedicated group in Azure portal
 
 1. Choose **Resource groups → Create**, using the subscription from setup 2.
 2. Enter a new dedicated group name and select **Sweden Central (`swedencentral`)**.
 3. Choose **Review + create → Create** and wait for completion.
 
-**In [Microsoft Foundry](https://ai.azure.com):**
+#### Create the project in Microsoft Foundry
+
+Open [Microsoft Foundry](https://ai.azure.com).
 
 1. Sign in with the same account. Enable **New Foundry** if a switch appears.
 2. Choose **Create project**, or the project selector → **Create new project**.
@@ -283,6 +331,8 @@ Replace `a7k3m9` with your own unique lowercase letters and digits. Use the name
 
 For commands instead of portal creation, use the [Azure CLI alternative](docs/en/setup.md#cli-provision). It **replaces setup 3–5**; do not provision both ways.
 
+**Next:** [Setup 4. Permissions](#setup-permissions) · [Setup map](#setup-map)
+
 <a id="setup-permissions"></a>
 ### Setup 4. Verify generation and evaluation permissions
 
@@ -290,12 +340,18 @@ For commands instead of portal creation, use the [Azure CLI alternative](docs/en
 
 The parent-resource assignments below are this dedicated workshop's common starting configuration, not the only minimum scope for every evaluation or existing project. Access is inherited by child projects too. For shared or existing environments, confirm the required scope with the owner using the [permission contract](docs/en/reference.md#permissions-contract).
 
+#### Find the project's managed identity
+
+Follow **project identity → parent-resource permissions**. These are different targets.
+
 1. In Foundry, open the project's Azure resource from **Manage → Project details**. Its resource ID ends in **`/accounts/ACCOUNT/projects/PROJECT`**. Match the names to the resources verified in setup 3.
 2. Under that project's **Identity → System assigned**, check its **Object (principal) ID** against the IAM member below. Do not copy the parent account's identity. If the menu or ID is missing, use the [managed-identity help](docs/en/reference.md#managed-identity-access).
 
 The following is an **illustration, not an actual portal screenshot**. Names and IDs are fictional; use values from your own environment.
 
 ![Match the project's principal ID with the managed-identity member on the parent Foundry resource, and verify Foundry User for the user and project](docs/images/foundry-permissions.en.svg)
+
+#### Check roles on the parent Foundry resource
 
 Open **Azure portal → parent Foundry resource → Access control (IAM)**. The scope ends in **`/accounts/ACCOUNT`**, with no `/projects/...` suffix.
 
@@ -309,6 +365,8 @@ Check **Role assignments** first. The role might appear under its previous name,
 For a missing user assignment, select **Add → Add role assignment → Foundry User → User, group, or service principal**, choose yourself, and **Review + assign**. For the project, use **Members → Managed identity** and verify that the selected object's ID exactly matches the project's recorded principal ID before assigning.
 
 **Checkpoint:** both identities have Foundry User at the **parent resource scope**. Do not grant subscription-wide access or select another identity with a similar name. If propagation takes time, wait rather than creating duplicate assignments.
+
+**Next:** [Setup 5. Model](#setup-model) · [Setup map](#setup-map)
 
 <a id="setup-model"></a>
 ### Setup 5. Deploy one model
@@ -335,6 +393,8 @@ For a missing user assignment, select **Add → Add role assignment → Foundry 
 
 One deployment serves both generation and judging, but these are separate calls. Catalog visibility or successful deployment does not prove Chat Completions, Structured Outputs, and cloud judging all work. Verify them with [the one-case smoke check](#setup-smoke). A judge can still be wrong.
 
+**Next:** [Setup 6. Configuration](#setup-config) · [Setup map](#setup-map)
+
 <a id="setup-config"></a>
 ### Setup 6. Put the project endpoint in your configuration
 
@@ -342,7 +402,11 @@ One deployment serves both generation and judging, but these are separate calls.
 2. In VS Code, open [config.example.json](config.example.json) and **Save As `config.json`**, beside `lab.py`.
 3. Replace the example `project_endpoint` and save.
 
-**Editing JSON:** keep the field names on the left; change only the values specified on the right. Preserve straight double quotes `"`, commas, and braces, with no comma after the last field. If copying the example, copy only from `{` through `}` into the file—not explanatory text or code-block fences.
+**Editing JSON**
+
+- Keep field names on the left; change only the **specified values on the right**.
+- Preserve straight double quotes `"`, commas, and braces. Do not add a comma after the last field.
+- Copy **only from `{` through `}`**, without explanatory text or code-block fences.
 
 ```json
 {
@@ -367,6 +431,8 @@ python lab.py doctor --live
 ```
 
 **Checkpoint:** both fields show **`LIVE 조회 OK`** (“LIVE lookup OK”), `eval-model`, and `gpt-6-luna`. Seeing the same deployment twice is expected. This checks lookup, not generation or evaluation.
+
+**Next:** [Setup 7. Connectivity](#setup-smoke) · [Command status](#command-status) · [Setup map](#setup-map)
 
 <a id="command-status"></a>
 ### Read command status before continuing
@@ -402,17 +468,27 @@ The completion message appears only after score/reason validation and `judge.jso
 
 **Paid generation/evaluation calls begin here.**
 
+#### Generate one answer
+
 ```bash
 python lab.py run --mode live --prompt v1 --data data/my-case.example.jsonl --out results/setup-smoke
 ```
 
-After **`1/1  N01 저장`** (“N01 saved”), evaluate the saved answer:
+**Checkpoint:** `1/1  N01 저장` (“N01 saved”).
+
+#### Evaluate the saved answer
+
+`run` generates an answer; `judge` evaluates **that same saved answer**.
 
 ```bash
 python lab.py judge results/setup-smoke
 ```
 
-If still processing, repeat the same command. For an error or interruption, use the [status and resume guidance](#command-status). Wait for **`평가 완료: 1개 답변 × 2개 지표`**: one answer, two metrics. Then inspect it:
+**Checkpoint:** `평가 완료: 1개 답변 × 2개 지표`: one answer, two metrics.
+
+If still processing, repeat the same command. For an error or interruption, use the [status and resume guidance](#command-status).
+
+#### Inspect the answer, scores, and reasons
 
 ```bash
 python lab.py inspect results/setup-smoke N01
@@ -438,6 +514,8 @@ A low score does not invalidate connectivity. Authentication failures, truncated
 <a id="lab-1"></a>
 ## 1. Set criteria before seeing the answers
 
+### 1-1. Read questions and expected behavior
+
 Read the [eight dev questions](data/dev.jsonl). **Dev** is the set used during improvement. Do not open `data/holdout.jsonl` yet; those four questions are for the final check.
 
 The expected D02 behavior is **prior approval required, limit 200000, source TRAVEL-CURRENT**. Identify what the assistant must never advise: claiming immediate reimbursement or inventing existing approval.
@@ -445,6 +523,8 @@ The expected D02 behavior is **prior approval required, limit 200000, source TRA
 For English readers, the dev cases cover: D01 current policy, D02 missing prior approval, D03 an earlier travel date but later claim date, D04 an unknown overseas limit, D05 a prohibited business-class flight, D06 a request to ignore policy and invent approval, D07 an exact-limit boundary, and D08 a missing travel date.
 
 Every question receives the same policy. **The model receives the question and policy, not the expected answers.** JSONL means one JSON object per line. `id` identifies a case, `query` is its question, `expected_*` supplies code-check expectations, and `ground_truth` is the human-readable explanation.
+
+### 1-2. Understand the four answer fields
 
 The answer has four fields. This is an **English explanation of the expected D02 answer, not actual model output**:
 
@@ -468,7 +548,7 @@ Decisions are `allowed`, `needs_approval`, `not_allowed`, `unknown`, or `needs_i
 
 `limit_krw` is not the claimed expense. `null` means the limit cannot be determined or lodging limits do not apply—not zero. `unknown` and `needs_info` can be correct depending on the case; decision values do not execute reimbursement or grant approval.
 
-### Use three complementary checks
+### 1-3. Distinguish the three evaluation methods
 
 | Method | What it checks | Limitation |
 |---|---|---|
@@ -476,7 +556,7 @@ Decisions are `allowed`, `needs_approval`, `not_allowed`, `unknown`, or `needs_i
 | **Foundry LLM judge** | **Groundedness:** supported by policy? **Relevance:** responds appropriately? | The judge itself can be wrong |
 | **Human review** | Policy consistency and real business risk | Cannot review every answer |
 
-### Fixed thresholds
+### 1-4. Fix the thresholds
 
 | Criterion | Requirement |
 |---|---|
@@ -580,17 +660,25 @@ Keep **model, policy, questions/expectations, judge, and thresholds unchanged**.
 
 Check each command's completion before running the next.
 
+**Action 1 — generate candidate answers**
+
 ```bash
 python lab.py run --mode live --prompt prompts/my-v2.txt --out results/candidate
 ```
 
-After `8/8  D08 저장`, use the baseline judge contract:
+**Checkpoint:** `8/8  D08 저장`. `candidate` holds the **after-change results**.
+
+**Action 2 — use the same judge**
 
 ```bash
 python lab.py judge results/candidate --like results/baseline
 ```
 
-Wait for **`평가 완료: 8개 답변 × 2개 지표`** and `Judge 결과: results/candidate/judge.json`. If still processing, repeat the command **including `--like`**. It preserves the judge model, evaluator versions, and evaluation group.
+**Checkpoint:** `평가 완료: 8개 답변 × 2개 지표` and `Judge 결과: results/candidate/judge.json`.
+
+If still processing, repeat the command **including `--like`**. It preserves the judge model, evaluator versions, and evaluation group.
+
+**Action 3 — compare before and after**
 
 ```bash
 python lab.py compare results/baseline results/candidate
@@ -616,7 +704,13 @@ The portal summarizes averages/statistics, not the local business checks or scor
 python lab.py review results/candidate D06
 ```
 
-The command waits for input. Enter lowercase `pass` or `fail`, then a **policy-based reason of at least five characters**. Read the `answer` text, not just its structured fields or judge score. A good answer refuses to invent approval and explains the applicable limit and prior-approval requirement.
+The command **waits for your input**; it has not stalled.
+
+1. Read the **`answer` text** and compare amounts, dates, and approval conditions with the [policy translation](docs/en/policies.md). Check that it does not invent approval.
+2. Enter lowercase **`pass` or `fail`**, then press Enter.
+3. Enter a **policy-based reason of at least five characters**, then press Enter.
+
+Do not copy a code `PASS` or a judge score of 4 or higher into your human verdict.
 
 The prompts are `사람의 판정 (pass/fail):` (“human verdict”) and `근거 문서와 답변을 비교한 이유:` (“reason after comparing policy and answer”). You may write your reason in English. Do not copy another review without checking your actual answer. Dangerous text warrants `fail` even with high scores.
 
@@ -666,7 +760,13 @@ The gate writes `results/candidate/gate.md`.
 | **BLOCK** | Record its reasons and hold the change. **Continue to activity 6.** Exit code 2 is intentional quality blocking. |
 | **READY_FOR_HUMAN_REVIEW** | Educational criteria met; record your adoption-review recommendation and continue. **Not production approval.** |
 
-**Checkpoint:** use `gate.md` to explain the result, your decision, and case-based evidence. If scores or human review are missing, finish those steps and **rerun the same `gate` command** to update the decision; saving a review alone does not refresh `gate.md`. Do not turn a genuine `fail` into `pass` to remove a block. In an automated rehearsal, explicitly leave real human review incomplete.
+**Checkpoint:** use `gate.md` to explain the result, your decision, and case-based evidence.
+
+**If blocked, distinguish the cause.**
+
+- **Missing scores or human review:** finish those steps and **rerun the same `gate` command**. Saving a review alone does not refresh `gate.md`.
+- **Genuine quality failure:** preserve the failure and hold the change. Do not change a verdict just to pass.
+- **Automated rehearsal:** explicitly leave real human review incomplete.
 
 Dev and holdout have different questions and are not a before/after pair. If you change the prompt after inspecting holdout, **use a new holdout next time**.
 
@@ -707,7 +807,9 @@ Keep the **160000 limit**, `needs_approval`, and `TRAVEL-PREVIOUS`. The expense 
 
 For a new question, decide its expected behavior **before generating an answer**. Preserve all eight fields: `id`, `category`, boolean `critical`, `query`, `expected_decision`, integer-or-null `expected_limit_krw`, official-ID array `expected_citations`, and `ground_truth`. Keep ID `N02` for the commands below. Do not put another business domain into the travel-policy checker.
 
-Use exactly one JSON object on one line, without blank lines. Editor word wrapping is fine; literal newlines inside the object are not. Numbers have no commas or quotation marks, and `null`, `true`, and `false` are lowercase.
+**Save one JSON object on one line.** Use VS Code's **View → Word Wrap** to read the long line. Visual wrapping is fine; do not insert Enter inside the object or add blank lines.
+
+Numbers have no commas or quotation marks, and `null`, `true`, and `false` are lowercase. Do not add or remove fields.
 
 <a id="validate-extra"></a>
 ### 6-3. Validate locally before paid calls

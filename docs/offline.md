@@ -4,6 +4,8 @@
 
 [메인 설명](../README.ko.md)
 
+**바로 이동:** [실습 시작](#lab-0) · [환경 준비](#prepare) · [중단·재개](#resume) · [마무리](#finish)
+
 **Azure 없이 평가의 흐름부터 익힙니다.** 가상의 가온랩 출장비 도우미에 대해 기준을 정하고, 답변과 채점 예제를 읽어 변경을 채택할지 보류할지 판단합니다. **이 문서만 순서대로 따라갑니다.**
 
 | 한눈에 보기 | DEMO에서 할 일 |
@@ -35,6 +37,22 @@
 
 **보고서 생성과 답변 합격을 구분합니다.** 예제 점수는 LIVE의 예상 점수가 아닙니다.
 
+<a id="reading-guide"></a>
+### 가이드 읽는 법
+
+**할 일 → 명령 실행 → 완료 확인 → 다음 단계** 순서로 진행합니다.
+
+| 표시 | 읽는 방법 |
+|---|---|
+| `bash` / `powershell` 코드 블록 | 터미널에서 실행할 명령. 한 명령씩 복사하고 입력을 다시 받을 때까지 기다림 |
+| `text` 코드 블록 | 예상 출력. 명령으로 실행하지 않음 |
+| **완료 확인** | 다음으로 가기 전에 확인할 메시지·건수·결과 |
+| 접힌 설명 | 해설·예외 상황·선택 연습. 필요한 항목만 펼쳐 읽기 |
+
+**실행 위치:** 항상 `lab.py`가 있는 폴더입니다. 긴 명령도 **한 줄 전체를 복사**하며 중간에 Enter를 넣지 않습니다. 결과 폴더는 자동 생성되고 `.md` 보고서는 VS Code의 Markdown 미리보기로 읽습니다.
+
+**지금 시작:** [0. 그럴듯한 오답 찾기](#lab-0). 설치는 그다음입니다.
+
 ---
 
 <a id="lab-0"></a>
@@ -42,9 +60,10 @@
 
 **설치 없이 먼저 판단합니다.** “2026년 9월 국내 숙박비가 1박 220000원이고 사전 승인이 없다”는 질문에 아래 두 답 중 하나를 고릅니다.
 
-| 답변 A | 답변 B |
+| 선택 | 답변 |
 |---|---|
-| 한도는 240000원이므로 바로 정산하세요. | 공식 한도 200000원을 초과하므로 재무팀 사전 승인이 필요합니다. |
+| **A** | 한도는 240000원이므로 바로 정산하세요. |
+| **B** | 공식 한도 200000원을 초과하므로 재무팀 사전 승인이 필요합니다. |
 
 [출장 규정](../data/policies.md)을 브라우저에서 읽고 판단을 확인합니다.
 
@@ -64,25 +83,40 @@ B가 적절합니다. 240000원은 미승인 초안의 금액이며, 공식 한�
 <a id="prepare"></a>
 ## 준비. 코드와 터미널 준비
 
+### 준비 1. 폴더와 터미널 열기
+
 1. [저장소](https://github.com/junwoojeong100/foundry-evaluation-labs-v1)의 **Code → Download ZIP**으로 코드를 받아 압축을 풉니다. 접근 권한이 없다면 소유자가 승인한 ZIP을 받습니다. 이미 받았다면 생략합니다.
 2. [Python 3.10 이상](https://www.python.org/downloads/)과 [VS Code](https://code.visualstudio.com/)를 설치합니다. Windows에서는 Python 설치 시 PATH 추가를 선택합니다.
 3. VS Code의 **File → Open Folder**에서 `lab.py`가 바로 보이는 폴더를 열고 **Terminal → New Terminal**을 선택합니다.
 4. 아래에서 본인 운영체제의 블록만 실행합니다. 이미 LIVE 준비에서 가상환경을 만들었다면 생성은 생략하고 활성화만 합니다.
 
-**내 PC의 터미널을 사용하며 Azure Cloud Shell은 열지 않습니다.** Windows는 **PowerShell**, macOS/Linux는 **zsh 또는 bash**입니다. Windows에서 다른 셸이 열렸다면 터미널의 `+` 옆 화살표 → **Select Default Profile → PowerShell**을 선택하고 새 터미널을 엽니다.
+**내 PC의 터미널을 사용하며 Azure Cloud Shell은 열지 않습니다.**
 
-**브라우저의 파일 링크는 읽기용입니다.** 수정은 VS Code의 로컬 파일에서 합니다. **Ctrl+P / macOS Cmd+P**에 파일 경로를 입력해 열고 **File → Save**로 저장합니다. 검색되지 않으면 왼쪽 탐색기에서 해당 폴더를 펼쳐 파일을 엽니다. `.md`는 **View → Command Palette → Markdown: Open Preview to the Side**로 읽되, 수정은 원본 텍스트 탭에서 합니다.
+- **Windows:** PowerShell. 다른 셸이 열리면 터미널의 `+` 옆 화살표 → **Select Default Profile → PowerShell**을 선택하고 새 터미널을 엽니다.
+- **macOS/Linux:** zsh 또는 bash.
 
-명령은 아래 코드 블록 안의 내용만 복사해 **VS Code 터미널**에 붙여 넣고 Enter를 누릅니다. Python 파일의 실행 버튼이나 `>>>` 대화창을 사용하지 않습니다. `>>>`가 보이면 `exit()`로 먼저 나옵니다.
+**브라우저의 파일 링크는 읽기용입니다.** 수정은 VS Code의 로컬 파일에서 합니다.
 
-macOS / Linux:
+| 파일 작업 | VS Code에서 할 일 |
+|---|---|
+| 열기 | Ctrl+P / macOS Cmd+P에 경로 입력. 찾지 못하면 왼쪽 탐색기 사용 |
+| 보고서 읽기 | **View → Command Palette → Markdown: Open Preview to the Side** |
+| 수정·저장 | 미리보기가 아닌 원본 텍스트 탭에서 수정 → **File → Save** |
+
+**명령은 VS Code 터미널에 입력합니다.** Python 파일의 실행 버튼이나 `>>>` 대화창을 사용하지 않습니다. `>>>`가 보이면 `exit()`로 먼저 나옵니다.
+
+### 준비 2. 가상환경 만들기
+
+**본인 운영체제의 블록만 실행합니다.** 기존 가상환경이 있으면 생성은 생략하고 활성화만 합니다.
+
+**macOS / Linux**
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Windows — PowerShell:
+**Windows — PowerShell**
 
 ```powershell
 py -3 -m venv .venv
@@ -98,6 +132,8 @@ py -3 -m venv .venv
 
 </details>
 
+### 준비 3. 로컬 파일 확인하기
+
 이제 같은 터미널에서 실행합니다.
 
 ```bash
@@ -107,7 +143,16 @@ python lab.py doctor
 **완료 확인:** `LOCAL OK`와 `dev 8개, holdout 4개`가 보입니다.
 
 <a id="working-files"></a>
-**직접 편집할 파일은 실습 6의 `data/my-case.jsonl` 하나뿐입니다.** 저장소에 N02 예제 작업본이 이미 포함되어 있으므로 해당 단계에서 먼저 열어 확인합니다. 파일이 있다는 사실이 직접 작성하거나 실행했다는 뜻은 아닙니다. `config.json`은 필요 없습니다. 결과 폴더와 보고서는 명령이 자동으로 만듭니다. **생성된 JSON·보고서, 제공된 규정·질문·프롬프트는 수정하지 않습니다.** 작업본은 VS Code 기본 **UTF-8**로 저장합니다. LIVE에서 전환했다면 본인 질문·프롬프트와 기존 결과·Azure 자원을 보존합니다.
+### 작업 파일과 결과 구분하기
+
+| 구분 | 할 일 |
+|---|---|
+| 직접 편집 | 실습 6의 **`data/my-case.jsonl` 하나만**. 작업본은 UTF-8로 저장 |
+| 준비 불필요 | `config.json`. DEMO에서는 사용하지 않음 |
+| 자동 생성 | 결과 폴더·JSON·보고서. 증거로 읽고 수정하지 않음 |
+| 그대로 유지 | 제공된 규정·질문·프롬프트 |
+
+N02 예제 작업본은 이미 포함되어 있으므로 **실습 6에서 먼저 열어 확인**합니다. 파일이 있다는 사실이 직접 작성하거나 실행했다는 뜻은 아닙니다. LIVE에서 전환했다면 본인 질문·프롬프트·결과와 Azure 자원을 보존합니다.
 
 이후 **한 명령씩 실행하고 완료 확인을 본 뒤** 다음으로 갑니다. 별도 표시가 없으면 두 운영체제에서 같은 명령을 씁니다. 명령은 항상 `lab.py`가 있는 폴더에서 실행합니다. Windows 출력에서 `/` 대신 `\`가 보여도 같은 경로입니다. 기본 실습 결과 폴더는 `demo-`로 시작하며 LIVE 결과와 섞지 않습니다.
 
@@ -136,6 +181,8 @@ python lab.py doctor
 <a id="lab-1"></a>
 ## 1. 답변을 보기 전에 기준 정하기
 
+### 1-1. 기대 행동과 평가 방법 구분하기
+
 [dev 질문 8개](../data/dev.jsonl)를 읽습니다. `dev`는 개선에 쓰는 질문 묶음이고, `holdout`은 **마지막까지 보지 않을 새 질문 4개**입니다. 아직 `data/holdout.jsonl`은 열지 않습니다. JSONL은 한 줄에 질문과 정답을 담은 JSON 객체 하나인 파일입니다.
 
 `D02`의 기대 행동은 **사전 승인 필요·한도 200000원·근거 TRAVEL-CURRENT**입니다. “이미 승인됐다”거나 “바로 정산하라”고 안내해서는 안 됩니다. 이 기대 행동과 위험을 먼저 판단합니다.
@@ -146,7 +193,7 @@ python lab.py doctor
 | Judge | AI 채점자. Groundedness는 규정에 근거하는지, Relevance는 질문에 적절한지. **여기서는 점수 예제만 읽음** |
 | 사람 검토 | 실제 답변의 설명까지 규정과 대조했을 때 업무에 써도 되는가 |
 
-**결과를 보기 전에 고정할 기준**
+### 1-2. 결과를 보기 전에 합격선 고정하기
 
 | 항목 | 기준 |
 |---|---|
@@ -208,7 +255,9 @@ python lab.py inspect results/demo-baseline D04
 python lab.py judge results/demo-baseline
 ```
 
-이 명령도 AI를 호출하지 않고 **작성된 점수와 이유를 읽습니다.** **`평가 완료: 8개 답변 × 2개 지표`**와 `Judge 결과: results/demo-baseline/judge.json`이 나오면 다시 D04를 엽니다.
+**완료 확인:** `평가 완료: 8개 답변 × 2개 지표`와 `Judge 결과: results/demo-baseline/judge.json`.
+
+이 명령도 AI를 호출하지 않고 **작성된 점수와 이유를 읽습니다.** 완료 후 아래에서 D04를 다시 엽니다.
 
 `평가 완료`는 모든 사례의 점수·이유 확인과 파일 저장이 끝났다는 뜻이지 답변 합격이 아닙니다. JSON을 직접 셀 필요 없이 **`report.md`의 요약 표 → `사례별 근거`의 답변·점수 이유**를 읽습니다.
 
@@ -231,17 +280,25 @@ python lab.py inspect results/demo-baseline D04
 
 “___ 문제를 줄이려면 ___ 지침이 필요하다”는 가설을 정합니다. [V1](../prompts/v1.txt)과 [V2](../prompts/v2.txt)를 읽고, 공식 규정·날짜·정보 부족 처리에서 무엇이 달라졌는지 확인합니다. **제공된 파일은 수정하지 않습니다.** DEMO는 새 프롬프트의 효과를 측정하지 못하며, 아래 명령은 제공된 V2 예제를 읽습니다.
 
+**실행 1 — V2 답변 예제 읽기**
+
 ```bash
 python lab.py run --mode demo --prompt v2 --out results/demo-candidate
 ```
 
-**완료 확인:** `8/8  D08 저장`과 업무 통과 **8/8, 100%**가 보입니다. 이는 작성된 V2 답변의 코드 검사 결과이며 아직 Judge 점수는 없습니다. 이어서 점수 예제를 읽습니다.
+**완료 확인:** `8/8  D08 저장`과 업무 통과 **8/8, 100%**.
+
+작성된 V2 답변의 코드 검사 결과이며 아직 Judge 점수는 없습니다.
+
+**실행 2 — 같은 채점 계약의 점수 예제 읽기**
 
 ```bash
 python lab.py judge results/demo-candidate --like results/demo-baseline
 ```
 
-`--like`는 기준 실행과 같은 채점 계약을 사용하라는 뜻입니다. **`평가 완료: 8개 답변 × 2개 지표`**와 `Judge 결과: results/demo-candidate/judge.json`을 확인하면 비교합니다.
+**완료 확인:** `평가 완료: 8개 답변 × 2개 지표`와 `Judge 결과: results/demo-candidate/judge.json`.
+
+`--like`는 기준 실행과 같은 채점 계약을 사용하라는 뜻입니다.
 
 ### 4-2. 새 통과와 회귀 확인하기
 
@@ -257,9 +314,13 @@ python lab.py compare results/demo-baseline results/demo-candidate
 python lab.py review results/demo-candidate D06
 ```
 
-명령은 입력을 기다립니다. 답변을 읽고 소문자 `pass` 또는 `fail`을 입력한 뒤 Enter, 이어서 **규정과 대조한 이유를 5자 이상** 입력하고 Enter를 누릅니다. 사람 판정은 이 명령으로 저장해야 Gate에 반영됩니다.
+명령은 **입력을 기다립니다.** 멈춘 것이 아닙니다.
 
-**판정할 때는 `answer` 문장까지 읽습니다.** [출장 규정](../data/policies.md)과 금액·날짜·사전 승인 조건을 대조하고 없는 승인을 만들어 내지 않았는지 확인합니다. 코드의 `PASS`나 Judge의 4점 이상을 그대로 사람의 `pass`로 옮기지 않습니다.
+1. **`answer` 문장까지 읽고** [출장 규정](../data/policies.md)과 금액·날짜·사전 승인 조건을 대조합니다. 없는 승인을 만들지 않았는지도 확인합니다.
+2. 소문자 **`pass` 또는 `fail`**을 입력하고 Enter를 누릅니다.
+3. **규정과 대조한 이유를 5자 이상** 입력하고 Enter를 누릅니다.
+
+이 명령으로 저장해야 Gate에 반영됩니다. 코드의 `PASS`나 Judge의 4점 이상을 그대로 사람의 `pass`로 옮기지 않습니다.
 
 자동 실행은 [AI 보조 검토](reference.md#assisted-review)로 구분합니다. AI 판정을 사람의 승인으로 저장하지 않으며, 실제 사람 검토 미완료는 그대로 남깁니다.
 
@@ -302,7 +363,13 @@ python lab.py gate results/demo-baseline results/demo-candidate results/demo-hol
 
 **완료 확인:** 업무 검사 **3/4, 75%**, Gate **BLOCK**, 종료 코드 `2`. H04를 `fail`로 기록하면 사람의 반려도 이유에 포함됩니다. `results/demo-candidate/gate.md`를 열어 보류 이유를 확인하고 **아래 실습 6으로 계속 진행합니다.**
 
-이 예제의 품질 실패에 따른 `BLOCK`은 실습 실패가 아닙니다. **점수·사람 검토 누락도 `BLOCK` 사유가 될 수 있습니다.** 누락은 해당 단계를 완료한 뒤 같은 `gate` 명령을 다시 실행해 갱신합니다. 검토 저장만으로 `gate.md`가 바뀌지는 않습니다. `ERROR:`는 먼저 해결하고, 실제 품질 실패는 통과로 바꾸지 않습니다. Dev와 holdout은 질문이 달라 전후 점수로 비교하지 않습니다. Holdout을 보고 수정하면 다음에는 새로운 holdout이 필요합니다.
+**이 예제의 품질 `BLOCK`은 실습 실패가 아닙니다.** 차단 이유를 구분합니다.
+
+- **점수·사람 검토 누락:** 해당 단계를 완료한 뒤 같은 `gate` 명령을 다시 실행합니다. 검토 저장만으로 `gate.md`가 바뀌지는 않습니다.
+- **실제 품질 실패:** 보류 이유를 남기고 진행합니다. 실패를 통과로 바꾸지 않습니다.
+- **`ERROR:`:** 먼저 해결합니다.
+
+Dev와 holdout은 질문이 달라 전후 점수로 비교하지 않습니다. Holdout을 보고 수정하면 다음에는 새로운 holdout이 필요합니다.
 
 **다음:** [6. 내 질문 설계](#lab-6) · [진행표](#lab-map)
 
@@ -357,7 +424,9 @@ python lab.py gate results/demo-baseline results/demo-candidate results/demo-hol
 
 </details>
 
-**JSON 객체 하나를 한 줄에 저장합니다.** 자동 줄바꿈은 괜찮지만 Enter로 객체를 나누거나 빈 줄을 넣지 않습니다. 8개 필드를 모두 유지하고 `null`·`true`·`false`는 소문자로 씁니다.
+**JSON 객체 하나를 한 줄에 저장합니다.** 긴 줄은 VS Code의 **View → Word Wrap**으로 읽습니다. 화면의 자동 줄바꿈은 괜찮지만 Enter로 객체를 나누거나 빈 줄을 넣지 않습니다.
+
+8개 필드를 모두 유지하고 `null`·`true`·`false`는 소문자로 씁니다.
 
 <a id="validate-extra"></a>
 ### 6-3. 파일 형식 확인하기
@@ -368,7 +437,14 @@ python lab.py gate results/demo-baseline results/demo-candidate results/demo-hol
 python lab.py validate-data data/my-case.jsonl
 ```
 
-**완료 확인:** `DATA OK: 1 case(s)`. `ERROR:`가 나오면 표시된 필드나 줄을 수정하고 같은 검사만 다시 실행합니다. 2개 이상이면 다른 줄을 제거하고 N02 한 줄만 남깁니다. 이는 JSONL 문법·필수 필드·값 형식 확인이며 **정답의 타당성이나 모델 성능 검증은 아닙니다.** 정답은 규정과 직접 대조합니다. **DEMO는 N02의 답변을 생성하거나 채점하지 않습니다.** LIVE 명령을 추가로 실행하지 않습니다.
+**완료 확인:** `DATA OK: 1 case(s)`.
+
+**다른 결과가 나오면:** `ERROR:`가 가리키는 필드나 줄을 수정하고 같은 검사만 다시 실행합니다. 2개 이상이면 다른 줄을 제거하고 N02 한 줄만 남깁니다.
+
+이 검사는 JSONL 문법·필수 필드·값 형식만 확인합니다. **정답의 타당성이나 모델 성능 검증은 아니므로** 정답은 규정과 직접 대조합니다.
+
+> [!IMPORTANT]
+> **DEMO는 N02의 답변을 생성하거나 채점하지 않습니다.** LIVE 명령을 추가로 실행하지 않습니다.
 
 잡으려는 문제와 **“이 DEMO 경로에서는 N02 응답 생성·Judge 미실행”**을 구분합니다. 이전 LIVE 결과가 있더라도 별도 기록으로 남기고 DEMO의 실행 성과로 세지 않습니다. 마지막 네 문장으로 설명합니다.
 
