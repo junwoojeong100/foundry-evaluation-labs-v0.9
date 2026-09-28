@@ -79,18 +79,33 @@ def clients(config: dict):
         raise RuntimeError(f"Azure 호출 실패 ({type(exc).__name__}): {exc}\n복구: docs/reference.md") from exc
 
 
-def messages_for(query: str, context: str, prompt: str) -> list[dict]:
+def validate_history(history: list[dict] | None) -> list[dict]:
+    if history is not None and not isinstance(history, list):
+        raise ValueError("Conversation history must be an array.")
+    turns = [] if history is None else history
+    if any(
+        not isinstance(turn, dict) or set(turn) != {"role", "content"} or turn["role"] not in ("user", "assistant")
+        or not isinstance(turn["content"], str) or not turn["content"].strip()
+        for turn in turns
+    ):
+        raise ValueError("Conversation history must contain user/assistant text turns only.")
+    return turns
+
+
+def messages_for(query: str, context: str, prompt: str, *, history: list[dict] | None = None) -> list[dict]:
+    turns = validate_history(history)
     return [
         {"role": "system", "content": prompt + "\n" + OUTPUT_INSTRUCTIONS + "\n<reference>\n" + context + "\n</reference>"},
+        *turns,
         {"role": "user", "content": query},
     ]
 
 
-def generate(client, config: dict, query: str, context: str, prompt: str) -> dict:
+def generate(client, config: dict, query: str, context: str, prompt: str, *, history: list[dict] | None = None) -> dict:
     started = time.monotonic()
     completion = client.chat.completions.create(
         model=config["model_deployment"],
-        messages=messages_for(query, context, prompt),
+        messages=messages_for(query, context, prompt, history=history),
         response_format={
             "type": "json_schema",
             "json_schema": {"name": "policy_answer", "strict": True, "schema": ANSWER_SCHEMA},
@@ -176,7 +191,7 @@ def evaluation_items(run: dict) -> list[dict]:
     ]
 
 
-def parse_output_items(outputs: list[dict], items: list[dict]) -> dict:
+def parse_output_items(outputs: list[dict], items: list[dict], *, metrics=METRICS) -> dict:
     expected = {item["id"]: item for item in items}
     parsed = {}
     for output in outputs:
@@ -196,7 +211,7 @@ def parse_output_items(outputs: list[dict], items: list[dict]) -> dict:
             if not isinstance(result, dict):
                 raise ValueError(f"{case_id}: 잘못된 평가 결과입니다.")
             name = result.get("name")
-            if name not in METRICS or name in values:
+            if name not in metrics or name in values:
                 raise ValueError(f"{case_id}: 중복 또는 예상하지 못한 평가기 {name}")
             values[name] = {"score": result.get("score"), "reason": result.get("reason")}
         parsed[case_id] = values
@@ -205,14 +220,27 @@ def parse_output_items(outputs: list[dict], items: list[dict]) -> dict:
     return parsed
 
 
-def judge_run(run: dict, folder: Path, *, like: Path | None, wait_seconds: int) -> dict | None:
+def judge_run(
+    run: dict, folder: Path, *, like: Path | None, wait_seconds: int,
+    contract_override: dict | None = None, items_override: list[dict] | None = None,
+    metrics=METRICS,
+) -> dict | None:
     state_path = folder / "foundry-job.json"
-    items = evaluation_items(run)
+    items = evaluation_items(run) if items_override is None else items_override
+    if (
+        not items or any(not isinstance(item, dict) for item in items)
+        or any(set(item) != set(items[0]) for item in items)
+        or any(not isinstance(value, str) for item in items for value in item.values())
+        or len({item.get("id") for item in items}) != len(items)
+    ):
+        raise ValueError("Evaluation items must have matching string fields and unique case IDs.")
     with clients(run["config"]) as (project, client):
         if state_path.exists():
             state = read_json(state_path)
             if state["evidence_hash"] != run["evidence_hash"]:
                 raise ValueError("이미 다른 응답으로 시작한 Foundry 작업입니다.")
+            if contract_override is not None and state["contract"] != contract_override:
+                raise ValueError("저장된 평가 계약이 요청한 고정 계약과 다릅니다.")
             if like is not None:
                 reference = read_json(like / "foundry-job.json")
                 if state["eval_id"] != reference["eval_id"]:
@@ -221,6 +249,8 @@ def judge_run(run: dict, folder: Path, *, like: Path | None, wait_seconds: int) 
             if like is not None:
                 reference = read_json(like / "foundry-job.json")
                 contract = reference["contract"]
+                if contract_override is not None and contract != contract_override:
+                    raise ValueError("--like의 평가 계약이 요청한 고정 계약과 다릅니다.")
                 if (
                     contract["project_endpoint"] != run["config"]["project_endpoint"]
                     or contract["judge_deployment"] != run["config"]["judge_deployment"]
@@ -232,7 +262,7 @@ def judge_run(run: dict, folder: Path, *, like: Path | None, wait_seconds: int) 
                 if not eval_id:
                     raise ValueError("--like 실행의 Foundry 평가 그룹이 아직 없습니다.")
             else:
-                contract = evaluator_contract(project, run["config"])
+                contract = contract_override if contract_override is not None else evaluator_contract(project, run["config"])
                 eval_id = None
             state = {
                 "evidence_hash": run["evidence_hash"], "contract": contract,
@@ -244,7 +274,8 @@ def judge_run(run: dict, folder: Path, *, like: Path | None, wait_seconds: int) 
                 raise RuntimeError("평가 그룹 생성 결과가 불명확합니다. 자동 재생성하지 않습니다. docs/reference.md의 원격 ID 복구를 따르세요.")
             state["phase"] = "creating-eval"
             write_json(state_path, state)
-            fields = {key: {"type": "string"} for key in ("id", "query", "response", "context")}
+            keys = ("id", "query", "response", "context") if items_override is None else tuple(items[0])
+            fields = {key: {"type": "string"} for key in keys}
             evaluation = client.evals.create(
                 name=f"straightforward-{run['run_id'][:8]}",
                 metadata={"workshop_run": run["run_id"]},
@@ -302,7 +333,7 @@ def judge_run(run: dict, folder: Path, *, like: Path | None, wait_seconds: int) 
         write_json(folder / "foundry-output.json", outputs)
         return {
             "source": "foundry", "evidence_hash": run["evidence_hash"],
-            "contract": state["contract"], "rows": parse_output_items(outputs, items),
+            "contract": state["contract"], "rows": parse_output_items(outputs, items, metrics=metrics),
             "eval_id": state["eval_id"], "run_id": state["run_id"],
             "report_url": job.report_url,
         }

@@ -19,7 +19,10 @@ IQ_OUTPUT_TOKENS = 6000
 
 
 def read_rag_config(path: Path) -> dict:
-    config = read_json(path)
+    return validate_rag_config(read_json(path))
+
+
+def validate_rag_config(config: dict) -> dict:
     keys = {"search_endpoint", "index_name", "knowledge_source", "knowledge_base", "top_k"}
     if not isinstance(config, dict) or set(config) != keys:
         raise ValueError("Use the five fields in optional-rag/config.example.json.")
@@ -126,14 +129,15 @@ def retrieval_contract(config: dict, corpus_hash: str) -> dict:
 
 
 class SearchRestClient:
-    def __init__(self, endpoint, pipeline):
+    def __init__(self, endpoint, pipeline, *, api_version=SEARCH_API_VERSION):
         self.endpoint = endpoint
         self.pipeline = pipeline
+        self.api_version = api_version
 
     def request(self, method: str, path: str, body=None, *, missing_ok=False, create_only=False):
         from azure.core.pipeline.transport import HttpRequest
         request = HttpRequest(
-            method, f"{self.endpoint}/{path}?api-version={SEARCH_API_VERSION}",
+            method, f"{self.endpoint}/{path}?api-version={self.api_version}",
             headers={"Accept": "application/json"},
         )
         if create_only:
@@ -154,7 +158,7 @@ class SearchRestClient:
 
 
 @contextmanager
-def search_client(config: dict):
+def search_client(config: dict, *, api_version=SEARCH_API_VERSION):
     from azure.core.exceptions import AzureError
     from azure.core.pipeline import Pipeline
     from azure.core.pipeline.policies import BearerTokenCredentialPolicy
@@ -168,7 +172,7 @@ def search_client(config: dict):
                 policies=[BearerTokenCredentialPolicy(credential, "https://search.azure.com/.default")],
             ) as pipeline,
         ):
-            yield SearchRestClient(config["search_endpoint"], pipeline)
+            yield SearchRestClient(config["search_endpoint"], pipeline, api_version=api_version)
     except AzureError as exc:
         raise RuntimeError(f"Azure Search request failed ({type(exc).__name__}): {exc}") from exc
 

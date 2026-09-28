@@ -271,13 +271,12 @@ class DocumentationTests(unittest.TestCase):
     def test_live_rehearsal_record_distinguishes_execution_from_human_approval(self):
         text = (ROOT / "docs" / "reference.md").read_text(encoding="utf-8")
         section = text.split('<a id="live-verification"></a>')[1].split("## 공식 출처")[0]
-        for required in (
-            "22개 응답", "44개 지표", "5개 평가 실행", "한 번의 실제 실행",
-            "실제 사람 검토는 미완료", "--reviewer assistant", "최종 Gate는 `BLOCK`",
-        ):
-            self.assertIn(required, section)
-        self.assertIn("| Candidate dev | 8 | 8/8 | 8/8 | 6/8 |", section)
-        self.assertIn("| 고정 Holdout | 4 | 4/4 | 4/4 | 2/4 |", section)
+        self.assertIn("complete-lab.md#results", section)
+        self.assertIn("이전", section)
+        current = (ROOT / "docs" / "complete-lab.md").read_text(encoding="utf-8")
+        self.assertIn("Relevance", current)
+        self.assertIn("100%", current)
+        self.assertIn("실제 운영 승인은", current)
 
     def test_retention_is_the_default_and_deletion_is_explicitly_optional(self):
         main = (ROOT / "README.md").read_text(encoding="utf-8")

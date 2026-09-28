@@ -44,7 +44,7 @@ Local and SDK transport tests are **not actual Azure execution**. For a full reh
 
 **Do not require V2 to win.** V1 may already answer well, or V2 may introduce another problem. Fix environment/SDK errors before class, but never fabricate results.
 
-The [September 27 LIVE rehearsal](reference.md#live-verification) improved business checks while retaining Relevance regression and BLOCK. Discuss disagreement about abstention and missing-information responses, but do not show it as an answer key before participants make their own initial judgments.
+The [completed workflow](complete-lab.md) starts with a genuine V1 failure, completes necessary user follow-ups, and passes every required metric—including Relevance—on new final scenarios. Earlier failure/validation records are retired. Distinguish scripted evaluation-user turns from actual human production approval.
 
 ## Facilitate by checkpoint
 

@@ -150,6 +150,7 @@ def project_context() -> dict:
 
 
 def redact(text: str, values: list[str]) -> str:
+    text = text.replace(str(ROOT), ".")
     for value in sorted((value for value in values if value), key=len, reverse=True):
         text = re.sub(re.escape(value), "[redacted]", text, flags=re.IGNORECASE)
     text = re.sub(r"https://ai\.azure\.com/\S+", "[Foundry report URL saved locally]", text)
@@ -325,7 +326,14 @@ def card(path: Path, language: str, closing: bool = False, *, topic="core") -> N
     body = ImageFont.truetype(str(FONT), 42)
     small = ImageFont.truetype(str(FONT), 30)
     draw.rectangle((104, 145, 114, 820), fill=(58, 154, 249))
-    if topic == "rag":
+    if topic == "success":
+        if closing:
+            heading = "Fresh questions.\nVerified acceptance." if language == "en" else "새 질문에서도\n실습 기준 합격"
+            sub = "Lab acceptance passed. Human production approval is separate." if language == "en" else "실습 기준은 합격했습니다. 사람의 운영 승인은 별도입니다."
+        else:
+            heading = "From a real failure\nto verified improvement." if language == "en" else "실제 실패에서\n검증된 개선까지"
+            sub = "One Search service · vectors · LLM planning · calibrated evaluation" if language == "en" else "검색 서비스 하나 · 벡터 · LLM 계획 · 교정된 평가"
+    elif topic == "rag":
         if closing:
             heading = "Retrieval is not\nanswer quality." if language == "en" else "검색 품질과\n답변 품질은 다릅니다."
             sub = "REVIEW_REQUIRED · keep the original evidence." if language == "en" else "REVIEW_REQUIRED · 원본 근거를 보존합니다."
@@ -342,7 +350,9 @@ def card(path: Path, language: str, closing: bool = False, *, topic="core") -> N
     for row, line in enumerate(wrapped(draw, sub, body, 1590)):
         draw.text((160, 525 + row * 60), line, font=body, fill=(181, 211, 243))
     draw.text((160, 715), "gpt-6-luna  /  swedencentral  /  eval-model", font=body, fill=(93, 185, 255))
-    if topic == "rag":
+    if topic == "success":
+        note = "Every final answer must pass all required metrics, including Relevance. No scores are altered." if language == "en" else "최종 응답은 Relevance를 포함한 모든 필수 지표를 통과해야 합니다. 점수는 조작하지 않습니다."
+    elif topic == "rag":
         note = "Live retrieval + retained RAG evaluations. GA extractive retrieval, not LLM query planning." if language == "en" else "실제 검색 + 보존된 RAG 평가. 정식 추출형 검색이며 LLM 쿼리 계획은 사용하지 않습니다."
     else:
         note = "One fresh smoke check + retained LIVE evidence. Captions only; no narration." if language == "en" else "새 연결 확인 1건 + 보존된 LIVE 증거. 자막 영상이며 음성 해설은 없습니다."

@@ -44,7 +44,7 @@ python lab.py doctor --live
 
 Confirm `LIVE 조회 OK` for `gpt-6-luna` / `eval-model`. Match the portal and CLI account, tenant, and subscription using the core guide.
 
-Use the **Free Search SKU** and **Free semantic/knowledge-retrieval plans** where available. Sweden Central support and the subscription's Free slot must be checked. If that slot is occupied, do not delete another service. Reuse an authorized environment or **explicitly choose a paid Basic-or-higher service and its ongoing costs**. There is no automatic upgrade.
+The current recommended layout **reuses the shared Basic Search service from the complete lab**. Its text and vector/planned indexes coexist. Free semantic/knowledge-retrieval plans are separate from the service SKU: **Basic still has ongoing service charges**. Do not automatically create another Search service.
 
 The extension has **7 chunks, 4 questions × 2 routes = 8 answers and 16 judge metric items**. Retrieval and evaluator internals are separate requests. Model generation/judging costs money; free retrieval allowances can be exhausted. Retaining resources is not equivalent to free usage.
 
@@ -53,6 +53,8 @@ The extension has **7 chunks, 4 questions × 2 routes = 8 answers and 16 judge m
 
 Replace all placeholders with real values. You can reuse the core dedicated group. The service name must be globally unique and use lowercase letters, digits, and dashes.
 
+**If the shared Basic service already exists, skip creation and use its endpoint/permissions.** Create below only when you do not yet have a service.
+
 ```bash
 az search service check-name-availability --name "YOUR-SEARCH-NAME" --type searchServices --subscription "YOUR-SUBSCRIPTION-ID"
 ```
@@ -60,7 +62,7 @@ az search service check-name-availability --name "YOUR-SEARCH-NAME" --type searc
 Proceed only with `nameAvailable: true`.
 
 ```bash
-az search service create --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --location swedencentral --sku free --semantic-search free --disable-local-auth true
+az search service create --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --location swedencentral --sku basic --identity-type SystemAssigned --semantic-search free --disable-local-auth true
 ```
 
 This **disables API keys**. Do not retrieve or store keys. You can record `retain=true` under portal Tags; a tag is not a deletion lock.
@@ -69,7 +71,7 @@ This **disables API keys**. Do not retrieve or store keys. You can record `retai
 az search service show --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --query "{id:id,location:location,sku:sku.name,state:provisioningState,disableLocalAuth:disableLocalAuth,semanticSearch:semanticSearch}" --output json
 ```
 
-Confirm Succeeded/succeeded, Sweden Central, `free`, and `disableLocalAuth: true`. Use the returned `id`, ending in `/providers/Microsoft.Search/searchServices/...`, as `YOUR-SEARCH-RESOURCE-ID`.
+Confirm Succeeded/succeeded, Sweden Central, `basic`, and `disableLocalAuth: true`. Use the returned `id`, ending in `/providers/Microsoft.Search/searchServices/...`, as `YOUR-SEARCH-RESOURCE-ID`.
 
 Grant the following roles to the **user Object ID already verified in the core guide**, at the **Search service scope only**, and only if missing:
 
@@ -198,18 +200,9 @@ In the Foundry evaluation report URL, match a case's **question, answer, retriev
 - Preserve low scores and failures; do not rerun until results look better.
 
 <a id="observed-results"></a>
-### September 28, 2026: actual execution
+### Superseded minimal-RAG validation
 
-The Search SKU and semantic/knowledge-retrieval plans were Free, with API keys disabled. The real index, Knowledge Source, and Knowledge Base were created. **Eight answers and sixteen judge metric items** were saved in two completed remote evaluation runs.
-
-| Route | Required-chunk Recall@3 | Business checks | Groundedness ≥4 | Relevance ≥4 |
-|---|---|---|---|---|
-| Search | 4/4 (100%) | 4/4 (100%) | 4/4 (100%) | 3/4 (75%) |
-| Foundry IQ | 4/4 (100%) | 3/4 (75%) | 4/4 (100%) | 2/4 (50%) |
-
-**All four questions had identical retrieved contexts across the routes.** In the IQ run, D02's amount and decision were correct, but an extra `SCOPE` citation failed the exact-set check. This is a difference in one generation/judging trial, **not proof that IQ retrieval is worse**. Retrieval and answer quality remain distinct, and the result is `REVIEW_REQUIRED`.
-
-Local `results/rag-verification.json` and each run folder record the evidence and equality between generation context and the original remote evaluation input. Original retrievals, answers, and scores are preserved; resources remain deployed.
+The earlier Free-service failure/validation records are superseded and scheduled for cleanup. Use the [shared Basic service and current acceptance result](complete-lab.md#results). This introductory API exercise can also run in its own index on that same Basic service.
 
 <a id="troubleshooting"></a>
 ## Troubleshooting

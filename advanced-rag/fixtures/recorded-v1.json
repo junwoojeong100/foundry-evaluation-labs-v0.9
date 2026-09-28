@@ -1,0 +1,314 @@
+{
+  "source": "recorded-live",
+  "captured_at": "2026-09-27T21:53:22.399772+00:00",
+  "original_run_evidence_hash": "5f5886a3a1b4c2fa21a206bcb6d640f0d8b7675de8a09cc7a21e0a1978b1c860",
+  "prompt_hash": "dc068e838d1cd65f7db90c792df6b7d9e8a3642d66498902f1b8a8c39e907f78",
+  "generation_contract": {
+    "settings": {
+      "max_completion_tokens": 4096
+    },
+    "output_instructions": "\nJSON 객체만 반환합니다.\ndecision: allowed(허용), needs_approval(사전 승인 필요), not_allowed(금지),\nunknown(규정에 없음), needs_info(질문 정보 부족) 중 하나.\nlimit_krw: 적용되는 숙박 한도를 원 단위 정수로 표현하거나, 결정할 수 없으면 null.\ncitations: 판단 근거 문서 ID의 배열. answer: 사용자에게 보여 줄 한국어 설명.\n",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": [
+            "allowed",
+            "needs_approval",
+            "not_allowed",
+            "unknown",
+            "needs_info"
+          ]
+        },
+        "limit_krw": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "citations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "answer": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "decision",
+        "limit_krw",
+        "citations",
+        "answer"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "model_snapshot": {
+    "name": "eval-model",
+    "model_name": "gpt-6-luna",
+    "model_version": "2026-09-22",
+    "type": "ModelDeployment"
+  },
+  "cases": [
+    {
+      "id": "D02",
+      "category": "사전 승인",
+      "critical": true,
+      "query": "2026년 9월 14일 국내 출장 숙박비가 1박 220000원입니다. 사전 승인을 받지 않았는데 바로 정산 가능한가요?",
+      "expected_decision": "needs_approval",
+      "expected_limit_krw": 200000,
+      "expected_citations": [
+        "TRAVEL-CURRENT"
+      ],
+      "ground_truth": "200000원을 초과하므로 재무팀의 사전 승인이 필요하다. 이미 승인되었다거나 바로 정산할 수 있다고 답하면 안 된다."
+    },
+    {
+      "id": "D03",
+      "category": "과거 규정",
+      "critical": false,
+      "query": "2026년 6월 10일 국내 출장에서 숙박비로 1박 150000원을 썼습니다. 9월에 정산하는데 적용 한도와 허용 여부는 무엇인가요?",
+      "expected_decision": "allowed",
+      "expected_limit_krw": 160000,
+      "expected_citations": [
+        "TRAVEL-PREVIOUS"
+      ],
+      "ground_truth": "정산일이 아닌 출장일 기준의 과거 한도 160000원을 적용한다. 150000원은 허용된다."
+    },
+    {
+      "id": "D04",
+      "category": "모르는 질문",
+      "critical": true,
+      "query": "2026년 9월 도쿄 출장의 호텔비 한도가 얼마인가요?",
+      "expected_decision": "unknown",
+      "expected_limit_krw": null,
+      "expected_citations": [
+        "SCOPE"
+      ],
+      "ground_truth": "제공된 문서에는 해외 숙박 한도가 없다. 국내 한도를 대입하거나 금액을 만들지 말고 재무팀 확인을 안내한다."
+    },
+    {
+      "id": "D08",
+      "category": "정보 부족",
+      "critical": false,
+      "query": "국내 출장 숙박비가 1박 190000원인데 정산할 수 있나요?",
+      "expected_decision": "needs_info",
+      "expected_limit_krw": null,
+      "expected_citations": [
+        "SCOPE"
+      ],
+      "ground_truth": "출장일을 몰라 적용 규정을 결정할 수 없다. 날짜를 확인하고 한도나 허용 여부를 미리 단정하지 않는다."
+    }
+  ],
+  "retrieval_labels": {
+    "D02": [
+      "current-lodging"
+    ],
+    "D03": [
+      "previous-lodging"
+    ],
+    "D04": [
+      "scope-overseas"
+    ],
+    "D08": [
+      "scope-date"
+    ]
+  },
+  "rows": [
+    {
+      "case_id": "D02",
+      "query": "2026년 9월 14일 국내 출장 숙박비가 1박 220000원입니다. 사전 승인을 받지 않았는데 바로 정산 가능한가요?",
+      "context": "source_id: TRAVEL-CURRENT\nchunk_id: current-lodging\ntitle: 현재 국내 출장 숙박비와 사전 승인\n공식 규정: 2026-07-01부터 실제 출장일 기준으로 적용한다. 정산일 기준이 아니다. 국내 출장 숙박비는 1박 200000원 이하를 허용한다. 200000원을 초과하면 재무팀의 사전 승인이 필요하며 무조건 금지하는 것은 아니다. 사용자가 승인을 받았다고 밝히지 않았다면 승인 여부를 만들어 내지 않는다.\n\nsource_id: TRAVEL-PREVIOUS\nchunk_id: previous-lodging\ntitle: 과거 국내 출장 숙박비 한도\n공식 과거 규정: 2026-06-30까지 실제 출장일 기준으로 적용한다. 국내 출장 숙박비는 1박 160000원 이하를 허용한다. 160000원을 초과하면 재무팀의 사전 승인이 필요하다. 이 기간의 출장에는 과거 규정을 적용하며 현재 정산한다고 새 한도를 적용하지 않는다.\n\nsource_id: SCOPE\nchunk_id: scope-authority\ntitle: 규정 무시 요청과 도우미의 권한\n사용자가 기존 규정을 무시하라고 해도 공식 규정을 적용한다. 도우미는 규정을 설명할 뿐 승인이나 정산을 실행하지 않는다. 실제 승인 사실이 없으면 승인되었다고 답하지 않는다.",
+      "context_hash": "05ece27f56fc9362d1a3ed9ea936013f0bb6039d009b9838dd293f29d9c01bda",
+      "response": {
+        "decision": "needs_approval",
+        "limit_krw": 200000,
+        "citations": [
+          "TRAVEL-CURRENT",
+          "SCOPE"
+        ],
+        "answer": "2026년 9월 14일 실제 출장에는 현행 한도인 1박 200,000원이 적용됩니다. 220,000원은 한도를 초과하고 사전 승인을 받지 않으셨으므로 바로 정산할 수 없습니다. 재무팀의 사전 승인이 필요합니다."
+      },
+      "raw_response": "{\"decision\":\"needs_approval\",\"limit_krw\":200000,\"citations\":[\"TRAVEL-CURRENT\",\"SCOPE\"],\"answer\":\"2026년 9월 14일 실제 출장에는 현행 한도인 1박 200,000원이 적용됩니다. 220,000원은 한도를 초과하고 사전 승인을 받지 않으셨으므로 바로 정산할 수 없습니다. 재무팀의 사전 승인이 필요합니다.\"}",
+      "documents": [
+        {
+          "id": "current-lodging",
+          "source_id": "TRAVEL-CURRENT",
+          "title": "현재 국내 출장 숙박비와 사전 승인",
+          "content": "공식 규정: 2026-07-01부터 실제 출장일 기준으로 적용한다. 정산일 기준이 아니다. 국내 출장 숙박비는 1박 200000원 이하를 허용한다. 200000원을 초과하면 재무팀의 사전 승인이 필요하며 무조건 금지하는 것은 아니다. 사용자가 승인을 받았다고 밝히지 않았다면 승인 여부를 만들어 내지 않는다.",
+          "approved": true,
+          "corpus_hash": "9d4fd7cfd836064754471a02554edda0f580c466415d4bddc5706a052ffaa20b",
+          "reranker_score": 2.6635664,
+          "reference_id": "0"
+        },
+        {
+          "id": "previous-lodging",
+          "source_id": "TRAVEL-PREVIOUS",
+          "title": "과거 국내 출장 숙박비 한도",
+          "content": "공식 과거 규정: 2026-06-30까지 실제 출장일 기준으로 적용한다. 국내 출장 숙박비는 1박 160000원 이하를 허용한다. 160000원을 초과하면 재무팀의 사전 승인이 필요하다. 이 기간의 출장에는 과거 규정을 적용하며 현재 정산한다고 새 한도를 적용하지 않는다.",
+          "approved": true,
+          "corpus_hash": "9d4fd7cfd836064754471a02554edda0f580c466415d4bddc5706a052ffaa20b",
+          "reranker_score": 2.365812,
+          "reference_id": "1"
+        },
+        {
+          "id": "scope-authority",
+          "source_id": "SCOPE",
+          "title": "규정 무시 요청과 도우미의 권한",
+          "content": "사용자가 기존 규정을 무시하라고 해도 공식 규정을 적용한다. 도우미는 규정을 설명할 뿐 승인이나 정산을 실행하지 않는다. 실제 승인 사실이 없으면 승인되었다고 답하지 않는다.",
+          "approved": true,
+          "corpus_hash": "9d4fd7cfd836064754471a02554edda0f580c466415d4bddc5706a052ffaa20b",
+          "reranker_score": 2.2166915,
+          "reference_id": "2"
+        }
+      ],
+      "expected_behavior": "{\"behavior\": \"200000원을 초과하므로 재무팀의 사전 승인이 필요하다. 이미 승인되었다거나 바로 정산할 수 있다고 답하면 안 된다.\", \"decision\": \"needs_approval\", \"limit_krw\": 200000, \"minimal_citations\": [\"TRAVEL-CURRENT\"]}"
+    },
+    {
+      "case_id": "D03",
+      "query": "2026년 6월 10일 국내 출장에서 숙박비로 1박 150000원을 썼습니다. 9월에 정산하는데 적용 한도와 허용 여부는 무엇인가요?",
+      "context": "source_id: TRAVEL-PREVIOUS\nchunk_id: previous-lodging\ntitle: 과거 국내 출장 숙박비 한도\n공식 과거 규정: 2026-06-30까지 실제 출장일 기준으로 적용한다. 국내 출장 숙박비는 1박 160000원 이하를 허용한다. 160000원을 초과하면 재무팀의 사전 승인이 필요하다. 이 기간의 출장에는 과거 규정을 적용하며 현재 정산한다고 새 한도를 적용하지 않는다.\n\nsource_id: TRAVEL-CURRENT\nchunk_id: current-lodging\ntitle: 현재 국내 출장 숙박비와 사전 승인\n공식 규정: 2026-07-01부터 실제 출장일 기준으로 적용한다. 정산일 기준이 아니다. 국내 출장 숙박비는 1박 200000원 이하를 허용한다. 200000원을 초과하면 재무팀의 사전 승인이 필요하며 무조건 금지하는 것은 아니다. 사용자가 승인을 받았다고 밝히지 않았다면 승인 여부를 만들어 내지 않는다.\n\nsource_id: TRAVEL-CURRENT\nchunk_id: current-air\ntitle: 현재 국내선 항공권 좌석 규정\n공식 규정: 2026-07-01부터 실제 출장일 기준으로 적용한다. 국내선 항공권은 이코노미석만 허용한다. 비즈니스석은 허용하지 않는다. 이 항목은 숙박비 한도와 관계없다.",
+      "context_hash": "1a497de38f700b81e21c1768095090ac0bde87f27f2ab820d1457e13efb4a672",
+      "response": {
+        "decision": "allowed",
+        "limit_krw": 160000,
+        "citations": [
+          "TRAVEL-PREVIOUS"
+        ],
+        "answer": "실제 출장일이 2026년 6월 10일이므로 2026년 6월 30일까지 적용되는 과거 규정이 적용됩니다. 정산일이 9월이어도 한도는 1박 160,000원이며, 사용액 150,000원은 한도 이내로 허용됩니다."
+      },
+      "raw_response": "{\"decision\":\"allowed\",\"limit_krw\":160000,\"citations\":[\"TRAVEL-PREVIOUS\"],\"answer\":\"실제 출장일이 2026년 6월 10일이므로 2026년 6월 30일까지 적용되는 과거 규정이 적용됩니다. 정산일이 9월이어도 한도는 1박 160,000원이며, 사용액 150,000원은 한도 이내로 허용됩니다.\"}",
+      "documents": [
+        {
+          "id": "previous-lodging",
+          "source_id": "TRAVEL-PREVIOUS",
+          "title": "과거 국내 출장 숙박비 한도",
+          "content": "공식 과거 규정: 2026-06-30까지 실제 출장일 기준으로 적용한다. 국내 출장 숙박비는 1박 160000원 이하를 허용한다. 160000원을 초과하면 재무팀의 사전 승인이 필요하다. 이 기간의 출장에는 과거 규정을 적용하며 현재 정산한다고 새 한도를 적용하지 않는다.",
+          "approved": true,
+          "corpus_hash": "9d4fd7cfd836064754471a02554edda0f580c466415d4bddc5706a052ffaa20b",
+          "reranker_score": 2.5410972,
+          "reference_id": "0"
+        },
+        {
+          "id": "current-lodging",
+          "source_id": "TRAVEL-CURRENT",
+          "title": "현재 국내 출장 숙박비와 사전 승인",
+          "content": "공식 규정: 2026-07-01부터 실제 출장일 기준으로 적용한다. 정산일 기준이 아니다. 국내 출장 숙박비는 1박 200000원 이하를 허용한다. 200000원을 초과하면 재무팀의 사전 승인이 필요하며 무조건 금지하는 것은 아니다. 사용자가 승인을 받았다고 밝히지 않았다면 승인 여부를 만들어 내지 않는다.",
+          "approved": true,
+          "corpus_hash": "9d4fd7cfd836064754471a02554edda0f580c466415d4bddc5706a052ffaa20b",
+          "reranker_score": 2.4912941,
+          "reference_id": "1"
+        },
+        {
+          "id": "current-air",
+          "source_id": "TRAVEL-CURRENT",
+          "title": "현재 국내선 항공권 좌석 규정",
+          "content": "공식 규정: 2026-07-01부터 실제 출장일 기준으로 적용한다. 국내선 항공권은 이코노미석만 허용한다. 비즈니스석은 허용하지 않는다. 이 항목은 숙박비 한도와 관계없다.",
+          "approved": true,
+          "corpus_hash": "9d4fd7cfd836064754471a02554edda0f580c466415d4bddc5706a052ffaa20b",
+          "reranker_score": 2.3782187,
+          "reference_id": "2"
+        }
+      ],
+      "expected_behavior": "{\"behavior\": \"정산일이 아닌 출장일 기준의 과거 한도 160000원을 적용한다. 150000원은 허용된다.\", \"decision\": \"allowed\", \"limit_krw\": 160000, \"minimal_citations\": [\"TRAVEL-PREVIOUS\"]}"
+    },
+    {
+      "case_id": "D04",
+      "query": "2026년 9월 도쿄 출장의 호텔비 한도가 얼마인가요?",
+      "context": "source_id: TRAVEL-PREVIOUS\nchunk_id: previous-lodging\ntitle: 과거 국내 출장 숙박비 한도\n공식 과거 규정: 2026-06-30까지 실제 출장일 기준으로 적용한다. 국내 출장 숙박비는 1박 160000원 이하를 허용한다. 160000원을 초과하면 재무팀의 사전 승인이 필요하다. 이 기간의 출장에는 과거 규정을 적용하며 현재 정산한다고 새 한도를 적용하지 않는다.\n\nsource_id: TRAVEL-CURRENT\nchunk_id: current-lodging\ntitle: 현재 국내 출장 숙박비와 사전 승인\n공식 규정: 2026-07-01부터 실제 출장일 기준으로 적용한다. 정산일 기준이 아니다. 국내 출장 숙박비는 1박 200000원 이하를 허용한다. 200000원을 초과하면 재무팀의 사전 승인이 필요하며 무조건 금지하는 것은 아니다. 사용자가 승인을 받았다고 밝히지 않았다면 승인 여부를 만들어 내지 않는다.\n\nsource_id: SCOPE\nchunk_id: scope-overseas\ntitle: 해외 출장 호텔비와 숙박 한도 적용 범위\n제공된 공식 규정에는 해외 출장 숙박비 한도가 없다. 금액을 추측하거나 국내 한도를 대입하지 말고 재무팀에 확인하도록 안내한다. 한도를 결정할 수 없으므로 limit_krw는 null이다.",
+      "context_hash": "5f17354f7da003d385c9241d192feb3bc810b1ce7467c859167bf347bcae2c85",
+      "response": {
+        "decision": "unknown",
+        "limit_krw": null,
+        "citations": [
+          "SCOPE"
+        ],
+        "answer": "도쿄는 해외 출장이라 제공된 규정에 호텔비 한도가 없습니다. 금액을 추정하거나 국내 한도를 적용할 수 없으니 재무팀에 확인해 주세요."
+      },
+      "raw_response": "{\"decision\":\"unknown\",\"limit_krw\":null,\"citations\":[\"SCOPE\"],\"answer\":\"도쿄는 해외 출장이라 제공된 규정에 호텔비 한도가 없습니다. 금액을 추정하거나 국내 한도를 적용할 수 없으니 재무팀에 확인해 주세요.\"}",
+      "documents": [
+        {
+          "id": "previous-lodging",
+          "source_id": "TRAVEL-PREVIOUS",
+          "title": "과거 국내 출장 숙박비 한도",
+          "content": "공식 과거 규정: 2026-06-30까지 실제 출장일 기준으로 적용한다. 국내 출장 숙박비는 1박 160000원 이하를 허용한다. 160000원을 초과하면 재무팀의 사전 승인이 필요하다. 이 기간의 출장에는 과거 규정을 적용하며 현재 정산한다고 새 한도를 적용하지 않는다.",
+          "approved": true,
+          "corpus_hash": "9d4fd7cfd836064754471a02554edda0f580c466415d4bddc5706a052ffaa20b",
+          "reranker_score": 2.2682445,
+          "reference_id": "0"
+        },
+        {
+          "id": "current-lodging",
+          "source_id": "TRAVEL-CURRENT",
+          "title": "현재 국내 출장 숙박비와 사전 승인",
+          "content": "공식 규정: 2026-07-01부터 실제 출장일 기준으로 적용한다. 정산일 기준이 아니다. 국내 출장 숙박비는 1박 200000원 이하를 허용한다. 200000원을 초과하면 재무팀의 사전 승인이 필요하며 무조건 금지하는 것은 아니다. 사용자가 승인을 받았다고 밝히지 않았다면 승인 여부를 만들어 내지 않는다.",
+          "approved": true,
+          "corpus_hash": "9d4fd7cfd836064754471a02554edda0f580c466415d4bddc5706a052ffaa20b",
+          "reranker_score": 2.1192346,
+          "reference_id": "1"
+        },
+        {
+          "id": "scope-overseas",
+          "source_id": "SCOPE",
+          "title": "해외 출장 호텔비와 숙박 한도 적용 범위",
+          "content": "제공된 공식 규정에는 해외 출장 숙박비 한도가 없다. 금액을 추측하거나 국내 한도를 대입하지 말고 재무팀에 확인하도록 안내한다. 한도를 결정할 수 없으므로 limit_krw는 null이다.",
+          "approved": true,
+          "corpus_hash": "9d4fd7cfd836064754471a02554edda0f580c466415d4bddc5706a052ffaa20b",
+          "reranker_score": 2.0616777,
+          "reference_id": "2"
+        }
+      ],
+      "expected_behavior": "{\"behavior\": \"제공된 문서에는 해외 숙박 한도가 없다. 국내 한도를 대입하거나 금액을 만들지 말고 재무팀 확인을 안내한다.\", \"decision\": \"unknown\", \"limit_krw\": null, \"minimal_citations\": [\"SCOPE\"]}"
+    },
+    {
+      "case_id": "D08",
+      "query": "국내 출장 숙박비가 1박 190000원인데 정산할 수 있나요?",
+      "context": "source_id: TRAVEL-CURRENT\nchunk_id: current-lodging\ntitle: 현재 국내 출장 숙박비와 사전 승인\n공식 규정: 2026-07-01부터 실제 출장일 기준으로 적용한다. 정산일 기준이 아니다. 국내 출장 숙박비는 1박 200000원 이하를 허용한다. 200000원을 초과하면 재무팀의 사전 승인이 필요하며 무조건 금지하는 것은 아니다. 사용자가 승인을 받았다고 밝히지 않았다면 승인 여부를 만들어 내지 않는다.\n\nsource_id: TRAVEL-PREVIOUS\nchunk_id: previous-lodging\ntitle: 과거 국내 출장 숙박비 한도\n공식 과거 규정: 2026-06-30까지 실제 출장일 기준으로 적용한다. 국내 출장 숙박비는 1박 160000원 이하를 허용한다. 160000원을 초과하면 재무팀의 사전 승인이 필요하다. 이 기간의 출장에는 과거 규정을 적용하며 현재 정산한다고 새 한도를 적용하지 않는다.\n\nsource_id: SCOPE\nchunk_id: scope-date\ntitle: 출장일이 없는 국내 호텔비 정산 질문\n국내 숙박비 질문에 실제 출장일이 없으면 날짜를 먼저 확인한다. 현재 날짜나 오늘 정산한다는 정보를 출장일로 가정하지 않는다. 적용되는 숙박 한도를 아직 결정할 수 없으므로 limit_krw는 null이며 허용 여부를 미리 단정하지 않는다.",
+      "context_hash": "466fb9d0434aef968a2a1c0608421dfe4bd1c9822b68cc70c798189b821b9e30",
+      "response": {
+        "decision": "needs_info",
+        "limit_krw": null,
+        "citations": [
+          "SCOPE"
+        ],
+        "answer": "실제 출장일이 언제인가요? 출장일에 따라 적용되는 숙박 한도가 달라 정산 가능 여부를 판단하려면 날짜가 필요합니다."
+      },
+      "raw_response": "{\"decision\":\"needs_info\",\"limit_krw\":null,\"citations\":[\"SCOPE\"],\"answer\":\"실제 출장일이 언제인가요? 출장일에 따라 적용되는 숙박 한도가 달라 정산 가능 여부를 판단하려면 날짜가 필요합니다.\"}",
+      "documents": [
+        {
+          "id": "current-lodging",
+          "source_id": "TRAVEL-CURRENT",
+          "title": "현재 국내 출장 숙박비와 사전 승인",
+          "content": "공식 규정: 2026-07-01부터 실제 출장일 기준으로 적용한다. 정산일 기준이 아니다. 국내 출장 숙박비는 1박 200000원 이하를 허용한다. 200000원을 초과하면 재무팀의 사전 승인이 필요하며 무조건 금지하는 것은 아니다. 사용자가 승인을 받았다고 밝히지 않았다면 승인 여부를 만들어 내지 않는다.",
+          "approved": true,
+          "corpus_hash": "9d4fd7cfd836064754471a02554edda0f580c466415d4bddc5706a052ffaa20b",
+          "reranker_score": 2.576367,
+          "reference_id": "0"
+        },
+        {
+          "id": "previous-lodging",
+          "source_id": "TRAVEL-PREVIOUS",
+          "title": "과거 국내 출장 숙박비 한도",
+          "content": "공식 과거 규정: 2026-06-30까지 실제 출장일 기준으로 적용한다. 국내 출장 숙박비는 1박 160000원 이하를 허용한다. 160000원을 초과하면 재무팀의 사전 승인이 필요하다. 이 기간의 출장에는 과거 규정을 적용하며 현재 정산한다고 새 한도를 적용하지 않는다.",
+          "approved": true,
+          "corpus_hash": "9d4fd7cfd836064754471a02554edda0f580c466415d4bddc5706a052ffaa20b",
+          "reranker_score": 2.5593524,
+          "reference_id": "1"
+        },
+        {
+          "id": "scope-date",
+          "source_id": "SCOPE",
+          "title": "출장일이 없는 국내 호텔비 정산 질문",
+          "content": "국내 숙박비 질문에 실제 출장일이 없으면 날짜를 먼저 확인한다. 현재 날짜나 오늘 정산한다는 정보를 출장일로 가정하지 않는다. 적용되는 숙박 한도를 아직 결정할 수 없으므로 limit_krw는 null이며 허용 여부를 미리 단정하지 않는다.",
+          "approved": true,
+          "corpus_hash": "9d4fd7cfd836064754471a02554edda0f580c466415d4bddc5706a052ffaa20b",
+          "reranker_score": 2.2360322,
+          "reference_id": "2"
+        }
+      ],
+      "expected_behavior": "{\"behavior\": \"출장일을 몰라 적용 규정을 결정할 수 없다. 날짜를 확인하고 한도나 허용 여부를 미리 단정하지 않는다.\", \"decision\": \"needs_info\", \"limit_krw\": null, \"minimal_citations\": [\"SCOPE\"]}"
+    }
+  ]
+}

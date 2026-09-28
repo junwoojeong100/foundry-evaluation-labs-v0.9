@@ -44,7 +44,7 @@ python lab.py doctor --live
 
 `gpt-6-luna`와 `eval-model`의 `LIVE 조회 OK`를 확인합니다. 포털과 CLI가 같은 계정·테넌트·구독인지 기본 가이드에서 대조합니다.
 
-Search **Free SKU**와 semantic/knowledge retrieval의 **Free 요금제**를 사용합니다. Sweden Central의 지원 여부와 구독의 Free 서비스 슬롯을 확인해야 합니다. Free 슬롯이 이미 사용 중이면 기존 서비스를 삭제하지 않습니다. 허가받은 기존 환경을 사용하거나, **유지 중 비용이 발생하는 Basic 이상을 별도로 선택·승인한 뒤** 진행합니다. 자동 업그레이드는 하지 않습니다.
+현재 권장 구성은 완결형 실습에서 만든 **공용 Basic 검색 서비스를 재사용**하는 것입니다. 같은 서비스에 이 절의 텍스트 인덱스와 벡터·계획형 인덱스를 함께 둡니다. semantic/knowledge retrieval의 Free 요금제와 서비스 SKU는 별개이며, **Basic 서비스는 유지 비용이 발생**합니다. 새 서비스를 자동으로 추가하지 않습니다.
 
 이 실습은 **7개 청크, 4개 질문 × 2개 검색 경로 = 8개 답변, 16개 Judge 지표**입니다. 검색 요청·평가기 내부 호출은 별도입니다. 모델 생성·평가는 유료이며, Free 검색 할당량을 넘으면 오류가 날 수 있습니다. 리소스 보존과 무료 사용은 같은 뜻이 아닙니다.
 
@@ -53,6 +53,8 @@ Search **Free SKU**와 semantic/knowledge retrieval의 **Free 요금제**를 사
 
 아래 `YOUR-...`를 실제 값으로 바꿉니다. 기본 실습의 전용 그룹을 사용해도 됩니다. 서비스 이름은 전역에서 고유한 소문자·숫자·하이픈이어야 합니다.
 
+**공용 Basic 서비스가 이미 있으면 생성 명령은 건너뛰고 그 서비스의 URL·권한을 사용합니다.** 아래 생성은 아직 서비스가 없는 경우에만 수행합니다.
+
 ```bash
 az search service check-name-availability --name "YOUR-SEARCH-NAME" --type searchServices --subscription "YOUR-SUBSCRIPTION-ID"
 ```
@@ -60,7 +62,7 @@ az search service check-name-availability --name "YOUR-SEARCH-NAME" --type searc
 `nameAvailable: true`일 때만 새 이름으로 생성합니다.
 
 ```bash
-az search service create --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --location swedencentral --sku free --semantic-search free --disable-local-auth true
+az search service create --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --location swedencentral --sku basic --identity-type SystemAssigned --semantic-search free --disable-local-auth true
 ```
 
 이 명령은 **API 키를 비활성화**합니다. 키를 조회하거나 설정 파일에 저장하지 않습니다. 생성 후 포털의 **Tags**에서 보존 의도인 `retain=true`를 기록해도 됩니다. 태그는 삭제 잠금이 아닙니다.
@@ -71,7 +73,7 @@ az search service create --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RE
 az search service show --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --query "{id:id,location:location,sku:sku.name,state:provisioningState,disableLocalAuth:disableLocalAuth,semanticSearch:semanticSearch}" --output json
 ```
 
-`Succeeded/succeeded`, Sweden Central, `free`, `disableLocalAuth: true`를 확인합니다. 아래 `YOUR-SEARCH-RESOURCE-ID`는 이 `id`이며 `/providers/Microsoft.Search/searchServices/...`로 끝납니다.
+`Succeeded/succeeded`, Sweden Central, `basic`, `disableLocalAuth: true`를 확인합니다. 아래 `YOUR-SEARCH-RESOURCE-ID`는 이 `id`이며 `/providers/Microsoft.Search/searchServices/...`로 끝납니다.
 
 기본 가이드에서 확인한 **본인 Object ID**에 다음 역할을 **Search 서비스 범위에서만**, 없는 경우에만 할당합니다.
 
@@ -198,18 +200,9 @@ Foundry의 Judge 보고서 URL에서는 같은 사례의 **질문·답변·검�
 - 답이 틀렸거나 점수가 낮으면 그대로 기록하며, 좋은 점수를 얻으려고 다시 뽑지 않습니다.
 
 <a id="observed-results"></a>
-### 2026-09-28 실제 실행 기록
+### 이전 최소 RAG 검증 기록의 대체
 
-Free Search 서비스와 semantic/knowledge retrieval Free 요금제, API 키 비활성화를 확인했습니다. 실제 인덱스·Knowledge Source·Knowledge Base를 생성하고, **8개 답변·16개 Judge 지표**를 두 완료된 원격 실행에 저장했습니다.
-
-| 경로 | 필수 청크 Recall@3 | 업무 검사 | Groundedness ≥4 | Relevance ≥4 |
-|---|---|---|---|---|
-| Search | 4/4 (100%) | 4/4 (100%) | 4/4 (100%) | 3/4 (75%) |
-| Foundry IQ | 4/4 (100%) | 3/4 (75%) | 4/4 (100%) | 2/4 (50%) |
-
-**네 질문 모두 두 경로의 실제 검색 문맥이 동일했습니다.** IQ 실행의 D02는 금액·결정은 맞았지만 `SCOPE`를 추가 인용해 정확한 출처 집합 검사에서 실패했습니다. 이는 한 번의 생성·채점에서 나온 차이이며 **IQ 검색이 더 나쁘다는 증거가 아닙니다**. 검색 성공과 답변 성공을 구분하고 `REVIEW_REQUIRED`를 유지했습니다.
-
-평가 결과, 실제 검색 문맥, 원격 원본의 문맥 일치는 로컬 `results/rag-verification.json`과 각 실행 폴더에 기록합니다. 원본 검색·응답·점수는 수정하지 않았고 자원도 삭제하지 않았습니다.
+이전 Free 서비스의 실패·검증 결과는 새 완결형 경로로 대체하며 정리합니다. 현재는 [공용 Basic 서비스와 새 합격 결과](complete-lab.md#results)를 사용합니다. 이 기본 API 연습도 같은 Basic 서비스의 별도 인덱스에서 실행할 수 있습니다.
 
 <a id="troubleshooting"></a>
 ## 문제 해결

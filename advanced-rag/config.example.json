@@ -1,0 +1,14 @@
+{
+  "search_endpoint": "https://YOUR-ADVANCED-SEARCH.search.windows.net",
+  "index_name": "travel-vector-index",
+  "knowledge_source": "travel-vector-ks",
+  "knowledge_base": "travel-planned-kb",
+  "top_k": 4,
+  "model_resource_endpoint": "https://YOUR-ACCOUNT.openai.azure.com",
+  "embedding_deployment": "rag-embedding",
+  "embedding_model": "text-embedding-3-small",
+  "embedding_dimensions": 1536,
+  "planner_deployment": "rag-planner",
+  "planner_model": "gpt-5.4-mini",
+  "retrieval_reasoning_effort": "low"
+}

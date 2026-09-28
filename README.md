@@ -4,6 +4,8 @@
 
 ## Microsoft Foundry Evaluation: an end-to-end, self-guided workshop
 
+**Recommended complete path:** [Failure → V2 improvement → fresh-question acceptance](docs/en/complete-lab.md). It uses one shared Basic Search service, real vector/hybrid retrieval and LLM query planning. Every final V2 holdout case passes **Groundedness, Relevance, policy task success, business, and retrieval checks**. The introductory material below remains a separate learning path.
+
 Find out whether the fictional **Gaon Lab travel-expense assistant** follows policy. Evaluation means **checking AI answers against criteria chosen in advance**. The code is provided; you do not need to write Python.
 
 **Follow this page from top to bottom: identify a wrong answer, prepare your environment, generate answers, evaluate them, change the instructions, compare, and record your decision.** The first activity needs no installation. Open or edit files only when a step asks you to; you do not need to read all the reference material first.

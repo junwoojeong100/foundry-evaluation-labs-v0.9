@@ -1,0 +1,14 @@
+{
+  "version": "advanced-lab-acceptance-v2",
+  "score_threshold": 4,
+  "pass_rate_threshold": 1.0,
+  "required_metrics": ["groundedness", "relevance", "policy_task_success"],
+  "diagnostic_metrics": [],
+  "critical_failures_allowed": 0,
+  "minimum_fresh_holdout_cases": 8,
+  "calibration_must_classify_all_controls": true,
+  "require_real_vector_index": true,
+  "require_llm_query_planning_activity": true,
+  "human_production_approval": "separate and required",
+  "note": "Every V2 case must pass business, retrieval and all three judge metrics, including builtin Relevance at 4/5. Freeze the contract before a genuinely new holdout. Do not lower thresholds, exclude failed metrics or resample grades."
+}

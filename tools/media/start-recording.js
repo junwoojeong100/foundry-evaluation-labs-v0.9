@@ -1,4 +1,5 @@
 async (page) => {
+  page.__startMediaRecording = async () => {
   if (!page.__mediaBrowser || !page.__mediaBaseUrl) throw new Error("Initialize the local headless browser and recording server first.");
   if (page.__activeRecording) throw new Error("Stop the current recording before starting another.");
   const response = await page.request.get(page.__mediaBaseUrl + "/capture-config.json");
@@ -48,4 +49,6 @@ async (page) => {
   const ready = Date.now() - started;
   page.__activeRecording = {id: config.id, context, page: screen, started_at_ms: started, ready_offset_ms: ready};
   return {recording: config.id, headless: true, ready_offset_ms: ready, visibleText: (await screen.locator("body").innerText()).slice(0, 700)};
+  };
+  return page.__startMediaRecording();
 }

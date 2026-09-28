@@ -317,33 +317,9 @@ python -m unittest discover -s tests -v
 SDK tests run when dependencies are installed; otherwise only those tests are skipped. Complete your own smoke check and, for a class, [a real rehearsal](facilitator.md#rehearsal).
 
 <a id="live-verification"></a>
-### September 27, 2026: one actual LIVE rehearsal
+### Superseded validation records
 
-This is **one execution**, not expected scores or a production guarantee. New dedicated resources were created in Sweden Central, the user and project identity received parent-scoped Foundry User, and `gpt-6-luna` `2026-09-22` served generation and judging.
-
-**22 responses, 44 metric items, five completed remote evaluation runs** were validated and saved. Structured outputs had no truncation or output errors.
-
-| Run | Answers | Business pass | Groundedness ≥4 | Relevance ≥4 |
-|---|---|---|---|---|
-| Smoke N01 | 1 | 0/1 | 1/1 | 1/1 |
-| Baseline dev | 8 | 7/8 | 8/8 | 7/8 |
-| Candidate dev | 8 | 8/8 | 8/8 | 6/8 |
-| Frozen holdout | 4 | 4/4 | 4/4 | 2/4 |
-| Extra N02 | 1 | 1/1 | 1/1 | 1/1 |
-
-V2's copy gained one sentence: until the actual travel date is known, do not list conditional date-specific limits/decisions, and cite only SCOPE. This targeted D08 before candidate/holdout generation.
-
-N01 correctly rejected the draft but cited it, so exact citation checks failed while both judges scored 5. D08's business check improved while Relevance fell **5→3**. D04 remained 3; H03/H04 scored 2/3. The generic judge penalized correct abstention or missing-information requests. The original scores and thresholds were retained.
-
-Portal N01/D04 rows matched local evidence. **Pass: 3** differed from the local threshold. Dev statistical comparison reported **Too few samples**.
-
-**Final gate: BLOCK. Actual human review remains incomplete.** D04/D06/H04 were labeled `assistant`, not human approval. Relevance regression, below-threshold rates, critical-case failures, and missing actual human review all remained visible. A future experiment needs domain-informed judge calibration and a new holdout, not score manipulation.
-
-The operator retained local raw results, remote IDs, worksheet, comparison/gate, and `results/live-verification.json`. These ignored local artifacts and `config.json` are not shipped in a fresh clone. Keep your own evidence.
-
-During that original rehearsal, the headless profile lacked authentication, so the authenticated regular Playwright session was used for portal checks. The later headless video-production workflow is described separately in the [recording notes](../media/README.md). No credentials are published.
-
-All Azure resources and evaluation records were retained. Cost Management succeeded but returned no reported rows yet; this is **not proof of free use or zero final cost**.
+Detailed failure/validation records from the earlier core run are retired from the current guide. Use the [completed workflow](complete-lab.md#results) for the current all-metrics V2 acceptance result, including Relevance. The new lesson retains only its required V1 comparison, calibration and acceptance evidence.
 
 ## Official sources
 

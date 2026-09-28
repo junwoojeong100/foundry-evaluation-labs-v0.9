@@ -1,0 +1,34 @@
+1
+00:00:07,000 --> 00:00:25,000
+One Search service for every retrieval exercise
+The same Basic service hosts the simple text index and the vector/planned knowledge base. Managed identity enables keyless embedding and planner calls.
+
+2
+00:00:25,000 --> 00:00:49,000
+Start with a real failure, not a fabricated one
+The calibrated judge separates ten positive/negative controls. The recorded V1 D02 still fails its exact citation contract. No baseline answer was weakened.
+
+3
+00:00:49,000 --> 00:01:11,000
+Complete the user task, not just the first turn
+V2 selects precise sources and completes necessary user follow-ups. The user supplies the missing date; the assistant does not invent it. Final-answer Relevance is required.
+
+4
+00:01:11,000 --> 00:01:39,000
+Prove the advanced retrieval actually runs
+The vector-only query uses 1536 dimensions. Foundry IQ returns modelQueryPlanning activity and generated subqueries. This is not minimal retrieval relabeled.
+
+5
+00:01:39,000 --> 00:01:57,000
+Inspect the real planned knowledge base
+The active source points at the vector index. The supported planner is gpt-5.4-mini; gpt-6-luna remains the answer and judge model. Preview API use is explicit.
+
+6
+00:01:57,000 --> 00:02:25,000
+Freeze first, then test fresh scenarios
+New scenarios are created after freezing. Every final case must pass business, retrieval, Groundedness, Relevance and policy task success. No metric is excluded.
+
+7
+00:02:25,000 --> 00:02:47,000
+Keep the proof and distinguish approval
+The completed cloud run preserves original answers and reasons. LAB_ACCEPTANCE_PASSED is an educational result, not human production authorization.
