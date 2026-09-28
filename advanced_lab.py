@@ -416,7 +416,20 @@ def freeze_command(args) -> int:
     if baseline_result["passed"]:
         raise ValueError("The starting evidence has no failure; do not manufacture one.")
     if not replay["passed"] or not planned["passed"]:
-        raise ValueError("Dev acceptance is not met. Diagnose dev failures before freezing or opening a holdout.")
+        details = ["Dev acceptance is not met. Inspect saved evidence; no new model calls are needed."]
+        for result in (replay, planned):
+            if result["passed"]:
+                continue
+            stage = result["stage"]
+            failed = [case_id for case_id, row in result["rows"].items() if not row["passed"]]
+            details.append(f"{stage} failed cases: {', '.join(failed)}")
+            details.append(f"Scores and reasons: {RESULTS / stage / 'report.md'}")
+            details.extend(
+                f"python advanced_lab.py inspect --stage {stage} --case-id {case_id} --context"
+                for case_id in failed
+            )
+        details.append("Preserve the failures; do not proceed to holdout. Help: docs/complete-lab.md#read-case")
+        raise ValueError("\n".join(details))
     old = load_generation(RESULTS / "v1-recorded")
     improved = load_generation(RESULTS / "v2-replay")
     initial_hashes = [
@@ -649,10 +662,23 @@ def inspect_command(args) -> int:
     if not matches:
         raise ValueError("This case is not present in the selected stage.")
     row = matches[0]
+    case = next(case for case in run["cases"] if case["id"] == args.case_id)
     metric = stage_metrics(args.stage)["rows"][args.case_id]
+    interaction = row.get("interaction")
     print(f"{args.stage} / {args.case_id}")
-    if args.dialogue and row.get("interaction"):
-        interaction = row["interaction"]
+    print(f"Case result: {'PASS' if metric['passed'] else 'FAIL'} (local criteria; not production approval)")
+    if not (args.dialogue and interaction):
+        print("Question:", case["query"])
+    print(
+        "Expected decision / limit / citations:", case["expected_decision"], "/",
+        json.dumps(case["expected_limit_krw"]), "/",
+        json.dumps(case["expected_citations"], ensure_ascii=False),
+    )
+    print("Expected behavior:", case["ground_truth"])
+    print("Required chunks:", ", ".join(run["retrieval_labels"][args.case_id]))
+    print("Chunks:", ", ".join(document["id"] for document in row["documents"]))
+    print("Required chunks found:", json.dumps(metric["required_chunks_found"]))
+    if args.dialogue and interaction:
         print("User:", interaction["initial_case"]["query"])
         print("Assistant:", interaction["initial_response"]["answer"])
         print("Evaluation-user follow-up:", interaction["followup"])
@@ -660,10 +686,10 @@ def inspect_command(args) -> int:
         print("Final scores:", json.dumps(metric["scores"], ensure_ascii=False))
         print("Initial field checks (not prose evaluation):", json.dumps(metric["intermediate_safe"]))
         return 0
+    print("Actual answer:")
     print(json.dumps(row["response"], ensure_ascii=False, indent=2))
     print("Business checks:", json.dumps(metric["business_checks"], ensure_ascii=False))
     print("Scores:", json.dumps(metric["scores"], ensure_ascii=False))
-    print("Chunks:", ", ".join(document["id"] for document in row["documents"]))
     print("Context hash:", row["context_hash"])
     if args.context:
         print(row["context"])

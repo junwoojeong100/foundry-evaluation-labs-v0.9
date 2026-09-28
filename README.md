@@ -145,6 +145,8 @@ python lab.py doctor
 
 **Checkpoint:** `LOCAL OK: Python ... , dev 8개, holdout 4개` means the local files contain eight dev and four holdout cases. It does **not** confirm Azure connectivity. In a new terminal, return to this folder and run only `source .venv/bin/activate` (macOS/Linux) or `.\.venv\Scripts\Activate.ps1` (PowerShell). If activation is blocked, keep using the virtual environment's Python directly. Do not recreate the environment or reinstall packages.
 
+**Only if moving or renaming the folder broke the virtual environment**, follow [environment recovery](docs/en/reference.md#moved-folder). Keep your existing results, configuration, and edited files.
+
 <a id="working-files"></a>
 **Edit only these three local working files, when their steps ask for them.**
 

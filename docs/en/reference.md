@@ -202,6 +202,7 @@ Portal Overall score/Pass may use threshold 3. Portal **100%** can therefore coe
 | `SyntaxError` at `>>>` | Exit the Python REPL; use a shell terminal. |
 | Edits are not reflected | Edit/save the local copy, check paths, and do not overwrite completed results. |
 | PowerShell activation blocked | Use `.venv\Scripts\python.exe`; do not change organizational policy. |
+| Moving/renaming the folder broke the virtual environment | [Repair the moved environment](#moved-folder), keeping results/configuration. DEMO still needs no LIVE packages. |
 | Missing/mismatched LIVE packages | Install the pinned `requirements.txt` in `.venv`; do not arbitrarily upgrade. |
 | Example config rejected | Replace the project endpoint and use actual deployment names; do not use model names. |
 | Only a classic connection string/model endpoint exists | A new Foundry project endpoint is required. |
@@ -311,15 +312,18 @@ Completed `run`/`judge` commands read saved evidence. Partial generation skips s
 
 For changed introductory/minimal-RAG inputs, use a new `--out` folder. **Complete-path `run` has no `--out`**: follow [new-experiment setup in a separate working folder](complete-lab.md#resume). Do not overwrite or merge earlier evidence.
 
-If moving the repository broke the virtual environment, recreate **only `.venv`**, after preserving anything you intentionally placed there. Do not delete configuration, results, or your prompt/question copies.
+<a id="moved-folder"></a>
+### If moving or renaming the folder broke the virtual environment
+
+**Do not use this recovery just because you opened another terminal.** Follow [normal resumption](setup.md#resume) by activating the existing environment.
+
+Only if the environment still refers to its old location and no longer works, open a terminal in the new folder. If an old environment was activated automatically, leave it with `deactivate` first. Confirm that `lab.py` and `requirements.txt` are present, then use **only your operating system's block** to recreate `.venv`. `--clear` removes packages inside `.venv`; preserve anything you intentionally placed there first. Do not delete configuration, results, or your prompt/question copies.
 
 macOS / Linux:
 
 ```bash
 python3 -m venv --clear .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
-python lab.py doctor
 ```
 
 Windows / PowerShell:
@@ -327,13 +331,33 @@ Windows / PowerShell:
 ```powershell
 py -3 -m venv --clear .venv
 .\.venv\Scripts\Activate.ps1
+```
+
+If activation is prohibited, replace every subsequent `python` with `.\.venv\Scripts\python.exe`. **DEMO participants skip the LIVE-only item below. Only LIVE and both RAG paths open it to restore packages.**
+
+<details>
+<summary>LIVE/RAG only: restore pinned packages</summary>
+
+Install the repository's fixed versions into the recreated environment. DEMO does not need them; do not upgrade to arbitrary newer versions.
+
+```bash
 python -m pip install -r requirements.txt
+```
+
+</details>
+
+**Local check for every path:**
+
+```bash
 python lab.py doctor
 ```
 
-Use the direct virtual-environment Python path if activation is prohibited.
+`LOCAL OK` and `dev 8개, holdout 4개` confirm recovery, not Azure connectivity. Keep saved results and use the [resume table](setup.md#resume) for your path's next unfinished step. DEMO still runs without Azure login, LIVE packages, or network access.
 
-**Ambiguous creation after disconnection:** `phase` may be `creating-eval` or `creating-run` without a saved ID. Do not automatically create another potentially billable job.
+<a id="remote-job-recovery"></a>
+### Ambiguous remote creation after disconnection
+
+`phase` may be `creating-eval` or `creating-run` without a saved ID. Do not automatically create another potentially billable job.
 
 First locate the **local correlation ID** for that evaluation. It is not the remote `run_id` in `foundry-job.json`.
 

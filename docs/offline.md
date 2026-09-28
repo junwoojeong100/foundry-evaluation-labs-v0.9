@@ -77,6 +77,8 @@ python lab.py doctor
 
 새 터미널에서는 `lab.py` 폴더로 돌아와 macOS/Linux의 `source .venv/bin/activate` 또는 PowerShell의 `.\.venv\Scripts\Activate.ps1`만 실행합니다. 생성·설치부터 반복하지 않습니다. 활성화가 막히면 가상환경 Python 직접 실행 방식을 유지합니다.
 
+**폴더 이동·이름 변경으로 가상환경이 실행되지 않을 때만** [가상환경 복구](reference.md#moved-folder)를 따릅니다. 그 절의 LIVE 패키지 설치는 건너뛰며, 기존 DEMO 결과와 본인 질문은 보존합니다.
+
 **준비 끝. 이제 아래 실습 1로 이어갑니다.**
 
 <a id="lab-1"></a>

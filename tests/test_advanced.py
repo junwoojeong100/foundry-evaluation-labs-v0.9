@@ -295,6 +295,138 @@ class AdvancedTests(unittest.TestCase):
         self.assertEqual(contract["diagnostic_metrics"], [])
         self.assertEqual(contract["human_production_approval"], "separate and required")
 
+    def test_freeze_failure_points_to_each_failed_case_without_changing_evidence(self):
+        results_by_stage = {
+            "v1-recorded": {"stage": "v1-recorded", "passed": False},
+            "v2-replay": {
+                "stage": "v2-replay", "passed": False,
+                "rows": {"D02": {"passed": False}, "D03": {"passed": True}},
+            },
+            "planned-dev": {
+                "stage": "planned-dev", "passed": False,
+                "rows": {"D03": {"passed": False}, "D04": {"passed": False}, "D08": {"passed": True}},
+            },
+        }
+        for failed_stages in (("v2-replay",), ("planned-dev",), ("v2-replay", "planned-dev")):
+            with self.subTest(stages=failed_stages), self.freeze_inputs() as (_, results):
+                metrics = copy.deepcopy(results_by_stage)
+                for stage in ("v2-replay", "planned-dev"):
+                    if stage not in failed_stages:
+                        metrics[stage] = {"stage": stage, "passed": True}
+                before = {path: path.read_bytes() for path in results.rglob("*") if path.is_file()}
+                with (
+                    patch("advanced_lab.stage_metrics", side_effect=metrics.__getitem__),
+                    patch("advanced_lab.clients", side_effect=AssertionError("Azure forbidden")),
+                    patch("advanced_lab.search_client", side_effect=AssertionError("Search forbidden")),
+                    redirect_stderr(io.StringIO()) as errors,
+                ):
+                    self.assertEqual(advanced_lab.main(["freeze"]), 1)
+                message = errors.getvalue()
+                self.assertTrue(message.startswith("ERROR: Dev acceptance is not met."))
+                for stage in ("v2-replay", "planned-dev"):
+                    if stage in failed_stages:
+                        self.assertIn(str(results / stage / "report.md"), message)
+                    for case_id, value in results_by_stage[stage]["rows"].items():
+                        command = f"python advanced_lab.py inspect --stage {stage} --case-id {case_id} --context"
+                        self.assertEqual(command in message, stage in failed_stages and not value["passed"])
+                self.assertIn("docs/complete-lab.md#read-case", message)
+                self.assertEqual(
+                    {path: path.read_bytes() for path in results.rglob("*") if path.is_file()},
+                    before,
+                )
+                self.assertFalse((results / "frozen.json").exists())
+                self.assertFalse((results / "holdout-data").exists())
+
+    def test_inspect_compares_expected_fields_and_required_chunks_with_actual_evidence(self):
+        fixture = advanced_lab.baseline()
+        case = next(case for case in fixture["cases"] if case["id"] == "D02")
+        for found in (True, False):
+            run = copy.deepcopy(fixture)
+            row = next(row for row in run["rows"] if row["case_id"] == "D02")
+            if not found:
+                row["documents"] = [doc for doc in row["documents"] if doc["id"] != "current-lodging"]
+            metric = {
+                "passed": False, "business_checks": response_checks(case, row["response"]),
+                "required_chunks_found": found,
+                "scores": {name: 5 for name in grading.METRICS},
+            }
+            before = copy.deepcopy(run)
+            with (
+                self.subTest(found=found),
+                patch("advanced_lab.load_generation", return_value=run),
+                patch("advanced_lab.stage_metrics", return_value={"rows": {"D02": metric}}),
+                patch("advanced_lab.clients", side_effect=AssertionError("Azure forbidden")),
+                patch("advanced_lab.search_client", side_effect=AssertionError("Search forbidden")),
+                redirect_stdout(io.StringIO()) as output,
+            ):
+                self.assertEqual(advanced_lab.main([
+                    "inspect", "--stage", "v1-recorded", "--case-id", "D02", "--context",
+                ]), 0)
+            text = output.getvalue()
+            self.assertIn(f"Question: {case['query']}", text)
+            self.assertIn('Expected decision / limit / citations: needs_approval / 200000 / ["TRAVEL-CURRENT"]', text)
+            self.assertIn(f"Expected behavior: {case['ground_truth']}", text)
+            self.assertIn("Actual answer:", text)
+            self.assertIn('"SCOPE"', text)
+            self.assertIn('"citations": false', text)
+            self.assertIn("Required chunks: current-lodging", text)
+            self.assertIn("Chunks: " + ", ".join(doc["id"] for doc in row["documents"]), text)
+            self.assertIn(f"Required chunks found: {json.dumps(found)}", text)
+            self.assertIn("Case result: FAIL", text)
+            self.assertIn("not production approval", text)
+            self.assertIn(row["context"], text)
+            self.assertEqual(run, before)
+
+    def test_dialogue_inspection_uses_final_expectations_without_hiding_initial_turns(self):
+        run = copy.deepcopy(advanced_lab.baseline())
+        initial = next(case for case in run["cases"] if case["id"] == "D08")
+        followup = read_json(ROOT / "advanced-rag/dev-followups.json")["D08"]
+        final = {
+            **initial,
+            **{key: followup[key] for key in (
+                "expected_decision", "expected_limit_krw", "expected_citations", "ground_truth",
+            )},
+        }
+        run["cases"] = [final if case["id"] == "D08" else case for case in run["cases"]]
+        run["retrieval_labels"]["D08"] = followup["required_chunks"]
+        row = next(row for row in run["rows"] if row["case_id"] == "D08")
+        row["interaction"] = {
+            "initial_case": initial, "initial_response": copy.deepcopy(row["response"]),
+            "followup": followup["query"],
+        }
+        row["response"] = {
+            "decision": "allowed", "limit_krw": 200000, "citations": ["TRAVEL-CURRENT"],
+            "answer": "제공한 출장일의 한도 이내이므로 허용됩니다.",
+        }
+        row["documents"] = [
+            document for document in read_documents(ROOT / "optional-rag/documents.jsonl")
+            if document["id"] == "current-lodging"
+        ]
+        metric = {
+            "passed": True, "required_chunks_found": True, "intermediate_safe": True,
+            "scores": {name: 5 for name in grading.METRICS},
+        }
+        with (
+            patch("advanced_lab.load_generation", return_value=run),
+            patch("advanced_lab.stage_metrics", return_value={"rows": {"D08": metric}}),
+            patch("advanced_lab.clients", side_effect=AssertionError("Azure forbidden")),
+            redirect_stdout(io.StringIO()) as output,
+        ):
+            self.assertEqual(advanced_lab.main([
+                "inspect", "--stage", "v2-replay", "--case-id", "D08", "--dialogue",
+            ]), 0)
+        text = output.getvalue()
+        self.assertIn('Expected decision / limit / citations: allowed / 200000 / ["TRAVEL-CURRENT"]', text)
+        self.assertIn(f"Expected behavior: {followup['ground_truth']}", text)
+        self.assertIn("Required chunks: current-lodging", text)
+        self.assertIn(f"User: {initial['query']}", text)
+        self.assertIn(f"Assistant: {row['interaction']['initial_response']['answer']}", text)
+        self.assertIn(f"Evaluation-user follow-up: {followup['query']}", text)
+        self.assertIn(f"Final answer: {row['response']['answer']}", text)
+        self.assertIn("Initial field checks (not prose evaluation): true", text)
+        self.assertIn("Case result: PASS", text)
+        self.assertIn("not production approval", text)
+
     def test_freeze_accepts_identical_candidates_and_preserves_existing_contract(self):
         with self.freeze_inputs() as (data, results):
             self.assertEqual(advanced_lab.freeze_command(None), 0)

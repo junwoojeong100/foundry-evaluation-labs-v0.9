@@ -143,6 +143,8 @@ python lab.py doctor
 
 **완료 확인:** `LOCAL OK: Python ... , dev 8개, holdout 4개`가 보입니다. 이는 로컬 파일 확인이며 아직 Azure 연결 성공을 뜻하지 않습니다. 새 터미널에서는 이 폴더로 돌아와 macOS/Linux의 `source .venv/bin/activate` 또는 PowerShell의 `.\.venv\Scripts\Activate.ps1`만 다시 실행합니다. 활성화가 막히면 가상환경 Python 직접 실행 방식을 유지합니다. 가상환경 생성이나 패키지 설치부터 반복하지 않습니다.
 
+**폴더를 옮기거나 이름을 바꾼 뒤 가상환경이 실행되지 않을 때만** [가상환경 복구](docs/reference.md#moved-folder)를 따릅니다. 기존 결과·설정·직접 수정한 파일은 유지합니다.
+
 <a id="working-files"></a>
 **직접 편집할 로컬 작업 파일은 아래 세 개입니다. 해당 단계에서만 수정합니다.**
 

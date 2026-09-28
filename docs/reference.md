@@ -229,6 +229,7 @@ AI 보조 검토는 `reviews.json`에 남지만 **사람 검토의 건수나 최
 | 명령 입력 후 `SyntaxError`, 화면에 `>>>`가 보임 | Python 대화창에 셸 명령을 입력한 상태. `exit()`로 나온 뒤 VS Code 터미널에 명령만 입력 |
 | 파일을 수정했는데 실행에 반영되지 않음 | 브라우저가 아니라 VS Code의 로컬 복사본인지, File → Save로 저장했는지, 명령의 파일 경로가 맞는지 확인. 완료된 결과는 덮어쓰지 않기 |
 | Windows에서 `Activate.ps1` 실행이 차단됨 | 조직 정책을 해제하지 않고 설치 명령부터 모든 `python`을 `.\.venv\Scripts\python.exe`로 대체. [준비 1](../README.ko.md#setup-tools) 확인 |
+| 폴더 이동·이름 변경 후 가상환경이 실행되지 않음 | [이동한 폴더의 가상환경 복구](#moved-folder). 결과·설정은 유지하며 DEMO는 LIVE 패키지를 설치하지 않음 |
 | LIVE 패키지 없음/버전 불일치 | 가상환경 안에서 `python -m pip install -r requirements.txt`. 임의 최신 업그레이드 금지 |
 | config 예시 값 오류 | endpoint의 `YOUR-...`를 실제 프로젝트 주소로 교체. 두 배포 이름은 본인이 만든 `eval-model` 또는 실제 이름인지 확인 |
 | classic 허브 연결 문자열이나 모델 주소만 있음 | 새 Foundry 프로젝트의 `/api/projects/...` 주소가 필요. [기존 환경 조건](setup.md#existing-environment)을 확인하고 새 환경 사용 또는 [DEMO로 분리 전환](setup.md#switch-to-demo) |
@@ -342,17 +343,18 @@ GUID는 **Foundry User / 이전 Azure AI User**의 역할 정의 ID입니다. �
 - **대기와 오류 복구를 구분합니다.** 코드 `3`이면 그대로 조회를 재개하고, `ERROR:`이면 원인을 먼저 해결한 뒤 같은 명령을 사용합니다. 수집·저장 오류 복구도 재개의 대상이므로 “처리 중일 때만 재실행 가능”한 것은 아닙니다. 원격 생성 여부가 불명확하면 아래 ID 복구부터 수행합니다.
 - 입문·최소 RAG의 프롬프트나 데이터가 달라졌다면 새 `--out` 폴더를 사용합니다. **완결형 `run`에는 `--out`이 없으므로** [별도 작업 폴더의 새 실험](complete-lab.md#resume)을 따릅니다. 이전 결과를 덮어쓰거나 합치지 않습니다.
 
-**폴더 이름이나 위치를 바꾼 경우**
+<a id="moved-folder"></a>
+### 폴더 이름이나 위치를 바꿔 가상환경이 깨졌다면
 
-가상환경이 이전 폴더를 참조하면 새 위치에서 터미널을 엽니다. `lab.py`와 `requirements.txt`가 있는 폴더인지 먼저 확인한 뒤 **`.venv`만 재생성**합니다. 아래 `--clear`는 `.venv` 안의 설치 패키지를 지우므로, 본인이 따로 넣은 파일이 있다면 먼저 보관합니다. `config.json`, `results/`, 직접 쓴 프롬프트와 질문은 지우지 않습니다.
+**단순히 터미널을 다시 연 경우에는 이 절을 실행하지 않습니다.** [일반 재개](setup.md#resume)처럼 기존 가상환경을 활성화하면 됩니다.
+
+가상환경이 이전 폴더를 참조해 실행되지 않을 때만 새 위치에서 터미널을 엽니다. 자동으로 기존 가상환경이 활성화됐다면 먼저 `deactivate`로 나옵니다. `lab.py`와 `requirements.txt`가 있는 폴더인지 확인한 뒤 **본인 운영체제 블록 하나만** 실행해 `.venv`를 재생성합니다. 아래 `--clear`는 `.venv` 안의 설치 패키지를 지우므로, 본인이 따로 넣은 파일이 있다면 먼저 보관합니다. `config.json`, `results/`, 직접 쓴 프롬프트와 질문은 지우지 않습니다.
 
 macOS / Linux:
 
 ```bash
 python3 -m venv --clear .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
-python lab.py doctor
 ```
 
 Windows:
@@ -360,13 +362,31 @@ Windows:
 ```powershell
 py -3 -m venv --clear .venv
 .\.venv\Scripts\Activate.ps1
+```
+
+활성화가 조직 정책으로 막히면 이후 모든 `python`을 `.\.venv\Scripts\python.exe`로 바꿉니다. **DEMO 참가자는 아래 LIVE 전용 항목을 건너뜁니다. LIVE와 두 RAG 경로 참가자만 펼쳐 패키지를 복원합니다.**
+
+<details>
+<summary>LIVE·RAG만: 고정 패키지 복원</summary>
+
+지금 재생성한 가상환경에 저장소의 고정 버전을 설치합니다. DEMO에는 필요하지 않으며 임의 최신 버전으로 업그레이드하지 않습니다.
+
+```bash
 python -m pip install -r requirements.txt
+```
+
+</details>
+
+**모든 경로의 로컬 확인:**
+
+```bash
 python lab.py doctor
 ```
 
-활성화가 조직 정책으로 막힌 경우는 [도구 준비](setup.md#tools)의 가상환경 Python 직접 실행 방식을 사용합니다. 복원 후에는 완료된 결과를 새로 만들지 말고 기록해 둔 다음 명령부터 이어갑니다.
+`LOCAL OK`와 `dev 8개, holdout 4개`를 확인하면 복구 완료입니다. 이는 Azure 연결 확인은 아닙니다. 기존 결과를 새로 만들지 말고 [재개 표](setup.md#resume)에서 본인 경로의 다음 미완료 단계로 이어갑니다. DEMO는 복구 뒤에도 Azure 로그인·LIVE 패키지·네트워크 없이 실행합니다.
 
-**드문 경우: 생성 요청을 보낸 직후 원격 ID를 받기 전에 끊김**
+<a id="remote-job-recovery"></a>
+### 드문 경우: 생성 요청 직후 원격 ID를 받기 전에 끊김
 
 `foundry-job.json`의 `phase`가 `creating-eval` 또는 `creating-run`인데 해당 ID가 없으면 생성 여부를 단정할 수 없습니다. 비용 중복을 피하려고 자동 재생성하지 않습니다.
 

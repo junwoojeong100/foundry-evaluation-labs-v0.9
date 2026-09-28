@@ -305,7 +305,7 @@ Outputs are fixed under **`results/advanced/`**. Use this table rather than intr
 | Transient connection failure or interruption during generation | Resolve the cause, then repeat the same `run --stage …`. Saved responses are not regenerated. A response interrupted before persistence can incur another charge |
 | `initial clarification/handoff field checks failed` / exit `1` | Initial quality failure. Read `<stage>/generation.json` at `pending → case ID → initial_response → response`, and preserve the failure. Repeating the command cannot resample a better answer |
 | Calibration exit `2` with `mismatches` | Record misclassified IDs/scores from `calibration-result.json` and scoring reasons from `calibration/report.md`, then stop. Do not lower thresholds or repeatedly judge until passing |
-| `freeze`: `Dev acceptance is not met` / exit `1` | Read dev judge reasons in `report.md`, and business checks/retrieved chunks with `inspect`; preserve failures. Do not create holdout yet |
+| `freeze`: `Dev acceptance is not met` / exit `1` | Read the failed stages/case IDs and report paths printed in the error → run each printed `inspect` command → [compare expectations and actual evidence](#read-case). Preserve failures; do not create holdout yet |
 | Interrupted `create-holdout` / `Holdout files already exist` | Check `holdout-data/` and registration. If all four data files are complete and belong to this frozen contract, but registration alone is missing, use `python advanced_lab.py register-holdout`. If already registered, continue with `run --stage holdout`. Preserve incomplete data files and use a new experiment rather than resampling |
 | `LAB_ACCEPTANCE_BLOCKED` / exit `2` | Completed holdout failed a criterion. Record reasons from `acceptance-report.md`/`acceptance-result.json`, then go to section 8 |
 | Other `ERROR:`, or `usage:` / `error:` | Resolve environment, input, or command errors first. In particular, exit `2` with `usage:` is an argument error, not a quality decision |
@@ -408,7 +408,7 @@ The resulting evaluator version, rubric, model, and acceptance criteria are fixe
 <a id="improve"></a>
 ## 5. Real V1 failure, then a controlled V2 improvement
 
-The [recorded V1 fixture](../../advanced-rag/fixtures/recorded-v1.json) contains four sanitized **actual earlier LIVE answers**, not fabricated wrong answers. D02's extra citation is retained. Replaying it is not claimed as fresh generation.
+The [recorded V1 fixture](../../advanced-rag/fixtures/recorded-v1.json) contains **four actual earlier LIVE answers for D02, D03, D04, and D08**, not fabricated wrong answers. D02's extra citation is retained. Replaying it is not claimed as fresh generation.
 
 **`--stage` names the run to use.** `v1-recorded` contains earlier answers; `v2-replay` generates new V2 answers from the same initial contexts. First import the local record:
 
@@ -429,6 +429,28 @@ python advanced_lab.py inspect --stage v1-recorded --case-id D02
 ```
 
 **Checkpoint:** find D02's `citations: false` under `Business checks`, then read `Scores`. Expected citations are `["TRAVEL-CURRENT"]`, but recorded V1 cites `["TRAVEL-CURRENT", "SCOPE"]`, failing the exact citation-set check. **A source being retrieved does not mean it is necessary to cite in the answer.** Read the judge's reasons in `results/advanced/v1-recorded/report.md`.
+
+<a id="read-case"></a>
+### Read a case's expectations and actual evidence
+
+`inspect` **only reads results whose generation and judging are both complete**. Add `--context` to display the actual retrieved context supplied to the answer. You do not need to rerun `run` or `judge` to investigate a failure.
+
+| Output | What to check |
+|---|---|
+| `Case result` | Whether this case meets the automated criteria. `FAIL` means answer/retrieval/score criteria were missed, not that the inspection command failed. `PASS` is not production approval |
+| `Question`, `Expected decision / limit / citations`, `Expected behavior` | The question and predefined decision, limit, minimum citations, and expected behavior. **Expectations are not model-generated answers** |
+| `Actual answer`, `Business checks` | Compare the answer with expectations. `true` passes that check; `false` fails it, such as D02's `citations: false` |
+| `Required chunks` → `Chunks` → `Required chunks found` | Required policy fragments → retrieved fragments → whether every required fragment was found. Chunk IDs differ from the answer's official citation IDs |
+| `Scores` / `Final scores` | Each of the three metrics must be **at least 4**. High judge scores do not cancel business or retrieval failures |
+| That stage's `report.md` | Match the same case ID and compare its **scoring reasons** with the actual answer |
+
+**For D02**, `current-lodging` is the chunk ID and `TRAVEL-CURRENT` is its official source ID. Finding the required chunk does not prevent a business-check failure if the answer also cites unnecessary `SCOPE`.
+
+**For dialogue cases, expectations and retrieval checks describe the final response**. Distinguish initial and final answers in the `--dialogue` output below. Even when `Initial field checks` is `true`, the initial explanation has not received semantic evaluation.
+
+**If you arrived here from an error**, inspect the failed cases, then return to the [status/resume table](#resume). Preserve the failed experiment and record unperformed later stages in section 8.
+
+### Understand and run V2
 
 Compare [V1](../../advanced-rag/instructions.v1.txt) and [V2](../../advanced-rag/instructions.v2.txt). V2 distinguishes the minimum sufficient decision/amount evidence from merely retrieved or procedural sources, and completes necessary clarification/handoff interactions.
 
@@ -496,6 +518,8 @@ python advanced_lab.py freeze
 ```
 
 **Checkpoint:** `FROZEN` and a contract hash. The hash is a fingerprint for detecting changed experiment conditions; you do not copy it into another command. V1 must contain a real failure; V2 replay and planned dev must meet the required criteria. The prompt, judge, model versions, retrieval configuration, source definitions, and corpus are fixed before fresh cases are created. If blocked, do not continue to holdout; preserve the cause and unperformed stages using the [resume table](#resume).
+
+**If you see `Dev acceptance is not met`**, the error prints each failed stage/case ID, its `report.md`, and ready-to-run `inspect --context` commands. Use them to [compare expectations and actual evidence](#read-case). Unlike an input typo, dev quality blocking is not resolved by repeatedly generating or judging the same experiment.
 
 <a id="holdout"></a>
 ## 7. Generate fresh questions only after freeze

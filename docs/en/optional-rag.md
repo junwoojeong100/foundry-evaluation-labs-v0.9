@@ -48,7 +48,7 @@ Run each command from the repository root containing `rag_lab.py`, with the virt
 python lab.py doctor --live
 ```
 
-Confirm `LIVE 조회 OK` for `gpt-6-luna` / `eval-model`. This verifies deployment/evaluator lookup, not Search setup or answer quality. Match the portal and CLI account, tenant, and subscription using the core guide.
+Confirm `LIVE 조회 OK` for `gpt-6-luna` / `eval-model`. This checks only authentication and model-deployment lookup, **not evaluator lookup, Search setup, or successful generation/judging**. The shared one-case smoke check covers generation/judging; the steps below check Search. Match the portal and CLI account, tenant, and subscription using the core guide.
 
 **Reuse an authorized Basic-or-higher Search service if available.** It can be the complete lab's service, but that is not required; otherwise create just one in section 2. Share the service, not the two exercises' object names. Free semantic/knowledge-retrieval plans are separate from the service SKU: **Basic still has ongoing service charges**. Do not automatically create another Search service.
 

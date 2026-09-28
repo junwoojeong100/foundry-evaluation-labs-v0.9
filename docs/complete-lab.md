@@ -303,7 +303,7 @@ python advanced_lab.py setup
 | 생성 도중 일시적인 연결 오류·사용자 중단 | 원인을 해결한 뒤 같은 `run --stage …` 재개. 저장된 응답은 다시 생성하지 않음. 응답 직후 저장 전에 끊긴 호출은 재청구될 수 있음 |
 | `initial clarification/handoff field checks failed` / 종료 코드 `1` | 초기 품질 실패. `<stage>/generation.json`의 `pending → 사례 ID → initial_response → response`를 읽고 실패로 보존. 같은 명령으로 좋은 답을 다시 뽑을 수 없음 |
 | 교정 종료 코드 `2` / `mismatches` 있음 | `calibration-result.json`의 오분류 ID·점수와 `calibration/report.md`의 채점 이유를 기록하고 중단. 합격선을 낮추거나 반복 채점해 진행하지 않음 |
-| `freeze`의 `Dev acceptance is not met` / 종료 코드 `1` | dev의 `report.md`에서 Judge 이유, `inspect`에서 업무 검사·검색 청크를 확인하고 실패를 보존. 아직 holdout을 만들지 않음 |
+| `freeze`의 `Dev acceptance is not met` / 종료 코드 `1` | 출력된 실패 stage·사례 ID와 보고서 경로 확인 → 함께 출력된 `inspect` 명령을 한 개씩 실행 → [기대값·실제값 읽기](#read-case). 실패를 보존하고 아직 holdout을 만들지 않음 |
 | `create-holdout` 중단 / `Holdout files already exist` | `holdout-data/`와 등록 파일 확인. 네 파일이 완전하고 같은 동결 계약에 속하나 등록만 빠졌다면 `python advanced_lab.py register-holdout`. 이미 등록됐다면 `run --stage holdout`으로 이동. 데이터 파일이 일부만 남았다면 보존하고 새 실험으로 구분하며 다시 뽑지 않음 |
 | `LAB_ACCEPTANCE_BLOCKED` / 종료 코드 `2` | 완료된 holdout이 기준 미달. `acceptance-report.md`·`acceptance-result.json`의 이유를 기록하고 8절로 이동 |
 | 그 밖의 `ERROR:` 또는 `usage:` / `error:` | 환경·입력·명령 오류를 먼저 해결. 특히 `usage:`와 함께 나온 코드 `2`는 품질 차단이 아니라 인자 오류 |
@@ -406,7 +406,7 @@ python advanced_lab.py calibrate
 <a id="improve"></a>
 ## 5. 실제 V1 실패와 통제된 V2 개선
 
-[V1 기록](../advanced-rag/fixtures/recorded-v1.json)은 정리된 **실제 이전 LIVE 답변 4개**입니다. 억지로 만든 오답이 아니며, D02의 불필요한 출처를 그대로 보존했습니다. 이를 다시 읽는 일을 새로운 생성이라고 표현하지 않습니다.
+[V1 기록](../advanced-rag/fixtures/recorded-v1.json)은 **D02·D03·D04·D08의 실제 이전 LIVE 답변 4개**입니다. 억지로 만든 오답이 아니며, D02의 불필요한 출처를 그대로 보존했습니다. 이를 다시 읽는 일을 새로운 생성이라고 표현하지 않습니다.
 
 **`--stage`는 사용할 실행 묶음의 이름**입니다. `v1-recorded`는 이전 답변, `v2-replay`는 같은 초기 문맥에서 새로 만드는 V2 답변입니다. 먼저 로컬 기록을 가져옵니다.
 
@@ -427,6 +427,28 @@ python advanced_lab.py inspect --stage v1-recorded --case-id D02
 ```
 
 **완료 확인:** `Business checks`의 D02 `citations: false`와 `Scores`를 확인합니다. 기대 출처는 `["TRAVEL-CURRENT"]`인데 기록된 V1은 `["TRAVEL-CURRENT", "SCOPE"]`를 인용해 엄격한 출처 집합 검사에 실패합니다. **출처가 검색됐다는 사실과 답변에 꼭 필요한 출처라는 판단은 다릅니다.** Judge의 이유는 `results/advanced/v1-recorded/report.md`에서 읽습니다.
+
+<a id="read-case"></a>
+### 한 사례의 기대값과 실제값 읽기
+
+`inspect`는 **생성·채점이 모두 완료된 결과를 읽기만** 합니다. `--context`를 붙이면 답변에 제공한 실제 검색 문맥도 출력합니다. 실패를 확인하려고 `run`·`judge`를 다시 실행할 필요는 없습니다.
+
+| 출력 | 확인할 것 |
+|---|---|
+| `Case result` | 이 사례의 자동 기준 통과 여부. `FAIL`은 답변/검색/점수의 기준 미달이며 명령 실패가 아님. `PASS`도 운영 승인이 아님 |
+| `Question`, `Expected decision / limit / citations`, `Expected behavior` | 질문과 사람이 미리 정한 결정·한도·최소 출처·기대 행동. **기대값은 모델이 만든 답이 아님** |
+| `Actual answer`, `Business checks` | 실제 답변과 기대값 비교. `true`는 해당 검사 통과, `false`는 실패. 예: D02의 `citations: false` |
+| `Required chunks` → `Chunks` → `Required chunks found` | 필수 규정 조각 → 실제 검색 조각 → 필수 조각을 모두 찾았는지. 검색 조각 ID와 답변의 공식 출처 ID는 다름 |
+| `Scores` / `Final scores` | 세 지표 각각 **4 이상**인지 확인. Judge가 높게 채점해도 업무·검색 검사 실패는 남음 |
+| 같은 stage의 `report.md` | 같은 사례 ID의 **점수 이유**와 실제 답변을 대조 |
+
+**D02에서는** `current-lodging`이 검색 조각 ID이고 `TRAVEL-CURRENT`가 그 조각의 공식 출처 ID입니다. 필요한 조각을 찾았더라도 불필요한 `SCOPE`까지 인용하면 업무 검사에는 실패할 수 있습니다.
+
+**대화 사례에서는 기대값과 검색 검사가 최종 응답 기준**입니다. 아래 `--dialogue`의 초기 응답과 최종 응답을 구분해 읽습니다. `Initial field checks`가 `true`여도 초기 설명 문장의 의미까지 자동 검증한 것은 아닙니다.
+
+**오류 표에서 이곳으로 왔다면** 출력된 실패 사례를 확인한 뒤 [상태·재개 표](#resume)로 돌아갑니다. 실패한 실험을 보존하고, 뒤 단계를 실행하지 못했다면 8절에서 미실행으로 기록합니다.
+
+### V2의 차이를 확인하고 실행
 
 [V1](../advanced-rag/instructions.v1.txt)과 [V2](../advanced-rag/instructions.v2.txt)를 비교합니다. V2는 최소 충분한 근거를 선택하고, 필요한 추가 정보 요청·업무 이관 대화까지 마무리합니다.
 
@@ -494,6 +516,8 @@ python advanced_lab.py freeze
 ```
 
 **완료 확인:** `FROZEN`과 계약 해시. 해시는 실험 조건이 바뀌었는지 확인하는 지문이며 다른 명령에 복사해 넣을 필요는 없습니다. 실제 V1 실패가 있어야 하며 V2 동일 문맥 및 계획형 dev가 기준을 통과해야 합니다. 지침·Judge·모델 버전·검색 설정·소스 정의·코퍼스를 새 질문 생성 전에 고정합니다. 실패하면 holdout으로 넘어가지 않고 [재개 표](#resume)에 따라 원인과 미실행 단계를 보존합니다.
+
+**`Dev acceptance is not met`라면** 터미널에 실패한 stage·사례 ID, 해당 `report.md`, 그대로 실행할 수 있는 `inspect --context` 명령이 나옵니다. 그 명령으로 [기대값과 실제값](#read-case)을 대조합니다. 입력 오류와 달리 dev의 품질 차단은 같은 생성·채점을 반복해 해결하지 않습니다.
 
 <a id="holdout"></a>
 ## 7. 고정한 뒤 새 질문 생성

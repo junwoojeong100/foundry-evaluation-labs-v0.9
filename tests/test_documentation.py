@@ -331,6 +331,26 @@ class DocumentationTests(unittest.TestCase):
                 self.assertIn(json.dumps(expected), section)
                 self.assertIn(json.dumps(actual), section)
 
+    def test_complete_case_reading_explains_inspection_and_links_from_freeze_failures(self):
+        labels = (
+            "Case result", "Question", "Expected decision / limit / citations", "Expected behavior",
+            "Actual answer", "Business checks", "Required chunks", "Chunks", "Required chunks found",
+            "Scores", "Final scores", "Initial field checks",
+        )
+        for relative in ("docs/complete-lab.md", "docs/en/complete-lab.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(guide=relative):
+                reading = text.split('<a id="read-case"></a>')[1].split('<a id="dialogue-check"></a>')[0]
+                for label in labels:
+                    self.assertIn(f"`{label}`", reading)
+                for required in ("current-lodging", "TRAVEL-CURRENT", "--context", "report.md", "true", "false"):
+                    self.assertIn(required, reading)
+                resume = text.split('<a id="resume"></a>')[1].split('<a id="retrieval-proof"></a>')[0]
+                freeze = text.split('<a id="freeze"></a>')[1].split('<a id="holdout"></a>')[0]
+                for section in (resume, freeze):
+                    self.assertIn("Dev acceptance is not met", section)
+                    self.assertIn("(#read-case)", section)
+
     def test_both_rag_paths_include_the_same_service_scoped_user_roles(self):
         roles_by_guide = {}
         for name in ("complete-lab", "optional-rag"):
@@ -592,6 +612,49 @@ class DocumentationTests(unittest.TestCase):
 
     def test_setup_shortcuts_do_not_duplicate_the_main_command_sequence(self):
         self.assertEqual(lab_commands(ROOT / "docs" / "setup.md"), [])
+
+    def test_moved_folder_recovery_keeps_demo_separate_from_live_package_installation(self):
+        for relative in ("docs/reference.md", "docs/en/reference.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            section = text.split('<a id="moved-folder"></a>')[1].split('<a id="remote-job-recovery"></a>')[0]
+            live_only = re.findall(r"<details>.*?</details>", section, re.DOTALL)
+            common = re.sub(r"<details>.*?</details>", "", section, flags=re.DOTALL)
+            with self.subTest(guide=relative):
+                self.assertEqual(len(live_only), 1)
+                self.assertIn("LIVE", live_only[0])
+                self.assertIn("python -m pip install -r requirements.txt", live_only[0])
+                self.assertIn("DEMO", common)
+                self.assertIn("deactivate", common)
+                self.assertIn("setup.md#resume", common)
+                self.assertIn("LOCAL OK", common)
+                commands = [
+                    shlex.split(line, comments=True)
+                    for block in SHELL_BLOCKS.findall(common)
+                    for line in block.splitlines() if line.strip()
+                ]
+                self.assertEqual(
+                    [command for command in commands if command[0] == "python"],
+                    [["python", "lab.py", "doctor"]],
+                )
+                self.assertFalse(any("pip" in command or command[0] == "az" for command in commands))
+                self.assertNotIn("--live", common)
+        for relative, link in (
+            ("README.ko.md", "docs/reference.md#moved-folder"),
+            ("README.md", "docs/en/reference.md#moved-folder"),
+            ("docs/offline.md", "reference.md#moved-folder"),
+            ("docs/en/offline.md", "reference.md#moved-folder"),
+        ):
+            with self.subTest(entry=relative):
+                self.assertIn(f"({link})", (ROOT / relative).read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as directory:
+            outcome = subprocess.run(
+                [sys.executable, "-S", str(ROOT / "lab.py"), "doctor"],
+                cwd=directory, capture_output=True, text=True, timeout=15,
+            )
+            self.assertEqual(outcome.returncode, 0, outcome.stderr)
+            self.assertIn("LOCAL OK", outcome.stdout)
+            self.assertIn("dev 8개, holdout 4개", outcome.stdout)
+            self.assertEqual(list(Path(directory).iterdir()), [])
 
     def test_documented_extra_cases_and_validation_commands_work_locally(self):
         for document in (ROOT / "README.md", ROOT / "docs" / "offline.md"):
