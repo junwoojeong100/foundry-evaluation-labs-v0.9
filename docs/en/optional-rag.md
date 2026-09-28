@@ -100,9 +100,7 @@ The [English/Korean vector and LLM-planned RAG summaries](../media/complete-rag/
 | You need a new environment | [Shared setup 1–7](setup.md#prepare) |
 | An authorized project and model already exist | [Existing-environment setup](setup.md#existing-environment); skip creation |
 
-In your chosen route, verify the virtual environment, packages, `config.json`, model deployment, and one-case generation/evaluation check.
-
-**Return to this section after shared setup.** Introductory activities 1–6 are not prerequisites.
+**Return here after `평가 완료: 1개 답변 × 2개 지표` and N01's scores/reasons.** Keep the shared environment and `config.json`. Introductory activities 1–6 are not prerequisites.
 
 Do not add an agent server, Docker, Storage, or an embedding deployment. With the virtual environment active, check connectivity:
 
@@ -133,7 +131,15 @@ Retrieval and evaluator internals are additional requests beyond the comparison 
 
 ### 2-1. Reuse an authorized service or create a new one
 
-Replace all placeholders with real values. You can reuse the core dedicated group. The service name must be globally unique and use lowercase letters, digits, and dashes.
+Replace placeholders using this table. Keep names, IDs, and endpoints distinct.
+
+| Placeholder | Value |
+|---|---|
+| `YOUR-SUBSCRIPTION-ID` | Subscription ID verified during shared setup |
+| `YOUR-LAB-RESOURCE-GROUP` | Search's actual resource group; use its group if reusing a service elsewhere |
+| `YOUR-SEARCH-NAME` | Authorized existing name or a new globally unique name using lowercase letters, digits, and dashes |
+| `YOUR-SEARCH-RESOURCE-ID` | Full `id` from the Search lookup in 2-2 |
+| `YOUR-USER-OBJECT-ID` | `objectId` from the signed-in-user lookup in 2-2 |
 
 **If an authorized Basic-or-higher service already exists, skip both commands below and use its endpoint/permissions.** `az search service create` can update an existing service, so do not run it against a name you intend to reuse. Create below only when you do not yet have a service.
 
@@ -346,11 +352,19 @@ python rag_lab.py compare results/rag-search results/rag-iq
 
 ### 5-4. Compare D04's retrieved evidence, answer, and scores
 
+**Read D04 in both result folders.** Start with Search:
+
+```bash
+python rag_lab.py inspect results/rag-search D04
+```
+
+**Check:** the question, answer, both scores and reasons, and `Actual retrieved context` are visible. Then open IQ:
+
 ```bash
 python rag_lab.py inspect results/rag-iq D04
 ```
 
-Read the retrieved chunks, missing required chunks, answer, business checks, and judge reasons—in that order. **Groundedness receives exactly the per-case context used to generate that answer**, not the original full corpus.
+**Checkpoint:** compare retrieved chunks, missing required chunks, answers, business checks, and judge reasons. Record “no difference” if they match. **Groundedness receives each answer's actual generation context**, not the full corpus.
 
 #### Read the answer's decision and explanation
 

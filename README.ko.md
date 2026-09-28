@@ -2,41 +2,41 @@
 
 # AI 답변, 믿어도 될까요?
 
-**Microsoft Foundry Evaluation — 처음부터 끝까지 따라 하는 실습**
+**Microsoft Foundry Evaluation 실습**
 
 **바로 이동:** [경로 선택](#choose-path) · [환경 준비](#setup-map) · [중단·재개](docs/setup.md#resume)
 
-가상의 **가온랩 출장비 도우미**가 규정에 맞게 답하는지 확인합니다. Evaluation은 **미리 정한 기준으로 AI 답변을 검사하는 일**입니다. 제공된 명령을 실행하고 답변을 읽으며 배우므로 **Python 코드를 작성할 필요는 없습니다.**
+가상의 **가온랩 출장비 도우미**가 규정에 맞게 답하는지 검사합니다. 이것이 **평가(Evaluation)**입니다. 명령을 복사해 실행하고 결과를 읽습니다. **Python 코드는 작성하지 않습니다.**
 
-**배우는 흐름:** 기준 정하기 → 답변 검사 → 지침 개선 → 새 질문 검증 → 근거로 채택·보류 판단.
+**진행 순서:** 기준 정하기 → 답변 검사 → 지침 개선 → 새 질문 확인 → 채택·보류 판단.
 
-**처음이라면 [완결형 RAG의 1절](docs/complete-lab.md#architecture)부터 시작하세요.** Azure 환경 없이 먼저 체험하려면 [DEMO](docs/offline.md#lab-0)를 선택합니다. 두 경로 모두 설치 전에 규정과 답변부터 살펴봅니다.
+**처음이거나 Azure가 없다면 [무료 DEMO](docs/offline.md#lab-0)로 시작하세요.** 실제 모델을 평가하려면 [입문 LIVE](docs/intro-lab.md#lab-0), 검색까지 다루려면 [완결형 RAG](docs/complete-lab.md#architecture)를 선택합니다.
 
 <details>
-<summary>실습의 배경과 공개 실행 기록의 범위</summary>
+<summary>실습 배경과 작성자 실행 기록</summary>
 
-사티아 나델라(Satya Nadella)의 [프런티어 생태계에 관한 블로그 글](https://snscratchpad.com/posts/frontier-ecosystem/)에서 영감을 받았습니다. 외부 벤치마크만이 아니라 **우리 업무의 기준으로 AI를 평가하고, 사람의 판단을 바탕으로 개선을 반복하는 학습 루프**를 경험합니다.
+사티아 나델라(Satya Nadella)의 [프런티어 생태계 글](https://snscratchpad.com/posts/frontier-ecosystem/)에서 영감을 받았습니다. 외부 순위 대신 우리 업무의 기준으로 AI를 평가하고 개선합니다.
 
-[경로별 실행 기록의 범위](docs/reference.md#live-verification)를 구분합니다. 공개된 완결형 결과는 입문 LIVE의 검증을 대신하지 않습니다. 다른 실행의 점수를 예상 정답으로 사용하거나 같은 점수가 나올 때까지 반복하지 않습니다.
+[작성자 실행 기록](docs/reference.md#live-verification)은 참고용입니다. 본인 결과로 판단하며, 같은 점수를 얻으려고 반복 실행하지 않습니다.
 
 </details>
 
 <a id="choose-path"></a>
 ## 내게 맞는 경로 하나 고르기
 
-모든 가이드를 순서대로 끝내는 과정이 아닙니다. **목적과 사용 가능한 환경에 맞는 한 행**을 고릅니다.
+**아래에서 하나만 선택합니다.** 다른 경로를 먼저 마칠 필요는 없습니다.
 
 | 경로 | 이런 목표라면 | 필요한 환경·비용 |
 |---|---|---|
-| **[완결형 RAG — 권장](docs/complete-lab.md)** | 검색부터 대화 개선·새 질문 검증까지 | 지정 모델 버전·모델 배포 3개·Basic 이상 Search. **유료** |
+| **[DEMO — 처음이라면](docs/offline.md)** | Azure 없이 평가 흐름 익히기 | Python만 사용. **무료·작성된 예제**, 실제 성능 측정 아님 |
 | [입문 LIVE](docs/intro-lab.md) | 검색 없이 평가·프롬프트 개선부터 | Foundry 프로젝트·모델 배포 1개. **유료** |
-| [DEMO](docs/offline.md) | Azure 없이 평가 흐름 먼저 체험 | Python만 사용. **무료·작성된 예제**, 실제 성능 측정 아님 |
-| [Optional RAG](docs/optional-rag.md) | 직접 Search와 Knowledge Base 비교 | 공통 준비 + Basic 이상 Search. **유료** |
+| [완결형 RAG](docs/complete-lab.md) | 검색·대화 개선·새 질문 검증까지 | 지정 모델 버전·모델 배포 3개·Basic 이상 Search. **유료** |
+| [Optional RAG — 검색 비교](docs/optional-rag.md) | Search 직접 검색과 Knowledge Base 비교 | 공통 준비 + Basic 이상 Search. **유료** |
 
-**선택한 가이드만 순서대로 따릅니다.** 완결형·Optional RAG에 입문 전체는 선행 필수가 아닙니다. LIVE는 활성 Azure 구독과 필요한 생성·사용·역할 할당 권한을 먼저 확인합니다. 허가받은 기존 자원은 [기존 환경 준비](docs/setup.md#existing-environment)로 재사용합니다.
+**LIVE는 실제 Azure 호출, RAG는 검색한 근거로 답하는 방식**입니다. 유료 경로는 활성 구독과 사용 권한이 필요합니다. 자원 생성·권한 설정은 선택한 가이드에서 안내합니다. 기존 자원은 [소유자의 허가를 받아 재사용](docs/setup.md#existing-environment)합니다.
 
 > [!IMPORTANT]
-> **실습 완료 ≠ AI 답변 합격.** 낮은 점수나 `BLOCK`도 근거를 설명하면 유효한 결과입니다. LIVE·DEMO 명령과 결과는 섞지 않으며, 막히면 [DEMO 전환 절차](docs/setup.md#switch-to-demo)를 따릅니다.
+> **실행 완료와 답변 합격은 다릅니다.** 낮은 점수나 `BLOCK`(품질 기준 미달)도 학습 결과입니다. LIVE가 막히면 [DEMO 전환 절차](docs/setup.md#switch-to-demo)를 따르고 결과를 섞지 않습니다.
 
 <a id="prepare"></a>
 <a id="setup-map"></a>
@@ -59,7 +59,7 @@
 <a id="lab-map"></a>
 ## 입문 LIVE 단계 바로가기
 
-**입문을 선택한 경우에만** [입문 진행표](docs/intro-lab.md#lab-map)를 따릅니다. 기존 README의 단계 링크도 아래에서 해당 안내로 이어집니다.
+**입문을 선택했다면** [입문 진행표](docs/intro-lab.md#lab-map)를 따릅니다.
 
 <a id="reading-guide"></a>
 [가이드 읽는 법](docs/intro-lab.md#reading-guide): **할 일 → 명령 → 완료 확인 → 다음 단계** 순서입니다.

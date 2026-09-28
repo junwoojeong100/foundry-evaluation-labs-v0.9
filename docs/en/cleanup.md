@@ -11,7 +11,8 @@
 
 | Situation | Steps to follow |
 |---|---|
-| Normal finish or early stop | [1. Save evidence](#save-results) → [2. Retain and check costs](#retain-resources), then stop |
+| DEMO only; no Azure resources created | [1. Save evidence](#save-results) only |
+| LIVE/RAG finish or stopping during Azure setup | [1. Save evidence](#save-results) → [2. Retain and check costs](#retain-resources), then stop |
 | The owner separately decides to delete later | Save evidence, then [optional steps 3–5](#delete-resources). Never bulk-delete shared resources |
 
 <a id="save-results"></a>
@@ -22,12 +23,12 @@ Keep the **entire result folder for the path you actually ran**. Reports/scores 
 | Executed path | Local evidence to retain |
 |---|---|
 | Introductory LIVE/DEMO | Your smoke, baseline, candidate, holdout, and extra-case results; distinguish LIVE from `demo-*` folders |
-| Minimal RAG | `results/rag-setup.json`, query outputs, and experiment files such as `results/rag-search/` and `results/rag-iq/` |
+| Optional RAG | `results/rag-setup.json`, query outputs, and experiment files such as `results/rag-search/` and `results/rag-iq/` |
 | Complete RAG | Entire `results/advanced/`: retrieval, calibration, stage generation/evaluation, freeze, fresh-question registration, and acceptance. See [stage artifacts](complete-lab.md#resume) |
 
 Poll pending jobs using the **entire original command, retaining options such as `--like`**. Complete-path calibration uses the original `calibrate` command. Cancel only your own job when separately needed and supported by its run screen, then verify its state. **Closing the terminal does not cancel remote work.**
 
-**Checkpoint:** needed local evidence and actual remote job states are saved. If a job is still pending, record the next check rather than marking it complete. Apply your organization's data-retention policy if extending the workshop to real information.
+**Checkpoint:** needed local evidence and actual remote job states are saved. If a job is still pending, record the next check rather than marking it complete. Apply your organization's data-retention policy for real information. **DEMO-only participants stop here.**
 
 <a id="retain-resources"></a>
 ## 2. Default: retain and check costs

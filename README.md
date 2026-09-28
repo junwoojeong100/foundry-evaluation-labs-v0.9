@@ -2,43 +2,43 @@
 
 # Can you trust an AI answer?
 
-**Microsoft Foundry Evaluation: an end-to-end, self-guided workshop**
+**A self-guided Microsoft Foundry Evaluation workshop**
 
 **Jump to:** [Choose a path](#choose-path) · [Setup](#setup-map) · [Resume](docs/en/setup.md#resume)
 
-Find out whether the fictional **Gaon Lab travel-expense assistant** follows policy. Evaluation means **checking AI answers against criteria chosen in advance**. Run the provided commands and read the answers; **you do not need to write Python**.
+Check whether the fictional **Gaon Lab travel-expense assistant** follows policy. This is **evaluation**. Copy the commands, run them, and read the results. **No Python coding is required.**
 
 **The learning loop:** define criteria → check answers → improve instructions → test fresh questions → make an evidence-based decision.
 
-**Start with [Complete RAG, section 1](docs/en/complete-lab.md#architecture).** To try the workflow without Azure, choose [DEMO](docs/en/offline.md#lab-0). Both begin with policy and answers, before installation.
+**New to evaluation or without Azure? Start with [free DEMO](docs/en/offline.md#lab-0).** Choose [Introductory LIVE](docs/en/intro-lab.md#lab-0) to evaluate a real model, or [Complete RAG](docs/en/complete-lab.md#architecture) to include retrieval.
 
 **Language:** the guides are in English, but policy inputs, questions, prompts, and CLI output remain **Korean** so both guides run the same experiment. Use the [English policy translation](docs/en/policies.md) for reading, not as a replacement input.
 
 <details>
-<summary>Workshop inspiration and the scope of published evidence</summary>
+<summary>Workshop inspiration and recorded results</summary>
 
-Inspired by [Satya Nadella's post on building a frontier ecosystem](https://snscratchpad.com/posts/frontier-ecosystem/), this workshop practices **business-specific evaluations and human-guided learning loops**: judge AI against your own criteria, improve it, and evaluate again—not just compare external benchmarks.
+Inspired by [Satya Nadella's post on building a frontier ecosystem](https://snscratchpad.com/posts/frontier-ecosystem/). Evaluate and improve AI against your own business criteria, not just external rankings.
 
-Keep [evidence scopes separate](docs/en/reference.md#live-verification): the published complete-path result does not revalidate introductory LIVE. Do not rerun to reproduce another execution's scores.
+[Recorded results](docs/en/reference.md#live-verification) are examples, not target scores. Judge your own results; do not rerun to match someone else's scores.
 
 </details>
 
 <a id="choose-path"></a>
 ## Choose one learning path
 
-You do not need to finish every guide. **Choose the row that matches your goal and available environment.**
+**Choose one row.** You do not need to complete another path first.
 
 | Path | Choose it to… | Environment and cost |
 |---|---|---|
-| **[Complete RAG — recommended](docs/en/complete-lab.md)** | Connect retrieval, dialogue improvement, and fresh-question validation | Required model version, three deployments, Basic-or-higher Search. **Paid** |
+| **[DEMO — start here if new](docs/en/offline.md)** | Learn the evaluation workflow without Azure | Python only. **Free, authored examples**, not a performance measurement |
 | [Introductory LIVE](docs/en/intro-lab.md) | Learn evaluation and prompt improvement without retrieval | Foundry project and one model deployment. **Paid** |
-| [DEMO](docs/en/offline.md) | Try evaluation before using Azure | Python only. **Free, authored examples**; not a model-performance measurement |
-| [Optional RAG](docs/en/optional-rag.md) | Compare direct Search with Knowledge Base retrieval | Shared setup and Basic-or-higher Search. **Paid** |
+| [Complete RAG](docs/en/complete-lab.md) | Connect retrieval, dialogue improvement, and fresh-question validation | Required model version, three deployments, Basic-or-higher Search. **Paid** |
+| [Optional RAG — retrieval comparison](docs/en/optional-rag.md) | Compare direct Search with Knowledge Base retrieval | Shared setup and Basic-or-higher Search. **Paid** |
 
-**Follow only your chosen guide.** Neither RAG path requires completing the introduction. For LIVE, first confirm an active Azure subscription and the required creation, usage, and role-assignment permissions. Reuse authorized resources through [existing-environment setup](docs/en/setup.md#existing-environment).
+**LIVE makes real Azure calls; RAG answers using retrieved evidence.** Paid paths require an active subscription and access. Your guide covers resource creation and permissions. [Reuse existing resources](docs/en/setup.md#existing-environment) only with the owner's permission.
 
 > [!IMPORTANT]
-> **Workshop completion ≠ passing AI answers.** Low scores or `BLOCK` are valid outcomes when you can explain the evidence. Keep LIVE and DEMO commands/results separate; if blocked, use the [DEMO switching procedure](docs/en/setup.md#switch-to-demo).
+> **Execution completion ≠ passing answers.** Low scores or `BLOCK` (unmet quality criteria) are learning outcomes. If LIVE is blocked, [switch to DEMO](docs/en/setup.md#switch-to-demo) without mixing the results.
 
 <a id="prepare"></a>
 <a id="setup-map"></a>
@@ -61,7 +61,7 @@ Do not recreate an existing environment. [New-environment CLI setup](docs/en/set
 <a id="lab-map"></a>
 ## Introductory LIVE shortcuts
 
-Use the [introductory progress map](docs/en/intro-lab.md#lab-map) **only if you chose that path**. Previous README step links still lead to the corresponding guidance below.
+Use the [introductory progress map](docs/en/intro-lab.md#lab-map) **only if you chose that path**.
 
 <a id="reading-guide"></a>
 [How to read the guide](docs/en/intro-lab.md#reading-guide): follow **action → command → checkpoint → next step**.

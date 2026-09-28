@@ -52,7 +52,7 @@ The policy inputs, example queries, and model answers remain **Korean** so both 
 > [!IMPORTANT]
 > **Lab completion is not the same as automated acceptance.** Preserve low scores and stopped runs. Do not mark unperformed stages complete or apply the introduction's 80% gate and D06/H04 review workflow here.
 
-Use each checkpoint and the generated results. No separate record form is needed; personal notes are optional.
+Use each checkpoint and the generated reports. Record dialogue observations in your own notes as directed in sections 5 and 7; no separate form is required.
 
 **Start here:** [1. Read the policy](#architecture). The glossary and videos below are optional references.
 
@@ -738,6 +738,8 @@ If pending, repeat the same judging command.
 python advanced_lab.py inspect --stage v2-replay --case-id D02
 ```
 
+**Check:** compare `Actual answer` → `citations` with V1. The expected value is `["TRAVEL-CURRENT"]`. If V2 still adds unnecessary citations, retain that failure rather than claiming improvement.
+
 <a id="dialogue-check"></a>
 ### 5-4. Read the full D04 and D08 dialogues
 
@@ -758,7 +760,7 @@ python advanced_lab.py inspect --stage v2-replay --case-id D08 --dialogue
 | `Final answer` → `Final scores` | Answer completing the follow-up request → its three final-response scores |
 | `Initial field checks (not prose evaluation)` | Initial field checks only, not a semantic pass for initial prose |
 
-**Checkpoint:** explain D02's changed citations and D04/D08's follow-up outcomes.
+**Checkpoint:** explain D02's citation changes and D04/D08's initial and final answers. In personal notes, record **`case ID / problem present or absent / supporting sentence`**. `inspect` is read-only and does not save these notes.
 
 **Interpretation:** V1 and V2 start from identical saved contexts and use the same answer model/settings/judge, with explicit user follow-ups completed where needed. This is a **prompt-and-dialogue workflow improvement**, not an effect attributable only to prompt wording. Keep the V1 failure; do not weaken V1 or reroll it.
 
@@ -848,7 +850,7 @@ If pending, repeat the same judging command. After completion, read both follow-
 
 ### 7-3. Review the N05 and N06 dialogues
 
-Use the [output labels explained earlier](#dialogue-check) to read **both initial prose and final answers**, then record your judgment.
+Use the [output labels](#dialogue-check) to read initial and final answers. In the same personal notes, record **`case ID / problem present or absent / supporting sentence`**. Do not edit generated reports or approval status.
 
 ```bash
 python advanced_lab.py inspect --stage holdout --case-id N05 --dialogue

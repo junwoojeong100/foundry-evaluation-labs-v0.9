@@ -42,6 +42,66 @@ def lab_commands(document: Path, script: str = "lab.py") -> list[list[str]]:
 
 
 class DocumentationTests(unittest.TestCase):
+    def test_beginner_path_selection_starts_with_demo(self):
+        for relative, directory in (("README.ko.md", "docs"), ("README.md", "docs/en")):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            choices = text.split('<a id="choose-path"></a>')[1].split('<a id="prepare"></a>')[0]
+            links = re.findall(r"\[[^\]]*\]\(([^)]+)\)", choices)
+            with self.subTest(guide=relative):
+                self.assertEqual(links[0], f"{directory}/offline.md")
+
+    def test_setup_checks_the_installation_environment_before_installing(self):
+        check = ["python", "-m", "pip", "--version"]
+        install = ["python", "-m", "pip", "install", "-r", "requirements.txt"]
+        for relative in ("docs/setup.md", "docs/en/setup.md"):
+            document = ROOT / relative
+            text = document.read_text(encoding="utf-8")
+            commands = shell_commands(document)
+            with self.subTest(guide=relative):
+                self.assertLess(commands.index(check), commands.index(install))
+                checkpoint = text.split("python -m pip --version\n```", 1)[1].split("```bash", 1)[0]
+                self.assertIn("`.venv`", checkpoint)
+                self.assertIn("`from`", checkpoint)
+
+    def test_intro_comparisons_have_output_checkpoints_before_the_next_command(self):
+        for language in ("", "en/"):
+            for name in ("intro-lab", "offline"):
+                relative = f"docs/{language}{name}.md"
+                text = (ROOT / relative).read_text(encoding="utf-8")
+                blocks = list(SHELL_BLOCKS.finditer(text))
+                checked = 0
+                for index, block in enumerate(blocks):
+                    command = shlex.split(block.group(1), comments=True)
+                    if command[:3] != ["python", "lab.py", "compare"]:
+                        continue
+                    end = blocks[index + 1].start() if index + 1 < len(blocks) else len(text)
+                    checkpoint = text[block.end():end]
+                    with self.subTest(guide=relative, command=command):
+                        self.assertIn(f"비교표: {command[4]}/comparison.md", checkpoint)
+                    checked += 1
+                self.assertEqual(checked, 1 if name == "intro-lab" else 2)
+
+    def test_rag_comparison_inspects_the_same_case_on_both_routes(self):
+        for relative in ("docs/optional-rag.md", "docs/en/optional-rag.md"):
+            commands = lab_commands(ROOT / relative, "rag_lab.py")
+            index = next(i for i, command in enumerate(commands) if command[0] == "compare")
+            inspections = [command for command in commands[index + 1:] if command[0] == "inspect"]
+            with self.subTest(guide=relative):
+                self.assertEqual(
+                    inspections,
+                    [["inspect", folder, "D04"] for folder in commands[index][1:]],
+                )
+
+    def test_intro_finish_delegates_cleanup_without_duplicate_deletion_steps(self):
+        for relative in ("docs/intro-lab.md", "docs/en/intro-lab.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            finish = text.split('<a id="finish"></a>')[1]
+            with self.subTest(guide=relative):
+                self.assertIn("(cleanup.md#retain-resources)", finish)
+                self.assertIn("(cleanup.md#delete-resources)", finish)
+                self.assertNotIn("Delete resource group", finish)
+                self.assertNotIn("az group exists", finish)
+
     def test_readme_openings_credit_the_original_workshop_inspiration(self):
         source = "https://snscratchpad.com/posts/frontier-ecosystem/"
         for relative in ("README.ko.md", "README.md"):
@@ -1055,6 +1115,11 @@ class DocumentationTests(unittest.TestCase):
                             self.assertIn(checkpoint, command_output.getvalue())
                             self.assertIn(f"Judge 결과: {folder / 'judge.json'}", command_output.getvalue())
                             self.assertIn("사례별 근거", (folder / "report.md").read_text(encoding="utf-8"))
+                        if argv[0] == "compare":
+                            self.assertIn(
+                                f"비교표: {Path(argv[2]) / 'comparison.md'}",
+                                command_output.getvalue(),
+                            )
                         if argv[0] == "run":
                             folder = lab.parser().parse_args(argv).out
                             saved = (folder / "run.json").read_bytes()

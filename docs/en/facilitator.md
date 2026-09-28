@@ -6,7 +6,7 @@
 
 Teach **evidence-based judgment**, not just tool operation. If D06 actually regressed, “approval fabrication means I would hold the change” is more useful than “the score increased.” Require evidence and reasons, not a predetermined failure.
 
-**Scope:** the pre-class checklist, rehearsal, and 0–6 table below are for **fixed-policy introductory LIVE/DEMO**. For recommended complete RAG, use [its dedicated checkpoints](#complete-checkpoints), not the 80% gate, D06/H04 workflow, or one-model constraint.
+**Scope:** the pre-class checklist, rehearsal, and 0–6 table below are for **introductory LIVE/DEMO**. Complete RAG uses [its own checkpoints](#complete-checkpoints), not the 80% gate, D06/H04 workflow, or one-model constraint.
 
 Introductory participants follow the [introductory guide](intro-lab.md): activity 0, shared setup, activities 1–6, and resource retention. Return to that guide after setup. Use checkpoints rather than a fixed timetable. Keep LIVE and authored DEMO evidence distinct. English documentation uses the same Korean experimental inputs as the Korean guide; use the [policy translation](policies.md) to explain them without changing the experiment.
 

@@ -1,12 +1,12 @@
 [English](en/optional-rag.md) | **한국어**
 
-# 선택 실습: Azure AI Search와 Foundry IQ 비교
+# Optional RAG: 두 검색 방식 비교하기
 
 [기본 실습](../README.ko.md) · [영문 기본 가이드](../README.md)
 
 **바로 이동:** [공통 준비](#prerequisites) · [두 검색 경로](#retrieval-routes) · [중단·재개](#resume) · [문제 해결](#troubleshooting)
 
-**같은 질문을 두 검색 경로로 실행하고, 검색 품질과 답변 품질을 따로 비교합니다.** 전체 규정을 전달하는 입문과 달리 **실제 검색된 문서만** 답변 모델과 Groundedness 평가기에 전달합니다.
+**같은 질문으로 두 검색 방식을 비교합니다.** 검색 품질과 답변 품질을 따로 봅니다. 답변 모델과 근거 충실도 평가에는 **실제 검색된 문서만** 전달합니다.
 
 | 한눈에 보기 | 이 경로에서 할 일 |
 |---|---|
@@ -18,7 +18,7 @@
 | 결과 위치 | `results/rag-search`·`results/rag-iq` |
 
 > [!IMPORTANT]
-> **완결형 RAG를 먼저 끝낼 필요는 없습니다.** 이 경로는 `optional-rag/prompt.txt`로 검색 두 경로만 비교합니다. 완결형의 V1/V2·교정·고정·holdout 절차와 섞지 않습니다. 두 RAG CLI 모두 DEMO 모드는 없습니다.
+> **다른 실습을 먼저 끝낼 필요는 없습니다.** `optional-rag/prompt.txt`로 검색만 비교합니다. 완결형의 V1/V2·새 질문 검증과 섞지 않습니다. DEMO 모드는 없습니다.
 
 생성한 리소스와 결과는 **삭제하지 않습니다**. Basic Search 유지비와 모델 호출 비용이 발생합니다. 허가된 기존 서비스가 있으면 재사용합니다.
 
@@ -37,19 +37,14 @@
 <a id="reading-guide"></a>
 ### 가이드 읽는 법
 
-**할 일 → 명령 실행 → 완료 확인 → 다음 단계** 순서로 진행합니다.
+**명령 → 완료 확인 → 다음 단계** 순서로 진행합니다.
 
-| 표시 | 읽는 방법 |
-|---|---|
-| `bash` 코드 블록 | 터미널에서 실행할 명령. 한 명령씩 복사하고 입력을 다시 받을 때까지 기다림 |
-| `text` 코드 블록 | 설명용 도식. 명령으로 실행하지 않음 |
-| `YOUR-...` | 본인 환경에서 확인한 값으로 바꿀 자리. 따옴표는 유지 |
-| **완료 확인** | 다음으로 가기 전에 확인할 메시지·건수·결과 |
-| 접힌 설명 | 예외 상황·추가 배경. 필요한 항목만 펼쳐 읽기 |
+- `bash`는 실행할 명령, `text`는 설명용 도식입니다. 명령은 한 줄 전체를 복사합니다.
+- `YOUR-...`는 본인 값으로 바꾸고 따옴표는 유지합니다.
+- `rag_lab.py`가 있는 폴더에서 가상환경을 활성화해 실행합니다.
+- 결과 폴더는 자동 생성됩니다. `.md`는 VS Code의 Markdown 미리보기로 읽습니다.
 
-**실행 위치:** `rag_lab.py`가 있는 폴더의 활성화된 가상환경입니다. 긴 명령도 **한 줄 전체를 복사**하며 중간에 Enter를 넣지 않습니다. 결과 폴더는 자동 생성되고 `.md` 보고서는 VS Code의 Markdown 미리보기로 읽습니다.
-
-**지금 시작:** 아래의 [두 검색 경로](#retrieval-routes)를 읽고 [1. 공통 준비](#prerequisites)로 진행합니다. [공식 출처](#sources)는 필요할 때만 확인합니다.
+**시작:** [두 검색 방식](#retrieval-routes)을 읽고 [1. 공통 준비](#prerequisites)로 갑니다.
 
 <a id="retrieval-routes"></a>
 ## 두 검색 경로 이해하기
@@ -58,13 +53,11 @@
 
 | 경로 | 실제 실행 |
 |---|---|
-| `search` | Azure AI Search 인덱스에 semantic 검색 요청 |
+| `search` | Azure AI Search에서 키워드 검색 후 의미 기반 정렬(semantic) |
 | `iq` | Foundry IQ Knowledge Base의 `retrieve` API → search-index Knowledge Source → 같은 인덱스 |
 | 공통 | 반환된 승인 문서 중 상위 3개 → `gpt-6-luna` 답변 → 코드 검사·검색 평가·Foundry Evaluation |
 
-**Foundry IQ를 이름만 붙인 로컬 검색으로 대체하지 않습니다.** Knowledge Base/Source를 실제 서비스에 생성하고, IQ 응답의 `references`, `sourceData`, `activity`를 저장합니다.
-
-**이 경로는 벡터·LLM 검색 계획을 사용하지 않습니다.** 코드에 고정된 정식 Search API **`2026-04-01`의 minimal/extractive 검색**입니다. `gpt-6-luna`는 검색 계획이 아니라 **답변 생성·평가**에 사용합니다.
+실제 서비스에 Knowledge Source·Knowledge Base를 만들고 검색 원본을 저장합니다. **벡터·LLM 검색 계획은 사용하지 않습니다.** 코드의 정식 API `2026-04-01`로 문서를 가져오며, `gpt-6-luna`는 답변 생성·평가에만 사용합니다.
 
 ```text
 질문 ── search ────────────────→ Azure AI Search 인덱스
@@ -75,7 +68,7 @@
               gpt-6-luna 답변 + 같은 문맥으로 평가
 ```
 
-같은 단일 인덱스를 사용하는 두 경로는 같은 문서를 반환할 수도 있습니다. 이 실습은 IQ가 항상 더 좋은 점수를 낸다는 성능 보증이 아닙니다.
+같은 인덱스이므로 같은 문서를 찾을 수도 있습니다. **IQ가 반드시 더 좋은 결과를 내는 것은 아닙니다.**
 
 <details>
 <summary>API 범위와 별도 완결형 영상의 차이</summary>
@@ -100,11 +93,7 @@
 | 새 환경이 필요함 | [공통 준비 1–7](setup.md#prepare) |
 | 허가된 프로젝트·모델이 이미 있음 | [기존 환경 준비](setup.md#existing-environment). 신규 생성 생략 |
 
-선택한 경로에서 가상환경·패키지·`config.json`·모델 배포와 한 건의 생성·평가를 확인합니다.
-
-**공통 준비가 끝나면 이 절로 돌아옵니다.** 입문 실습 1–6을 먼저 실행할 필요는 없습니다.
-
-새 에이전트 서버·Docker·Storage·임베딩 배포는 만들지 않습니다. 가상환경을 활성화한 터미널에서 연결을 조회합니다.
+**N01의 `평가 완료: 1개 답변 × 2개 지표`와 점수·이유를 확인하면 이 절로 돌아옵니다.** 입문 실습 1–6은 생략합니다. 에이전트 서버·Docker·Storage·임베딩 배포도 필요 없습니다. 가상환경을 활성화하고 조회합니다.
 
 ```bash
 python lab.py doctor --live
@@ -112,17 +101,15 @@ python lab.py doctor --live
 
 **완료 확인:** `gpt-6-luna`와 `eval-model`의 `LIVE 조회 OK`.
 
-이 조회는 로그인·모델 배포만 확인합니다. **평가기 조회·Search 준비·실제 생성·채점 성공까지 확인하지는 않습니다.** 생성·채점은 공통 준비의 한 건 실행에서, Search는 아래 단계에서 확인합니다.
-
-포털과 CLI가 같은 계정·테넌트·구독인지 [공통 준비 2](setup.md#setup-sign-in)에서 대조합니다.
+조회는 로그인·배포만 확인합니다. 생성·채점은 공통 N01에서, Search는 아래에서 확인합니다. 계정이 다르면 [로그인 확인](setup.md#setup-sign-in)으로 돌아갑니다.
 
 ### 1-2. Search 비용과 권한 확인하기
 
-**허가된 Basic 이상 검색 서비스가 있으면 재사용**합니다. 완결형에서 만든 서비스도 가능하지만 필수는 아니며, 없다면 2절에서 하나만 만듭니다. 서비스는 공유해도 검색 객체 이름은 두 실습에서 구분합니다. semantic/knowledge retrieval의 Free 요금제와 서비스 SKU는 별개이며, **Basic 서비스는 유지 비용이 발생**합니다. 새 서비스를 자동으로 추가하지 않습니다.
+**허가된 Basic 이상 서비스가 있으면 재사용**합니다. 없으면 2절에서 하나만 만듭니다. 서비스는 공유해도 실험별 검색 객체 이름은 구분합니다.
 
-위 비교 규모와 별도로 검색 요청·평가기 내부 호출도 발생합니다. 모델 생성·평가는 유료이며, Free 검색 할당량을 넘으면 오류가 날 수 있습니다. 리소스 보존과 무료 사용은 같은 뜻이 아닙니다.
+**Basic 유지비와 모델·검색 사용량은 별도**입니다. 검색의 Free 할당량이 서비스를 무료로 만들지는 않습니다. 할당량 초과 시 임의로 유료 전환하지 않습니다.
 
-**생성 전에** 서비스 생성·사용·유지 비용과 아래 두 역할의 서비스 범위 할당을 소유자에게 승인받습니다. 역할 할당에는 해당 범위의 `roleAssignments/write` 권한이 필요하며 일반 Contributor만으로는 부족합니다. 권한 있는 담당자가 준비할 수 없다면 여기서 중단합니다.
+생성·사용·비용과 두 역할의 서비스 범위 할당을 소유자에게 승인받습니다. 역할 할당에는 `roleAssignments/write` 권한이 필요합니다. 일반 Contributor만으로는 부족하며 담당자가 준비할 수 없다면 중단합니다.
 
 **다음:** [2. Search 준비](#create-search) · [진행표](#lab-map)
 
@@ -133,11 +120,19 @@ python lab.py doctor --live
 
 ### 2-1. 허가된 서비스 재사용 또는 신규 생성
 
-아래 `YOUR-...`를 실제 값으로 바꿉니다. 기본 실습의 전용 그룹을 사용해도 됩니다. 서비스 이름은 전역에서 고유한 소문자·숫자·하이픈이어야 합니다.
+`YOUR-...`를 아래 값으로 바꿉니다. 이름·ID·주소를 혼동하지 않습니다.
 
-**허가된 Basic 이상 서비스가 이미 있으면 아래 두 명령을 건너뛰고 그 서비스의 URL·권한을 사용합니다.** `az search service create`는 기존 서비스를 갱신할 수도 있으므로 재사용할 이름으로 실행하지 않습니다. 아래 생성은 아직 서비스가 없는 경우에만 수행합니다.
+| 자리 | 넣을 값 |
+|---|---|
+| `YOUR-SUBSCRIPTION-ID` | 공통 준비에서 확인한 구독 ID |
+| `YOUR-LAB-RESOURCE-GROUP` | Search가 속한 실제 그룹 이름. 기존 서비스가 다른 그룹에 있으면 그 그룹 |
+| `YOUR-SEARCH-NAME` | 허가된 기존 서비스 이름 또는 새 고유 이름. 소문자·숫자·하이픈 사용 |
+| `YOUR-SEARCH-RESOURCE-ID` | 2-2의 Search 조회 결과 `id` 전체 |
+| `YOUR-USER-OBJECT-ID` | 2-2의 사용자 조회 결과 `objectId` |
 
-**신규 생성 전에:** Azure 포털 → **Subscriptions → 사용할 구독 → Resource providers**에서 **`Microsoft.Search`**를 확인합니다. 미등록이면 권한 있는 담당자가 **Register** 후 `Registered`를 확인합니다. 공통 준비의 `Microsoft.CognitiveServices` 등록만으로 대신할 수 없습니다. [공급자 등록 공식 안내](https://learn.microsoft.com/azure/azure-resource-manager/management/resource-providers-and-types)에 따라 필요한 공급자만 등록합니다. 기존 Search가 다른 그룹에 있다면 아래 `YOUR-LAB-RESOURCE-GROUP`에는 그 서비스의 실제 그룹을 넣습니다.
+**기존 서비스가 있으면 아래 두 명령을 건너뜁니다.** `create`는 기존 설정도 바꿀 수 있으므로 새 이름에만 실행합니다.
+
+**신규 생성 전:** Azure 포털의 **Subscriptions → 사용할 구독 → Resource providers**에서 **`Microsoft.Search`**가 `Registered`인지 확인합니다. 미등록이면 권한 있는 담당자가 **Register**합니다. `Microsoft.CognitiveServices`와 다릅니다. [공식 등록 안내](https://learn.microsoft.com/azure/azure-resource-manager/management/resource-providers-and-types)를 따릅니다.
 
 ```bash
 az search service check-name-availability --name "YOUR-SEARCH-NAME" --type searchServices --subscription "YOUR-SUBSCRIPTION-ID"
@@ -149,7 +144,7 @@ az search service check-name-availability --name "YOUR-SEARCH-NAME" --type searc
 az search service create --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID" --location swedencentral --sku basic --identity-type SystemAssigned --semantic-search free --disable-local-auth true
 ```
 
-이 명령은 **API 키를 비활성화**합니다. 키를 조회하거나 설정 파일에 저장하지 않습니다. 생성 후 포털의 **Tags**에서 보존 의도인 `retain=true`를 기록해도 됩니다. 태그는 삭제 잠금이 아닙니다.
+이 명령은 **API 키를 비활성화**합니다. 키를 조회하거나 저장하지 않습니다.
 
 <a id="search-access"></a>
 ### 2-2. 사용자 ID와 Search 역할 확인
@@ -190,9 +185,9 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-principal-type User --role "8ebe5a00-799e-43f5-93ac-243d3dce84a7" --scope "YOUR-SEARCH-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
 ```
 
-첫 역할은 **Search Service Contributor**(인덱스·Knowledge 객체뿐 아니라 서비스 설정 관리·키 조회 권한도 포함), 두 번째는 **Search Index Data Contributor**(문서 업로드·조회·Knowledge Base retrieve)입니다. 구독 전체에 할당하지 않습니다. **이 서비스 범위 역할은 다른 참가자의 객체에도 적용되므로 이름 구분은 보안 경계가 아닙니다.** 승인된 공동 실습 범위에서만 사용합니다. 이 사용자 애플리케이션 경로는 프로젝트 관리 ID로 검색하지 않으므로 불필요한 관리 ID 역할을 추가하지 않습니다.
+첫 역할은 검색 객체·서비스 설정 관리와 키 조회, 두 번째는 문서 업로드·검색을 허용합니다. **다른 참가자 객체에도 적용되는 권한**입니다. 구독 전체에 할당하지 않으며 이름 구분은 보안 격리가 아닙니다. 검색 주체는 본인 계정이므로 프로젝트 관리 ID 역할은 추가하지 않습니다.
 
-**완료 확인:** 본인의 Object ID에 두 역할이 유효한지 확인하고 전파를 기다립니다. 역할 생성 성공만으로 데이터 접근이 입증되지는 않습니다. 3–4절에서 401/403이 나면 본인·범위·네트워크·전파를 확인한 뒤 같은 명령으로 재개합니다. 역할을 반복 생성하거나 키로 우회하지 않습니다.
+**완료 확인:** 본인 Object ID에 두 역할이 있습니다. 실제 접근은 3–4절에서 확인합니다. 401/403이면 ID·범위·네트워크·권한 반영을 확인하며 중복 할당이나 키로 우회하지 않습니다.
 
 **다음:** [3. 설정·검색 객체](#index) · [진행표](#lab-map)
 
@@ -219,9 +214,9 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 }
 ```
 
-예제의 세 객체 이름은 기본값입니다. **공유 서비스에서는 실행 전에** `index_name`·`knowledge_source`·`knowledge_base`를 허가된 참가자별 이름(예: `travel-rag-a7k3m9`, `travel-policy-ks-a7k3m9`, `travel-policy-kb-a7k3m9`)으로 정합니다. 같은 실험을 재개할 때는 이름과 `top_k: 3`을 유지하며 완결형 객체를 지정하지 않습니다.
+**공유 서비스에서는 세 이름을 참가자별로 바꿉니다.** 예: `travel-rag-a7k3m9`, `travel-policy-ks-a7k3m9`, `travel-policy-kb-a7k3m9`. 재개 시 이름과 `top_k: 3`을 유지합니다. 완결형의 객체를 지정하지 않습니다.
 
-**설정 구분:** `config.json`에는 공통 준비의 프로젝트 주소(`.services.ai.azure.com/api/projects/...`), `config.rag.json`에는 Search 주소(`.search.windows.net`)가 들어갑니다. 두 파일을 합치거나 같은 주소를 양쪽에 넣지 않습니다. [JSON 편집 요령](setup.md#setup-config)처럼 안내한 값만 수정하고 저장합니다.
+**주소 구분:** `config.json`은 프로젝트 주소(`.services.ai.azure.com/api/projects/...`), `config.rag.json`은 Search 주소(`.search.windows.net`)입니다. 파일을 합치지 말고 [JSON 편집 요령](setup.md#setup-config)에 따라 값만 바꿉니다.
 
 ### 3-2. 검색 객체 생성하기
 
@@ -235,15 +230,13 @@ python rag_lab.py setup
 
 **저장 파일:** `results/rag-setup.json`에 실제 인덱스·Knowledge Source·Knowledge Base 정의가 남습니다. 검색 성공은 다음 절의 두 질의로 별도 확인합니다.
 
-### 3-3. 생성한 객체의 범위 이해하기
+### 3-3. 검색할 문서 확인하기
 
-[청크](../optional-rag/documents.jsonl)는 기본 가상 규정을 7개 문서로 나눕니다. 공식 청크 6개와 미승인 초안 1개이며, 검색 요청의 **`approved eq true`** 필터로 초안을 제외합니다. `corpus_hash` 필터는 같은 코퍼스 버전만 사용하게 합니다. 한국어 분석기와 semantic 구성이 포함됩니다.
+[문서 7개](../optional-rag/documents.jsonl)는 공식 규정 6개와 미승인 초안 1개입니다. **`approved eq true`**로 초안을 제외하고 `corpus_hash`로 같은 문서 버전만 검색합니다.
 
-`setup`은 같은 코퍼스의 미완료 업로드는 재개할 수 있지만, 다른 코퍼스/소스가 있는 객체는 덮어쓰지 않습니다. 바꿀 때는 새 객체 이름으로 별도 실험을 만듭니다.
+`setup`은 같은 문서 묶음의 미완료 업로드를 재개합니다. 기존 설정·문서가 다르면 덮어쓰지 않고 중단합니다. 다른 실험은 소유자의 허가를 받고 새 객체 이름을 사용합니다.
 
-**선언된 설정이 다르면 생성·업로드 전에 중단합니다.** 인덱스의 분석기·semantic 구성, Source의 반환 필드, Knowledge Base의 소스 목록 등을 비교하며 서버가 추가한 기본 속성은 허용합니다. 재사용에는 여전히 소유자의 허가가 필요하고, 실험 중에는 검색 객체를 수정하지 않습니다.
-
-**구분:** 서비스 RBAC는 접근 권한입니다. `approved`는 교육용 문서의 공식 여부 필터이지 사용자별 ACL이 아닙니다. 문서별 보안·Purview·개인별 접근 통제는 이 실습의 검증 범위가 아닙니다.
+**`approved`는 공식 문서 필터이지 사용자별 접근 권한이 아닙니다.** 문서별 보안은 이 실습의 검증 범위가 아닙니다.
 
 **다음:** [4. 두 검색 경로 확인](#retrieve) · [진행표](#lab-map)
 
@@ -296,7 +289,7 @@ IQ는 `intents` 입력을 사용합니다. 앱은 반환된 승인 문서 중 �
 
 [질문 4개](../optional-rag/cases.jsonl)는 기본 dev의 D02·D03·D04·D08을 재사용합니다. 새로운 독립 holdout이라고 부르지 않습니다. [검색 정답](../optional-rag/retrieval-labels.json)은 평가 전용이며 검색 요청·답변 모델·Judge에 전달하지 않습니다.
 
-두 실행 사이에 질문·코퍼스·`optional-rag/prompt.txt`·설정·답변/Judge 모델 버전·검색 객체를 바꾸지 않습니다. **검색 경로만** 달라야 하며 계약이 다르면 비교가 거부됩니다. 변경이 필요하면 기존 결과를 보존하고 두 경로 모두 새 출력 폴더에서 별도 실험으로 시작합니다.
+**검색 방식만 바꿉니다.** 질문·문서·`optional-rag/prompt.txt`·설정·모델/Judge·검색 객체는 유지합니다. 다른 조건도 바꾸려면 결과를 보존하고 두 방식 모두 새 결과 폴더에서 시작합니다.
 
 ### 5-1. Search 답변 4개 생성·채점하기
 
@@ -344,11 +337,19 @@ python rag_lab.py compare results/rag-search results/rag-iq
 
 ### 5-4. D04의 검색 근거·답변·점수 대조하기
 
+**같은 D04를 두 결과 폴더에서 읽습니다.** 먼저 Search 결과를 엽니다.
+
+```bash
+python rag_lab.py inspect results/rag-search D04
+```
+
+**확인:** 질문·답변·두 점수·이유와 `Actual retrieved context`가 보입니다. 이어서 IQ 결과를 엽니다.
+
 ```bash
 python rag_lab.py inspect results/rag-iq D04
 ```
 
-**읽는 순서:** 실제 검색 청크 → 기대 청크 누락 → 답변 JSON → 업무 검사 → Groundedness/Relevance 이유입니다. Judge에 전달되는 `context`는 **그 답변을 생성할 때 사용한 검색 문맥과 동일**합니다.
+**완료 확인:** 두 결과의 **검색 청크 → 필수 청크 누락 → 답변 → 업무 검사 → Judge 이유**를 대조합니다. 같으면 “차이 없음”으로 기록합니다. Judge의 `context`는 각각의 답변을 만들 때 사용한 문맥입니다.
 
 #### 답변의 결정과 설명 읽기
 
@@ -361,7 +362,7 @@ python rag_lab.py inspect results/rag-iq D04
 
 `null`은 한도를 결정할 수 없거나 숙박 한도와 무관하다는 뜻이며 0원이 아닙니다.
 
-결정은 `allowed`(허용), `needs_approval`(사전 승인 필요), `not_allowed`(금지), `unknown`(규정에 없음), `needs_info`(질문 정보 부족) 중 하나입니다. D04처럼 규정에 없는 한도에 `unknown`으로 답하는 것이 올바를 수도 있습니다. 이 값이 실제 정산이나 승인을 실행하지는 않습니다.
+결정은 `allowed`(허용), `needs_approval`(사전 승인 필요), `not_allowed`(금지), `unknown`(규정에 없음), `needs_info`(정보 부족) 중 하나입니다. D04의 `unknown`은 올바른 답일 수 있습니다. 실제 정산·승인을 실행하는 값은 아닙니다.
 
 #### 검색 지표와 답변 지표 구분하기
 
@@ -384,7 +385,7 @@ python rag_lab.py inspect results/rag-iq D04
 
 Judge 통과 기준은 **4/5**입니다. 실제 문맥과 채점 이유를 사람이 검토합니다.
 
-기본 `lab.py compare/gate`는 고정 문서 실험용이므로 RAG 입력을 거부합니다. RAG는 위 전용 비교를 사용합니다. 기본 실습과 이 실습의 결과·합격률을 하나의 전후 실험처럼 합치지 않습니다.
+**비교는 `rag_lab.py compare`만 사용합니다.** `lab.py compare/gate`는 RAG 입력을 거부합니다. 입문 결과와도 합치지 않습니다.
 
 <a id="resume"></a>
 ### 명령 상태·중단·재개
@@ -427,14 +428,14 @@ Judge 통과 기준은 **4/5**입니다. 실제 문맥과 채점 이유를 사�
 
 - [ ] `results/rag-search`·`results/rag-iq` 각각 답변 4개와 두 Judge 점수·이유가 있다.
 - [ ] `results/rag-iq/rag-comparison.md`에서 검색 지표와 답변 지표를 구분해 읽었다.
-- [ ] D04의 실제 검색 문맥·답변·점수 이유를 대조했고 `REVIEW_REQUIRED`가 출시 승인이 아님을 이해했다.
+- [ ] 두 방식의 D04 검색 문맥·답변·점수 이유를 대조했고 `REVIEW_REQUIRED`가 출시 승인이 아님을 이해했다.
 - [ ] 본인 결과 폴더와 실제 자원을 보존하고 [비용 확인](cleanup.md#retain-resources)을 마쳤다.
 
 Azure 포털의 해당 Search 서비스에서 **Indexes**, **Knowledge sources**, **Knowledge bases**를 확인합니다. 포털 메뉴/미리 보기 기능은 API와 다를 수 있으므로 생성·조회 확인의 기준은 저장한 서비스 응답입니다.
 
 Foundry의 Judge 보고서 URL에서는 같은 사례의 **질문·답변·검색 문맥·두 점수·이유**를 대조합니다. 기본 실습처럼 전체 규정이 `context`에 들어가 있으면 잘못 연결한 것입니다.
 
-`run.json`에는 경로·설정·코퍼스 해시·검색 원본·참조·활동·실제 문맥과 해시·모델 답변이 남습니다. 검색은 끝났지만 생성이 끊겼다면 저장된 검색을 재사용합니다. 완료된 `run`은 새 유료 호출 없이 기록을 읽습니다.
+`run.json`에 검색 원본·문맥·답변·실행 조건이 남습니다. 재개할 때 저장된 검색·응답을 재사용합니다.
 
 - Search 서비스와 Knowledge 객체, 기존 Foundry 자원·평가 결과는 **모두 유지**합니다.
 - Free 할당량 초과를 이유로 자동으로 유료 요금제로 전환하지 않습니다.
@@ -444,12 +445,12 @@ Foundry의 Judge 보고서 URL에서는 같은 사례의 **질문·답변·검�
 [진행표로 돌아가기](#lab-map) · [중단·재개 찾기](#resume)
 
 <a id="observed-results"></a>
-### 이전 최소 RAG 기록과 참고 범위
+### 이전 Optional RAG 기록
 
 <details>
 <summary>이전 실행 기록을 참고할 때만 펼치기</summary>
 
-작성자의 이전 Free 서비스·기록 정리는 과거 전환 기록이지 참가자의 삭제 단계나 현재 자원 상태 확인이 아닙니다. [완결형의 기록된 결과](complete-lab.md#results)는 별도 벡터·계획·대화 실험의 관측값이며, 이 최소 RAG의 `search`/`iq` 비교를 재검증한 증거는 아닙니다. 이 API 연습은 허가된 Basic 서비스의 별도 인덱스에서 실행하고, 본인의 `rag-comparison.md`와 각 `rag-report.md`로 판단합니다.
+작성자의 과거 Free 서비스 정리는 **참가자의 삭제 지시가 아닙니다**. [완결형 기록](complete-lab.md#results)도 이 `search`/`iq` 비교의 검증을 대신하지 않습니다. 허가된 Basic 서비스의 별도 인덱스에서 실행하고 본인 보고서로 판단합니다.
 
 </details>
 

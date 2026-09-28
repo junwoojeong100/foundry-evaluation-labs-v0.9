@@ -169,7 +169,7 @@ Older records without a `reviewer` field retain their legacy human interpretatio
 <a id="artifacts"></a>
 ## Saved evidence
 
-The file table and mappings below describe **introductory `lab.py`**. For minimal RAG, use [retrieval/input evidence](optional-rag.md#evidence); for complete RAG, use [stage-specific artifacts](complete-lab.md#resume). Minimal RAG passes retrieved context rather than the whole policy, and complete RAG has a separate dialogue evaluation contract.
+The table below covers **introductory `lab.py`**. For Optional RAG, use [retrieval evidence](optional-rag.md#evidence); for Complete RAG, use [stage artifacts](complete-lab.md#resume). RAG passes retrieved context, not the full policy. Complete RAG also evaluates dialogue.
 
 | File | Contents |
 |---|---|
@@ -435,7 +435,7 @@ SDK tests run when dependencies are installed; otherwise only those tests are sk
 <a id="live-verification"></a>
 ### Evidence scope by learning path
 
-Keep the author's earlier introductory records separate. On September 28, 2026, a new group was used to rerun **the shared N01 setup smoke and the entire recommended complete path**. The [recorded complete-path result](complete-lab.md#results), with every final V2 metric passing including Relevance, is **one observation from a separate vector/planning/dialogue experiment**. It does not revalidate the entire introductory LIVE path or minimal RAG in the current environment.
+Separate from earlier introductory records, the author ran **shared N01 setup and the complete path** in a new group on September 28, 2026. The [recorded result](complete-lab.md#results), with all required final V2 metrics passing including Relevance, is **one observation**. It does not revalidate introductory LIVE or Optional RAG.
 
 The retained V1 comparison, calibration, and acceptance evidence belongs to that complete-path run only. Use reports from your own path; do not treat another execution's scores as a reproduction target.
 

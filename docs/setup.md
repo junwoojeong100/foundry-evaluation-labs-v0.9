@@ -1,12 +1,12 @@
 [English](en/setup.md) | **한국어**
 
-# 공통 환경 준비 · 중단과 재개
+# 공통 환경 준비
 
 [전체 경로](../README.ko.md) · [준비 진행표](#setup-map) · [중단·재개](#resume) · [문제 해결](reference.md#troubleshooting)
 
-**입문 LIVE·완결형 RAG·Optional RAG가 함께 쓰는 준비 1–7입니다.** 새 실습은 [선택한 가이드](../README.ko.md#choose-path)에서 시작합니다. 입문 참가자는 설치 전에 [실습 0](intro-lab.md#lab-0)을 먼저 합니다. DEMO는 [별도 로컬 준비](offline.md#prepare)만 필요합니다.
+**유료 경로의 공통 준비입니다.** [선택한 가이드](../README.ko.md#choose-path)에서 안내받았을 때 진행합니다. DEMO 참가자는 [DEMO 준비](offline.md#prepare)로 이동합니다.
 
-아래에서 **신규 준비·기존 환경·재개 중 본인 상황 하나**를 선택합니다. 이미 완료한 명령은 반복하지 않습니다.
+아래에서 본인 상황 하나를 선택합니다. 완료한 단계는 반복하지 않습니다.
 
 <a id="setup-options"></a>
 ## 내 상황에 맞는 준비 선택
@@ -25,22 +25,22 @@
 ## 준비. 내 PC와 Azure 연결하기
 
 > [!IMPORTANT]
-> **RAG 참가자는 준비 1–7 후 원래 경로로 돌아갑니다.** [완결형 Search 준비](complete-lab.md#search-setup) 또는 [Optional RAG 준비](optional-rag.md#prerequisites)로 복귀하며 입문 실습 전체를 수행하지 않습니다. 여기서는 공통 프로젝트와 답변·Judge용 모델 한 개만 준비합니다.
+> **준비 7을 마치면 원래 가이드로 돌아갑니다.** RAG 참가자는 [완결형 Search 준비](complete-lab.md#search-setup) 또는 [Optional RAG 준비](optional-rag.md#prerequisites)로 이동합니다. 입문 실습 전체를 수행할 필요는 없습니다.
 
-**이미 허가받은 환경이 있다면** 아래 신규 생성 절차 대신 [기존 환경 준비](#existing-environment)를 수행합니다. 입문 참가자는 그 뒤 [실습 1](intro-lab.md#lab-1), RAG 참가자는 위에서 선택한 본인 가이드로 이어갑니다.
+**허가된 프로젝트·모델이 있다면 [기존 환경 준비](#existing-environment)로 이동합니다.** 아래는 새 환경을 만드는 절차입니다.
 
 | 준비 항목 | 공통 준비에서 사용할 값 |
 |---|---|
 | 모델 / 배포 이름 | **`gpt-6-luna` / `eval-model`** — 답변 생성과 Judge가 같은 배포 사용 |
 | 지역 | **Sweden Central (`swedencentral`)** |
-| 새로 준비할 범위 | **프로젝트 1개 + 모델 배포 1개** |
-| 계정·구독 | Microsoft Entra ID 계정 + 활성 Azure 구독. API 키 사용 안 함 |
+| 새로 만들 것 | **전용 리소스 그룹 → Foundry 리소스 → 프로젝트·모델 배포 각 1개** |
+| 계정·구독 | Microsoft Entra ID 계정(Azure에 로그인할 조직 계정) + 활성 Azure 구독. API 키 사용 안 함 |
 | 신규 환경의 시작 권한 | 구독의 **활성 Owner 역할**. 적용되는 상속 역할 포함 |
 | 종료 후 | **모든 리소스 보존** + [비용 확인](cleanup.md#retain-resources). 삭제는 별도 결정 |
 
-Owner는 한 사람이 자원 생성과 역할 할당을 진행하도록 선택한 조건입니다. 모든 Azure 자원 생성이나 기존 환경 사용에 Owner가 필요한 것은 아닙니다. 다른 허가된 역할 조합은 [권한 계약](reference.md#permissions-contract)을 참고합니다.
+Owner는 이 절에서 자원 생성과 역할 할당을 혼자 수행하기 위한 조건입니다. 기존 환경 사용자에게까지 요구하지 않습니다. 다른 역할 조합은 [작업별 권한](reference.md#permissions-contract)을 확인합니다.
 
-이 공통 단계에는 검색 서비스·에이전트 서버·Docker·Git·azd·Jupyter가 필요 없습니다. RAG의 Search와 추가 모델은 본인 가이드에서 준비합니다. **실제 개인정보·기밀·비밀번호는 입력하지 않습니다.**
+이 단계에서는 아래 도구만 설치합니다. RAG의 Search·추가 모델은 원래 가이드에서 준비합니다. **개인정보·기밀·비밀번호는 입력하지 않습니다.**
 
 **비용:** 모델·토큰 사용량에 따라 청구됩니다. 예산 알림과 TPM 설정은 자동 지출 차단이 아닙니다.
 
@@ -65,9 +65,9 @@ Owner는 한 사람이 자원 생성과 역할 할당을 진행하도록 선택�
 
 #### 폴더와 터미널 열기
 
-1. [저장소](https://github.com/junwoojeong100/foundry-evaluation-labs-v1)의 **Code → Download ZIP**을 선택하고 압축을 풉니다. 이미 받았다면 생략합니다. 비공개 저장소에 접근할 수 없다면 소유자가 승인한 ZIP을 받습니다. Azure 권한과 GitHub 권한은 별개입니다.
+1. [저장소](https://github.com/junwoojeong100/foundry-evaluation-labs-v1)의 **Code → Download ZIP**으로 받아 압축을 풉니다. 이미 받았다면 생략합니다. 접근할 수 없으면 소유자에게 저장소 접근 권한이나 승인된 ZIP을 요청합니다.
 2. 아래 도구를 설치합니다. 설치 후에는 새 터미널을 엽니다.
-3. VS Code에서 **File → Open Folder**로 **`lab.py`와 `requirements.txt`가 바로 보이는 폴더**를 엽니다. 압축을 푼 바깥 폴더가 아니라 실제 파일이 있는 폴더입니다.
+3. VS Code의 **File → Open Folder**에서 **`lab.py`와 `requirements.txt`가 바로 보이는 폴더**를 엽니다.
 4. **Terminal → New Terminal**을 선택합니다. 이후 명령은 이 터미널에 입력합니다.
 
 **내 PC의 VS Code 터미널을 사용합니다.** Azure 포털의 **Azure Cloud Shell**이나 노트북 셀이 아닙니다.
@@ -75,7 +75,7 @@ Owner는 한 사람이 자원 생성과 역할 할당을 진행하도록 선택�
 - **Windows:** PowerShell. 다른 셸이 열리면 터미널의 `+` 옆 화살표 → **Select Default Profile → PowerShell**을 선택하고 새 터미널을 엽니다.
 - **macOS/Linux:** zsh 또는 bash.
 
-브라우저는 가이드 읽기·Azure 화면 조작에, VS Code는 **내 PC의 파일 수정·명령 실행**에 사용합니다. 브라우저의 파일 링크를 읽어도 로컬 파일은 바뀌지 않습니다.
+**브라우저에서는 가이드를 읽고 Azure를 조작합니다. 파일 수정과 명령 실행은 VS Code에서 합니다.**
 
 **`>>>`가 보이면** Python 대화창입니다. `exit()`로 나온 뒤 명령을 실행합니다. Python 파일의 실행 버튼은 사용하지 않습니다.
 
@@ -115,13 +115,21 @@ py -3 -m venv .venv
 <details>
 <summary>Windows에서 Activate.ps1 실행이 차단될 때</summary>
 
-조직 정책을 해제하지 않습니다. 패키지 설치부터 이후의 모든 `python`을 **`.\.venv\Scripts\python.exe`로 바꿔** 실행합니다. 예를 들어 `python lab.py doctor`는 `.\.venv\Scripts\python.exe lab.py doctor`가 됩니다. `az`로 시작하는 명령은 바꾸지 않습니다.
+조직 정책을 해제하지 않습니다. 이후 모든 `python`을 **`.\.venv\Scripts\python.exe`**로 바꿉니다. 예: `.\.venv\Scripts\python.exe lab.py doctor`. `az` 명령은 그대로 실행합니다.
 
 </details>
 
-#### 패키지 설치 후 로컬 파일 확인하기
+#### 설치할 가상환경 확인하기
 
-이제 운영체제와 관계없이 패키지를 설치합니다. Windows 활성화가 실패했다면 위 **“Windows에서 Activate.ps1 실행이 차단될 때”**를 펼쳐 대체 실행 방법부터 적용합니다.
+아래 명령으로 패키지 설치 위치를 확인합니다. Windows 활성화가 막혔다면 위 대체 방법을 먼저 적용합니다.
+
+```bash
+python -m pip --version
+```
+
+**완료 확인:** 출력의 `from` 뒤 경로가 **이번 실습 폴더의 `.venv` 안**입니다. 다른 경로라면 설치하지 말고 위 가상환경을 다시 활성화합니다.
+
+#### 패키지 설치와 로컬 확인
 
 ```bash
 python -m pip install -r requirements.txt
@@ -135,7 +143,7 @@ python lab.py doctor
 
 **완료 확인:** `LOCAL OK: Python ... , dev 8개, holdout 4개`.
 
-로컬 파일 확인까지 끝났습니다. **아직 Azure 연결 성공을 뜻하지는 않습니다.**
+`LOCAL OK`는 로컬 파일 확인입니다. **Azure 연결은 준비 6–7에서 확인합니다.**
 
 <details>
 <summary>새 터미널이나 폴더 변경 후 다시 시작할 때</summary>
@@ -149,9 +157,7 @@ python lab.py doctor
 <a id="working-files"></a>
 **공통 준비에서 편집할 파일은 `config.json` 하나입니다.** 준비 6에서 `config.example.json`을 복사해 `lab.py` 옆에 저장합니다. 아직 만들거나 편집하지 않아도 됩니다.
 
-이후 파일은 선택한 가이드에서 안내합니다. 입문은 [작업 파일 표](intro-lab.md#working-files), RAG는 본인의 가이드를 따릅니다. 포함된 예제와 이전에 작성한 본인 작업을 구분하고 덮어쓰지 않습니다.
-
-**결과 폴더와 보고서는 명령이 자동으로 만듭니다.** 생성된 JSON·보고서는 직접 수정하지 않습니다. 원본 규정·질문·프롬프트를 유지하고 작업 파일은 **UTF-8**로 저장합니다.
+이후 파일은 [입문 작업 파일 표](intro-lab.md#working-files) 또는 본인의 RAG 가이드에서 안내합니다. **기존 작업을 덮어쓰지 않습니다.** 결과 폴더·보고서는 자동 생성되므로 직접 수정하지 않습니다. 작업 파일은 **UTF-8**로 저장합니다.
 
 **다음:** [준비 2. 로그인](#setup-sign-in) · [준비 진행표](#setup-map)
 
@@ -163,7 +169,7 @@ python lab.py doctor
 
 1. Entra ID 계정으로 로그인한 뒤 **Subscriptions / 구독**에서 사용할 구독을 엽니다.
 2. **Overview / 개요**의 **구독 ID와 디렉터리(테넌트) ID**를 확인합니다. 바로 아래 로그인 명령에 이 값을 사용합니다.
-3. **Access control (IAM) → View my access**에서 구독 범위의 **Owner**가 활성인지 확인합니다. PIM의 적격 역할만 있다면 조직 절차로 활성화합니다.
+3. **Access control (IAM) → View my access**에서 구독 범위의 **Owner**가 활성인지 확인합니다. PIM에서 “적격”으로만 보이면 아직 활성 권한이 아닙니다. 조직 절차로 활성화합니다.
 4. 같은 구독의 **Resource providers / 리소스 공급자**에서 `Microsoft.CognitiveServices`를 확인합니다. 미등록이면 **Register**를 선택하고 `Registered`까지 기다립니다.
 
 **실행 위치: VS Code 터미널.** `YOUR-...`는 문자 그대로 입력하는 값이 아닙니다. 확인한 실제 ID로 바꾸되 따옴표는 유지합니다.
@@ -188,9 +194,7 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 - 구독 ID·테넌트 ID는 포털과 터미널에서 같습니다. **구독 이름만으로 판단하지 않습니다.**
 - `state`는 `Enabled`입니다.
 
-여러 계정으로 로그인했다면 기본 구독이 다른 계정을 가리킬 수 있습니다. 구독이 안 보이면 사용할 구독의 테넌트로 로그인했는지 먼저 확인합니다.
-
-**브라우저와 Azure CLI는 로그인 세션이 별개입니다.** Foundry나 보고서 URL에서 **Pick an account / 계정 선택**이 다시 나오면 위 `account`와 같은 계정을 선택합니다. New Foundry로 전환할 때 다시 선택할 수도 있습니다. CLI에서 로그인했다고 다른 브라우저나 headless 브라우저까지 인증된 것은 아닙니다.
+구독이 안 보이면 로그인한 테넌트를 확인합니다. **브라우저와 CLI는 각각 로그인합니다.** Foundry에서 계정을 다시 물으면 위 `account`와 같은 계정을 선택합니다.
 
 **다음:** [준비 3. 프로젝트](#setup-project) · [준비 진행표](#setup-map)
 
@@ -229,7 +233,7 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 
 **완료 확인:** **Manage → Project details / Resource details**에서 프로젝트와 상위 Foundry 리소스를 확인할 수 있고, Azure 포털의 전용 그룹에서도 배포 상태가 `Succeeded`입니다. 그룹·리소스·프로젝트 이름과 실제 지역을 대조합니다.
 
-**리소스 그룹의 지역만 맞추면 끝나는 것이 아닙니다.** 상위 Foundry 리소스와 프로젝트도 `swedencentral`인지 각각 확인합니다. 지정 지역이 모델 용량을 보장하지는 않습니다. 조직 정책·지역·쿼터로 막히면 [모델 가용성 도움말](reference.md#model-availability)을 확인하고, 다른 지역으로 임의 변경하거나 기존 환경의 방화벽·네트워크 제한을 해제하지 않습니다.
+**그룹·Foundry 리소스·프로젝트의 지역을 각각 확인합니다.** 모델 용량이나 조직 정책으로 막히면 [가용성 도움말](reference.md#model-availability)을 봅니다. 지역을 임의 변경하거나 방화벽을 해제하지 않습니다.
 
 포털 대신 명령으로 준비하려면 [Azure CLI 신규 환경 경로](#cli-provision)를 사용합니다. **준비 3–5의 대체 경로**이며 두 경로로 자원을 중복 생성하지 않습니다.
 
@@ -241,16 +245,16 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 
 **Owner만 있다고 모델 호출과 평가까지 되는 것은 아닙니다.** 내 터미널은 **본인 계정**, 클라우드 평가 작업은 **프로젝트 관리 ID**의 권한을 사용합니다. 관리 ID는 프로젝트가 Azure 서비스에 접근할 때 사용하는 신원입니다.
 
-아래 상위 리소스 역할 할당은 **본인 전용 실습 환경의 공통 시작 구성**이며, 모든 평가·기존 프로젝트의 유일한 최소 범위는 아닙니다. 권한은 하위 프로젝트에도 상속됩니다. 공유·기존 환경은 [권한 계약](reference.md#permissions-contract)에 따라 소유자와 필요한 범위를 확인합니다.
+아래 권한은 **본인 전용 환경**의 시작 구성입니다. 하위 프로젝트에도 상속됩니다. 공유 환경은 소유자와 [필요한 범위](reference.md#permissions-contract)를 확인하며 임의로 넓히지 않습니다.
 
 #### 프로젝트에서 관리 ID 확인하기
 
 **프로젝트에서 ID 확인 → 상위 리소스에서 역할 확인** 순서입니다. 두 대상을 구분합니다.
 
-1. Foundry의 **Manage → Project details**에서 프로젝트의 Azure 리소스를 엽니다. 리소스 ID가 **`/accounts/실제리소스이름/projects/실제프로젝트이름`**으로 끝나는지 준비 3에서 확인한 이름과 대조합니다. 기본 경로의 프로젝트 이름은 `eval-workshop`이며, 기존 환경에서는 허가받은 실제 이름을 사용합니다.
+1. Foundry의 **Manage → Project details**에서 프로젝트의 Azure 리소스를 엽니다. ID 끝이 **`/accounts/실제리소스이름/projects/실제프로젝트이름`**인지 확인합니다. 새 프로젝트 이름은 `eval-workshop`입니다.
 2. 그 프로젝트의 **Identity → System assigned → Object (principal) ID**를 확인해 아래 IAM 대상과 대조합니다. 상위 Foundry 리소스의 관리 ID를 복사하지 않습니다. 메뉴나 ID가 없으면 [관리 ID 선택 도움말](reference.md#managed-identity-access)을 봅니다.
 
-**아래는 화면에서 대조할 값을 보여 주는 설명용 그림이며 실제 포털 캡처가 아닙니다.** 이름·메일·ID는 가상 값이므로 복사하지 않고 본인 화면의 값을 사용합니다.
+**아래는 설명용 그림이며 실제 포털 캡처가 아닙니다.** 그림의 가상 값 대신 본인 화면의 이름·ID를 사용합니다.
 
 ![프로젝트 화면의 Object (principal) ID를 상위 Foundry 리소스 IAM의 프로젝트 관리 ID와 대조하고, 같은 리소스 범위에서 본인과 프로젝트에 각각 Foundry User가 있는지 확인하는 그림](images/foundry-permissions.svg)
 
@@ -267,9 +271,7 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 2. 본인에게 없다면 **Add → Add role assignment → Foundry User → User, group, or service principal**에서 본인을 선택하고 **Review + assign**합니다.
 3. 프로젝트 관리 ID에 없다면 같은 역할의 **Members → Managed identity**에서 위에서 확인한 프로젝트를 선택합니다. 대상 상세의 **Object ID가 앞서 확인한 프로젝트의 ID와 같은지 확인한 뒤** 할당합니다. 이름만 같은 다른 대상을 선택하지 않습니다.
 
-목록에서 찾지 못하면 [관리 ID 선택 도움말](reference.md#managed-identity-access)을 사용합니다. 같은 이름의 다른 ID로 대체하지 않습니다.
-
-**완료 확인:** 본인 계정과 **확인한 프로젝트 ID** 모두 **Foundry 리소스 범위**의 Foundry User가 있습니다. 구독 전체에 추가하지 않습니다. 권한 반영이 늦어도 같은 역할을 중복 생성하지 않습니다.
+**완료 확인:** 본인과 프로젝트 ID 모두 **Foundry 리소스 범위**의 Foundry User가 있습니다. 찾지 못하면 [관리 ID 도움말](reference.md#managed-identity-access)을 봅니다. 구독 전체 할당이나 중복 할당으로 해결하지 않습니다.
 
 **다음:** [준비 5. 모델](#setup-model) · [준비 진행표](#setup-map)
 
@@ -293,11 +295,11 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 
 **완결형 RAG 참가자는 버전 `2026-09-22`가 필요합니다.** 기록된 V1 비교의 [고정 버전 조건](complete-lab.md#setup)을 확인하고, 제공되지 않으면 Search·추가 모델을 만들기 전에 경로를 다시 선택합니다. 위의 “제공되는 버전” 선택은 별도 입문 경로에 해당합니다.
 
-**Provisioned/PTU·GPU 배포는 선택하지 않습니다.** Global Standard는 사용량 기반이며, 리소스를 `swedencentral`에 만들어도 추론 처리가 그 지역에만 머무는 방식은 아닙니다. 모델이 없거나 쿼터가 부족하면 [모델·지역 선택 도움말](reference.md#model-availability)을 따릅니다. 다른 모델·지역으로 임의 대체하거나 다른 사람의 쿼터를 줄이지 않습니다.
+**Provisioned/PTU·GPU 배포는 선택하지 않습니다.** Global Standard는 사용량 기반이며 스웨덴 내 처리만 보장하지는 않습니다. 모델·쿼터가 없으면 [도움말](reference.md#model-availability)을 따릅니다. 모델·지역을 임의 변경하거나 다른 배포의 쿼터를 줄이지 않습니다.
 
 **완료 확인:** **Build → Models**에서 **`eval-model`**이 `Succeeded`이고 연결된 모델이 **`gpt-6-luna`**입니다. 모델 이름·버전·배포 유형을 기록합니다. **모델 이름 `gpt-6-luna`와 배포 이름 `eval-model`을 혼동하지 않습니다.**
 
-이 배포 하나를 답변 생성과 AI 채점에 함께 사용합니다. **카탈로그 조회나 배포 성공만으로 Chat Completions·Structured Outputs(JSON Schema)·클라우드 Judge가 모두 동작한다고 판단하지 않습니다.** [준비 7의 한 건 생성·평가](#setup-smoke)로 실제 호환성을 확인합니다. 호출은 별개이고 같은 모델도 잘못 채점할 수 있으므로 뒤에서 사람 판단과 대조합니다.
+이 배포 하나로 답변 생성과 AI 채점을 각각 호출합니다. 배포 성공만으로 실행을 보장하지 않습니다. [준비 7](#setup-smoke)에서 JSON 답변 생성과 클라우드 채점을 확인합니다.
 
 **다음:** [준비 6. 설정 파일](#setup-config) · [준비 진행표](#setup-map)
 
@@ -346,7 +348,12 @@ python lab.py doctor --live
 <a id="command-status"></a>
 ### 명령 결과를 보고 다음 행동 고르기
 
-**완료 메시지 → 건수 → 보고서** 순서로 확인합니다. 낮은 점수는 관찰 결과이지만 `ERROR:`는 해결 후 진행해야 합니다. 이후 모든 `run`, `judge`, `gate`에 같은 규칙을 적용합니다.
+**완료 메시지 → 건수 → 보고서** 순서로 확인합니다.
+
+- `ERROR:`가 나오면 멈추고 원인을 해결합니다.
+- `아직 처리 중입니다`가 나오면 **같은 명령 전체**를 다시 실행합니다. `--like`도 유지합니다.
+- `FAIL`·낮은 점수는 답변의 품질 결과입니다. 오류와 구분합니다.
+- `BLOCK`은 최종 기준 미달입니다. 보고서에서 품질 실패와 검토 누락을 구분합니다.
 
 <details>
 <summary>출력별 다음 행동 — 완료·대기·오류·BLOCK·재개</summary>
@@ -366,9 +373,13 @@ python lab.py doctor --live
 
 `judge`의 기본 **상태 조회 대기 예산은 300초**입니다. 인증·제출·HTTP 응답·결과 수집 때문에 전체 명령은 더 걸릴 수 있습니다. `아직 처리 중입니다`로 끝나면 같은 명령을 재실행합니다. **저장된 원격 작업을 조회**하며 새 평가를 제출하지 않습니다. 새 터미널에서 동시에 실행하지 않습니다.
 
-**오류·중단 뒤에는 원인을 해결하고 [결과 파일별 재개 표](#resume-checkpoints)를 확인합니다.** 미완료 `run`은 같은 입력·같은 `--out`으로 재개하면 저장된 답변은 건너뜁니다. 다만 중단 전에 저장되지 않은 답변은 재호출 비용이 발생할 수 있습니다. 원격 작업이 처리 중이거나 completed이고 ID가 저장되어 있다면, `judge`도 연결·로컬 저장 오류 해결 후 조회·수집을 재개할 수 있습니다. 제출 직후 ID 저장 전에 끊겼거나 서비스 상태가 `failed`/`canceled`라면 무작정 재제출하지 말고 [원격 ID 복구](reference.md#resume)를 따릅니다.
+**오류 원인을 해결한 뒤 [재개 표](#resume-checkpoints)를 따릅니다.**
 
-**`평가 완료`는 점수·이유 검증과 `judge.json`·`report.md` 저장이 끝난 뒤에만 나옵니다.** JSON을 직접 세거나 수정할 필요 없이 **완료 건수 → `보고서:`에 나온 `report.md` → `사례별 근거`의 답변·점수 이유** 순서로 확인합니다. 오류나 점수 누락은 낮은 점수와 다릅니다. 완료 후에는 다음 단계로 갑니다. 완료된 `run`·`judge`를 반복해도 더 좋은 답을 만들지 않고 저장된 결과를 읽습니다.
+- 미완료 `run`: 같은 입력·`--out`으로 실행하면 저장한 답변은 건너뜁니다. 저장 전에 끊긴 응답은 재호출 비용이 들 수 있습니다.
+- ID가 저장된 `judge`: 원격 작업이 처리 중이거나 `completed`라면 조회·수집을 재개합니다.
+- ID 저장 전 중단 또는 원격 `failed`/`canceled`: 재제출 전에 [원격 ID 복구](reference.md#resume)를 확인합니다.
+
+`평가 완료`는 점수·이유 검증과 파일 저장까지 끝났다는 뜻입니다. **완료 건수 → `report.md` → `사례별 근거`**를 읽고 진행합니다. 완료된 명령을 반복해도 저장 결과를 재사용합니다.
 
 </details>
 
@@ -404,11 +415,15 @@ python lab.py judge results/setup-smoke
 python lab.py inspect results/setup-smoke N01
 ```
 
-**완료 확인:** 답변의 업무 검사에 `"schema": true`, `groundedness`와 `relevance`에 각각 **1–5점과 이유**가 있습니다. 출력된 **Foundry 보고서 URL**을 열어 포털에서도 같은 질문·답변·점수를 확인합니다. URL이 없으면 프로젝트의 **Evaluation / 평가**에서 `results/setup-smoke/foundry-job.json`의 `eval_id`·`run_id`와 대조해 찾습니다.
+**완료 확인:** 아래 세 가지를 확인합니다.
+
+1. 업무 검사에 `"schema": true`가 있습니다.
+2. `groundedness`와 `relevance`에 각각 **1–5점과 이유**가 있습니다.
+3. 출력된 **Foundry 보고서 URL**에서 같은 질문·답변·점수를 확인합니다. URL이 없으면 프로젝트의 **Evaluation / 평가**에서 `results/setup-smoke/foundry-job.json`의 `eval_id`·`run_id`로 찾습니다.
 
 점수가 낮아도 연결이 확인됐으면 진행합니다. 인증 오류·잘린 답변·누락된 점수는 먼저 해결합니다. 이 `N01`은 연결 확인용이며 본 실습의 질문에는 포함되지 않습니다.
 
-**Judge가 5점인데 `citations`만 FAIL일 수도 있습니다.** 예를 들어 초안은 적용할 수 없다고 올바르게 설명했더라도 출처 배열에 `FAQ-DRAFT`를 함께 넣으면 엄격한 출처 집합 검사에는 실패합니다. 답변 JSON 형식과 두 점수·이유가 유효하면 연결 확인은 완료하고, 이 차이는 평가 관찰로 기록합니다.
+**Judge가 5점이어도 `citations`는 FAIL일 수 있습니다.** 불필요한 출처를 넣으면 코드 검사는 실패합니다. 형식과 두 점수·이유가 유효하면 연결 확인은 완료입니다.
 
 **준비 끝. 아래에서 본인 경로 하나만 선택해 돌아갑니다.** RAG 참가자는 입문 실습 1로 가지 않습니다.
 
@@ -425,7 +440,7 @@ python lab.py inspect results/setup-smoke N01
 <a id="cli-provision"></a>
 ## 선택: Azure CLI로 신규 환경 준비
 
-**이 문서의 준비 1–2를 완료한 뒤, 준비 3–5의 포털 조작 대신 사용하는 경로**입니다. Azure CLI **2.80.0 이상**과 생성·역할 할당 권한이 필요합니다. Owner는 두 작업을 수행하는 한 방법이지 모든 참가자의 최소 역할은 아닙니다. [공식 프로젝트 생성 문서](https://learn.microsoft.com/azure/foundry/how-to/create-projects)를 따르며 `azd`, 검색 서비스, 에이전트 서버는 추가하지 않습니다. 이미 프로젝트·모델을 만들었다면 다시 실행하지 않습니다.
+**준비 1–2 후 포털 준비 3–5를 대신하는 절차**입니다. Azure CLI **2.80.0 이상**과 생성·역할 할당 권한이 필요합니다. [공식 생성 안내](https://learn.microsoft.com/azure/foundry/how-to/create-projects)를 따릅니다. 이미 프로젝트·모델이 있으면 실행하지 않습니다.
 
 `YOUR-...`를 준비 2에서 확인한 구독 ID와 본인이 사용할 실제 값으로 바꿉니다. 그룹·Foundry 리소스 이름은 본인 고유 이름, 프로젝트는 `eval-workshop`, 배포는 `eval-model`을 사용합니다. 아래 명령은 macOS/Linux와 PowerShell에서 동일합니다.
 
@@ -448,7 +463,7 @@ az group create --name "YOUR-LAB-RESOURCE-GROUP" --location swedencentral --subs
 az cognitiveservices account create --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --kind AIServices --sku S0 --location swedencentral --custom-domain "YOUR-FOUNDRY-ACCOUNT" --assign-identity --allow-project-management true --subscription "YOUR-SUBSCRIPTION-ID" --yes
 ```
 
-**`--assign-identity`와 `--allow-project-management true`를 생략하지 않습니다.** 상위 리소스의 관리 ID와 프로젝트 관리 기능이 필요합니다. Custom domain은 전역에서 고유해야 합니다. `retain=true` 태그는 보존 의도를 기록할 뿐 삭제를 차단하는 잠금이나 과금 중지 장치가 아닙니다.
+**`--assign-identity`와 `--allow-project-management true`를 생략하지 않습니다.** 관리 ID·프로젝트 관리에 필요합니다. Custom domain은 전역 고유 이름이어야 합니다. `retain=true`는 보존 표시일 뿐 삭제·과금 차단이 아닙니다.
 
 ### 2. 프로젝트와 실제 주소·ID 확인
 
@@ -464,7 +479,13 @@ az cognitiveservices account show --name "YOUR-FOUNDRY-ACCOUNT" --resource-group
 az cognitiveservices account project show --name "YOUR-FOUNDRY-ACCOUNT" --resource-group "YOUR-LAB-RESOURCE-GROUP" --project-name eval-workshop --subscription "YOUR-SUBSCRIPTION-ID" --query "{id:id,location:location,state:properties.provisioningState,principalId:identity.principalId,endpoints:properties.endpoints}" --output json
 ```
 
-두 자원의 지역 `swedencentral`과 상태 `Succeeded`를 확인합니다. 첫 조회의 `id`는 아래 **`YOUR-FOUNDRY-RESOURCE-ID`**, 프로젝트 조회의 `principalId`는 **`YOUR-PROJECT-PRINCIPAL-ID`**입니다. `endpoints`의 **AI Foundry API** 주소를 준비 6의 `config.json`에 사용합니다. 주소를 이름으로 조립하지 않습니다.
+**완료 확인:** 두 자원 모두 지역 `swedencentral`, 상태 `Succeeded`입니다. 조회 값을 다음과 같이 사용합니다.
+
+| 조회 결과 | 사용할 곳 |
+|---|---|
+| 상위 리소스의 `id` | `YOUR-FOUNDRY-RESOURCE-ID` |
+| 프로젝트의 `principalId` | `YOUR-PROJECT-PRINCIPAL-ID` |
+| 프로젝트 `endpoints`의 **AI Foundry API** | 준비 6의 `config.json`. 주소를 추측해 만들지 않음 |
 
 ### 3. 본인과 프로젝트 관리 ID의 권한
 
@@ -482,7 +503,7 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 az role assignment create --assignee-object-id "YOUR-PROJECT-PRINCIPAL-ID" --assignee-principal-type ServicePrincipal --role "53ca6127-db72-4b80-b1b0-d745d6d5456d" --scope "YOUR-FOUNDRY-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
 ```
 
-두 역할 모두 **Foundry User**이고 범위는 `/accounts/실제리소스이름`까지입니다. 구독 전체나 다른 리소스로 넓히지 않습니다. 이 상위 범위는 하위 프로젝트에도 상속되므로 **본인 전용 환경의 시작 구성**으로 사용합니다. 기존 공유 환경의 범위를 임의로 넓히지 않습니다. 본인은 `User`, 프로젝트 관리 ID는 `ServicePrincipal`이며 상위 계정의 관리 ID와는 별개입니다.
+두 역할은 **Foundry User**, 범위는 `/accounts/실제이름`까지이며 하위 프로젝트에 상속됩니다. 본인은 `User`, **프로젝트** 관리 ID는 `ServicePrincipal`입니다. 계정 관리 ID와 혼동하거나 구독·공유 환경으로 범위를 넓히지 않습니다.
 
 ### 4. 모델·쿼터 확인 후 한 개 배포
 
@@ -494,7 +515,7 @@ az cognitiveservices model list --location swedencentral --subscription "YOUR-SU
 az cognitiveservices usage list --location swedencentral --subscription "YOUR-SUBSCRIPTION-ID" --query "[?name.value=='OpenAI.GlobalStandard.gpt-6-luna'].{name:name.value,current:currentValue,limit:limit}" --output json
 ```
 
-첫 조회는 SKU 정보가 빠지지 않도록 해당 모델 항목 전체를 보여 줍니다. 모델·선택 버전·`GlobalStandard` 지원과 용량 단위를 확인합니다. 아래는 기록된 **60K TPM / capacity 60** 구성의 예시입니다. 현재 모델/SKU에서도 **capacity 1 = 1000 TPM**인지 확인하고, 해당 쿼터의 **`limit - current`가 60 이상**일 때만 사용합니다. 다른 모델의 단위나 쿼터 이름을 이 예시로 추정하지 않습니다.
+모델·버전·`GlobalStandard` 지원과 용량 단위를 확인합니다. 아래 명령은 **60K TPM / capacity 60** 예시입니다. 현재 모델/SKU도 **capacity 1 = 1000 TPM**이고 **`limit - current`가 60 이상**일 때만 사용합니다. 다른 모델의 단위를 추정하지 않습니다.
 
 쿼터 조회에는 구독 범위의 조회 권한이 따로 필요합니다. 403이나 빈 목록을 “쿼터 0”으로 단정하지 말고 [권한·가용성 도움말](reference.md#model-availability)에서 계정·권한·제공 여부를 확인합니다. 남은 쿼터가 있어도 지역의 실제 배포 용량까지 보장하지는 않습니다.
 
@@ -513,13 +534,11 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 
 새 자원을 만들거나 기존 모델의 이름·설정을 바꾸지 않습니다. 입문 참가자는 아직 하지 않았다면 [실습 0](intro-lab.md#lab-0)의 A/B 판단만 먼저 한 뒤 이 절로 돌아옵니다.
 
-**사용 가능한 환경:** 새 포털에서 사용하는 **Foundry 프로젝트**와 그 프로젝트에서 접근 가능한 모델 배포입니다. Project endpoint는 `https://리소스이름.services.ai.azure.com/api/projects/프로젝트이름` 형태입니다. 허브 기반 classic 프로젝트의 연결 문자열이나 Azure OpenAI 모델 주소만 있다면 이 실습의 설정으로 대신 사용할 수 없습니다.
+**사용 조건:** 새 포털의 Foundry 프로젝트와 접근 가능한 모델 배포입니다. 주소는 `https://리소스이름.services.ai.azure.com/api/projects/프로젝트이름` 형태입니다. Classic 허브 연결 문자열이나 모델 주소는 대신 쓸 수 없습니다.
 
 기존 환경도 이 실습의 **`gpt-6-luna`·`swedencentral` 조건**을 확인합니다. 실제 배포 이름이 달라도 되지만 모델·지역을 바꾼 실험으로 조용히 대체하지 않습니다. 모델명·배포명·모델 버전·API 버전은 [서로 다른 값](reference.md#model-endpoint-contract)입니다.
 
-**완결형 참가자는 아래 5번 대신 [완결형 Search 준비](complete-lab.md#search-setup)로 돌아갑니다.** 기존 배포도 완결형의 지정 이름·모델 버전 조건을 먼저 확인하며, 조건을 맞추려고 공유 배포를 임의 변경하지 않습니다.
-
-**Optional RAG 참가자는 아래 5번 대신 [Optional RAG 준비](optional-rag.md#prerequisites)로 돌아갑니다.** 완결형 실습 전체를 먼저 수행할 필요는 없습니다.
+**RAG 참가자는 5번 대신 원래 가이드로 돌아갑니다:** [완결형 Search 준비](complete-lab.md#search-setup) / [Optional RAG 준비](optional-rag.md#prerequisites). 완결형의 지정 배포 이름·버전을 맞추려고 공유 배포를 변경하지 않습니다.
 
 1. 환경 소유자에게 아래 정보를 확인해 다음 단계의 로그인·설정에 사용합니다. API 키나 공유 비밀번호를 받지 않습니다.
 2. [준비 1](#setup-tools)에서 로컬 도구를 준비하고, [준비 2](#setup-sign-in)의 **로그인과 구독 확인**을 수행합니다. 자원을 만들지 않으므로 Owner 취득이나 공급자 등록은 요구하지 않습니다.
@@ -534,7 +553,7 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 | Project endpoint·실제 모델 배포 이름 | `config.json`. 모델 이름이 아니라 배포 이름을 사용 |
 | 본인·프로젝트 관리 ID의 실제 역할과 범위, 사용·비용·정리 허용 범위 | 호출·평가 권한 및 공유 환경 보호 |
 
-본인 화면에서 프로젝트 관리 ID를 조회할 수 없으면 소유자에게 준비 4의 ID·역할 대조를 요청합니다. **`eval-workshop`·`eval-model`은 신규 생성 경로의 예시 이름**이므로 기존 자원의 이름을 바꾸지 않습니다. 두 모델 용도로 같은 배포를 쓰면 `config.json`의 `model_deployment`와 `judge_deployment`에 모두 그 이름을 넣습니다.
+ID를 조회할 수 없으면 소유자에게 준비 4의 확인을 요청합니다. **기존 자원 이름은 바꾸지 않습니다.** 같은 배포를 쓰면 `config.json`의 `model_deployment`·`judge_deployment`에 모두 실제 배포 이름을 넣습니다.
 
 <a id="switch-to-demo"></a>
 ## LIVE가 막혀 DEMO로 전환할 때
@@ -576,7 +595,7 @@ Azure 포털의 **Cost Management → Cost analysis**에서 해당 전용 그룹
 <a id="resume-checkpoints"></a>
 ### 마지막 단계가 기억나지 않는다면
 
-**VS Code에서 본인 경로의 `results/`만 확인합니다.** 아래 `baseline`·`candidate`·`holdout`은 LIVE의 폴더명이며, DEMO에서는 각각 `demo-baseline`·`demo-candidate`·`demo-holdout`입니다. 아직 환경 준비 중이었다면 [준비 바로가기](#tools)에서 마지막 완료 신호 다음 단계로 돌아갑니다.
+**VS Code에서 `results/`를 확인합니다.** 아래 폴더는 LIVE용입니다. DEMO는 `demo-baseline`·`demo-candidate`·`demo-holdout`을 봅니다. 준비 중이었다면 [준비 진행표](#setup-map)로 돌아갑니다.
 
 | 저장된 상태 / 아직 없는 것 | LIVE에서 이어갈 위치 | DEMO에서 이어갈 위치 |
 |---|---|---|
@@ -587,7 +606,7 @@ Azure 포털의 **Cost Management → Cost analysis**에서 해당 전용 그룹
 | 후보 검토는 완료, holdout 생성·Judge·H04 검토 또는 Gate가 남음 | [실습 5](intro-lab.md#lab-5)의 첫 미완료 단계 | [실습 5](offline.md#lab-5)의 첫 미완료 단계 |
 | `candidate/gate.md`와 판단 기록까지 있음 | [실습 6](intro-lab.md#lab-6): 추가 질문·보고 | [실습 6](offline.md#lab-6): 질문 검사·보고 |
 
-파일 유무는 위치를 찾는 단서일 뿐입니다. **`status`가 `collecting`이면 같은 `run`, 평가 처리 중이면 같은 `judge`를 먼저 재개**합니다. `judge.json`이 있어도 오류가 났다면 같은 `judge`로 유효성을 확인합니다. `--like`를 생략하거나 결과 파일을 수정하지 않습니다. 이미 적은 사람의 최초 판단은 지우지 않습니다.
+파일이 있어도 완료 상태를 확인합니다. **`collecting`은 같은 `run`, 평가 대기는 같은 `judge`로 재개**합니다. `judge.json`이 있어도 오류가 났다면 같은 명령으로 확인합니다. `--like`·결과·최초 사람 판단을 유지합니다.
 
 `gate.md`가 있어도 검토 누락이 남아 있다면 실제 사람의 검토를 추가하고 같은 `gate`를 다시 실행합니다. 점수 실패를 없애려고 답변이나 평가를 새로 뽑는 것과는 다릅니다.
 

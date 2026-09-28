@@ -299,6 +299,8 @@ If still processing, repeat the command **including `--like`**. It preserves the
 python lab.py compare results/baseline results/candidate
 ```
 
+**Checkpoint:** `비교표: results/candidate/comparison.md`.
+
 In `results/candidate/comparison.md`, inspect the business pass rate, newly passing cases, business regressions, and judge regressions. A regression is a previously passing check becoming a failure. **A better average does not cancel an important new failure.** Match case IDs in both reports to read actual answers and reasons.
 
 **Compare in the portal:**
@@ -403,7 +405,7 @@ Open `data/my-case.jsonl` first. The repository includes an N02 example with an 
 | `results/my-case` already exists too | Use [resume checkpoints](setup.md#resume-checkpoints); do not replace the question |
 | Practice editing | Prepare the working copy below, then change two values in 6-2 |
 
-**Only when editing:** if the file is missing, open [the extra-case example](../../data/my-case.example.jsonl) and **Save As `data/my-case.jsonl`**, preserving the original. Replace the working copy with this **entire single line**, then continue to 6-2. It creates **N02**, not setup case N01. Keep the Korean question and expectation.
+**Only when editing:** put the following line in `data/my-case.jsonl` only if it contains no personal work to preserve. If missing, use **File → New Text File → Save As**. This is **N02**, not setup case N01. Keep the Korean question and expectation.
 
 ```jsonl
 {"id":"N02","category":"과거 출장의 한도 초과","critical":true,"query":"2026년 6월 15일 국내 출장 숙박비가 1박 170000원입니다. 9월에 정산하면 사전 승인 없이 처리해도 되나요?","expected_decision":"needs_approval","expected_limit_krw":160000,"expected_citations":["TRAVEL-PREVIOUS"],"ground_truth":"정산일이 아니라 출장일의 과거 한도 160000원을 적용한다. 170000원은 한도 초과이므로 재무팀 사전 승인이 필요하며 바로 정산할 수 있다고 안내하면 안 된다."}
@@ -489,37 +491,18 @@ Completion is about **execution and evidence-based judgment**, not obtaining hig
 <a id="retain-resources"></a>
 ### Default: retain every created Azure resource
 
-**Do not delete resources in this workshop.** Keep the group, Foundry resource, project, model deployment, evaluation records, and required role assignments. Do not run group/deployment deletion commands or `azd down`.
+**Closing the terminal does not stop Azure charges.** Follow these steps even if you stop early.
 
-1. Keep `results/` locally and record the state of remote jobs. Closing a terminal does not cancel or finish them.
-2. In the intended subscription, verify the dedicated group, parent resource, and project remain in `swedencentral`. Check `eval-model` under **Build → Models**.
-3. Check **Cost Management → Cost analysis**, scoped to the group. Reporting may lag; no visible cost does not prove free use. Retention is not a billing stop, and alerts do not automatically block spending.
-4. Confirm **not deleted, retention reason, next check date or condition, and cost status**. With no planned deletion date, **retain until a separate request**.
+1. Keep the full `results/` folder and the status of pending remote jobs.
+2. Follow [shared retention steps](cleanup.md#retain-resources) to check actual resources and costs.
+3. Record the retention reason, costs, and next check. Without a deletion date, **retain until a separate request**.
 
-**Checkpoint:** actually created resources and records remain, and you can explain the retention conditions and cost status. Do not mark uncreated resources or unrun evaluations as completed. Skip the optional deletion path below.
+**Checkpoint:** results and resources remain, and you can explain the cost status and retention conditions. Do not mark uncreated resources or unrun stages as complete.
 
 <a id="delete-resources"></a>
 ### Optional: only after a separate deletion decision
 
-Do not follow this section while a retention request is in effect.
-
-<details>
-<summary>Only after a separate deletion decision: scope, deletion, and confirmation</summary>
-
-1. Keep local results and export any needed portal records. Confirm or cancel only your own pending jobs.
-2. Open the exact recorded **subscription → dedicated resource group** and inspect its contents. Do not delete a shared group or an uncertain scope.
-3. Only when the owner has decided it is no longer needed, choose **Overview → Delete resource group**, read the list, and enter the exact group name yourself.
-4. Wait for actual deletion completion, not merely “request submitted.” This read-only query can confirm:
-
-```bash
-az group exists --name "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTION-ID"
-```
-
-Successful cleanup means **`false` for the correct group/subscription** and portal confirmation. Authentication errors or 403 are not proof of deletion. Do not remove organizational locks or policies without authorization. Deletion does not cancel costs already incurred.
-
-Record deletion status/time and reported or still-pending costs. Use the [retention and cleanup reference](cleanup.md) if needed.
-
-</details>
+**Retention is the default.** Only after the owner's separate deletion decision, follow the [shared deletion steps](cleanup.md#delete-resources). Never delete shared resources as a group. See [retention and cleanup](cleanup.md) for the full procedure.
 
 **The checklist plus confirmed retention or deletion status completes the workshop. Deletion is not required.** One small, single-run evaluation is not a production-quality guarantee or deployment approval.
 

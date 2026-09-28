@@ -33,7 +33,7 @@ If you already have an authorized environment, use [existing-environment setup](
 |---|---|
 | Model / deployment name | **`gpt-6-luna` / `eval-model`** — same deployment for answers and judging |
 | Region | **Sweden Central (`swedencentral`)** |
-| Resources | **One project + one model deployment** |
+| New resources | **Dedicated resource group → Foundry resource → one project and one model deployment** |
 | Identity and subscription | Microsoft Entra ID account + active Azure subscription. No API keys |
 | New-environment starting role | **Active Owner** on the subscription, including an applicable inherited role |
 | After the workshop | **Retain all resources** and [check costs](cleanup.md#retain-resources). Deletion requires a separate decision |
@@ -118,6 +118,16 @@ py -3 -m venv .venv
 Do not relax organizational policy. Replace every subsequent `python`, including the installation command, with **`.\.venv\Scripts\python.exe`**. For example, `python lab.py doctor` becomes `.\.venv\Scripts\python.exe lab.py doctor`. Leave commands starting with `az` unchanged.
 
 </details>
+
+#### Check the installation environment
+
+Check where Python will install packages. If Windows blocked activation, use the direct-Python fallback above first.
+
+```bash
+python -m pip --version
+```
+
+**Checkpoint:** the path after `from` is **inside this workshop folder's `.venv`**. If it points elsewhere, reactivate the environment before installing.
 
 #### Install packages and check local files
 

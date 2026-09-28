@@ -300,6 +300,8 @@ python lab.py judge results/demo-candidate --like results/demo-baseline
 python lab.py compare results/demo-baseline results/demo-candidate
 ```
 
+**Checkpoint:** `비교표: results/demo-candidate/comparison.md`. Expect newly passing D03, D04, and D08, with no regressions.
+
 Read newly passing cases, business regressions, and judge regressions in `comparison.md`. Then review D06:
 
 ### 4-3. Save your D06 verdict
@@ -382,7 +384,7 @@ Open `data/my-case.jsonl` first. The repository includes an N02 example with an 
 | Your previous LIVE/DEMO question is present | Preserve it and go to [6-3. Validation](#validate-extra); record reuse |
 | Practice editing | Prepare the working copy below, then change two values in 6-2 |
 
-**Only when editing:** if the file is missing, save [the extra-case example](../../data/my-case.example.jsonl) as `data/my-case.jsonl`, preserving the original. Replace the working copy with this single line, then continue to 6-2. Prepare **one N02 case**, not the source example's N01.
+**Only when editing:** put the following line in `data/my-case.jsonl` only if it contains no personal work to preserve. If missing, use **File → New Text File → Save As**. Prepare **one N02 case**.
 
 ```jsonl
 {"id":"N02","category":"과거 출장의 한도 초과","critical":true,"query":"2026년 6월 15일 국내 출장 숙박비가 1박 170000원입니다. 9월에 정산하면 사전 승인 없이 처리해도 되나요?","expected_decision":"needs_approval","expected_limit_krw":160000,"expected_citations":["TRAVEL-PREVIOUS"],"ground_truth":"정산일이 아니라 출장일의 과거 한도 160000원을 적용한다. 170000원은 한도 초과이므로 재무팀 사전 승인이 필요하며 바로 정산할 수 있다고 안내하면 안 된다."}
@@ -454,13 +456,19 @@ Do this only after the main workshop. LIVE participants can run it independently
 python lab.py run --mode demo --prompt v1 --out results/trap-baseline
 ```
 
+**Checkpoint:** `8/8  D08 저장`, business 5/8 (62.5%).
+
 ```bash
 python lab.py run --mode demo --prompt shortcut --out results/trap-candidate
 ```
 
+**Checkpoint:** `8/8  D08 저장`, business 6/8 (75%).
+
 ```bash
 python lab.py compare results/trap-baseline results/trap-candidate
 ```
+
+**Checkpoint:** `비교표: results/trap-candidate/comparison.md`. Next, inspect the regressed D06:
 
 ```bash
 python lab.py inspect results/trap-candidate D06
