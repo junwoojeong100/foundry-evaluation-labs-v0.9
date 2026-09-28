@@ -1,20 +1,43 @@
 [English](en/optional-rag.md) | **한국어**
 
-# Optional: Azure AI Search + Foundry IQ RAG와 Evaluation
+# 선택 실습: Azure AI Search와 Foundry IQ 비교
 
 [기본 실습](../README.ko.md) · [영문 기본 가이드](../README.md)
 
-**직접 Search와 Knowledge Base 검색을 비교하는 선택 실습**입니다. 기본 입문 경로는 전체 규정을 직접 전달합니다. 여기서는 **실제 검색된 문서만** 모델과 Groundedness 평가기에 전달하고, **검색이 맞았는지와 답변이 맞았는지**를 따로 봅니다.
+**같은 질문을 두 검색 경로로 실행하고, 검색 품질과 답변 품질을 따로 비교합니다.** 전체 규정을 전달하는 입문과 달리 **실제 검색된 문서만** 답변 모델과 Groundedness 평가기에 전달합니다.
 
-**RAG는 자료를 검색한 뒤 그 근거로 답하는 방식**입니다. **청크**는 검색할 규정 조각, **인덱스**는 그 조각을 찾도록 저장한 검색 대상입니다. Knowledge Source는 인덱스 연결이고 Knowledge Base는 그 연결로 검색 요청을 처리합니다. 코드를 작성하지 않고 설정 파일 작성 → 검색 두 번 확인 → 각 경로의 답변 생성·평가 → 비교 순서로 진행합니다.
+| 한눈에 보기 | 이 경로에서 할 일 |
+|---|---|
+| 실행 방식 | **LIVE 전용·유료**. `rag_lab.py` 사용, Python 코드 작성 불필요 |
+| 재사용할 환경 | 계정·Foundry 프로젝트·`gpt-6-luna` 배포 `eval-model`·`swedencentral` |
+| 검색 환경 | **Basic 이상 Search 1개**와 인덱스·Knowledge Source·Knowledge Base |
+| 설정 파일 | 공통 `config.json` + 이 경로의 `config.rag.json` |
+| 비교 규모 | **7개 청크·질문 4개 × 검색 경로 2개 = 답변 8개·Judge 지표 16개** |
+| 결과 위치 | `results/rag-search`·`results/rag-iq` |
 
-**완결형 RAG를 먼저 끝낼 필요는 없습니다.** 이 문서는 `rag_lab.py`·`optional-rag/prompt.txt`로 두 검색 경로만 비교합니다. `advanced_lab.py`의 V1/V2·교정·동결·holdout 절차와 결과를 섞지 않습니다. 두 RAG CLI 모두 DEMO 모드는 없습니다.
+> [!IMPORTANT]
+> **완결형 RAG를 먼저 끝낼 필요는 없습니다.** 이 경로는 `optional-rag/prompt.txt`로 검색 두 경로만 비교합니다. 완결형의 V1/V2·교정·고정·holdout 절차와 섞지 않습니다. 두 RAG CLI 모두 DEMO 모드는 없습니다.
 
-기존 계정·Foundry 프로젝트·`gpt-6-luna` 배포 `eval-model`·`swedencentral`을 재사용합니다. Azure AI Search 서비스, 인덱스, 실제 Foundry IQ Knowledge Source/Knowledge Base를 추가합니다. 생성한 리소스와 결과는 **삭제하지 않습니다**.
+생성한 리소스와 결과는 **삭제하지 않습니다**. Basic Search 유지비와 모델 호출 비용이 발생합니다. 허가된 기존 서비스가 있으면 재사용합니다.
 
-**별도 완결형 경로 참고 영상:** [국문·영문 벡터·LLM 계획 RAG 영상](media/complete-rag/README.md). 이 문서의 minimal `search`/`iq` 실행 기록이나 검증 결과는 아닙니다.
+<a id="lab-map"></a>
+## 진행표
 
-## 무엇을 사용하는가
+| 순서 | 할 일 | 완료 확인 |
+|---|---|---|
+| [1. 공통 준비](#prerequisites) | 환경·비용·권한 확인 | 모델 조회 + 공통 한 건 평가 |
+| [2. Search 준비](#create-search) | 서비스 재사용 또는 생성·역할 확인 | 실제 서비스 ID·본인 역할 |
+| [3. 검색 객체](#index) | 설정 파일 작성·인덱스·Knowledge Base 생성 | `SETUP OK: 7 chunks, 4 evaluation cases` |
+| [4. 검색 확인](#retrieve) | 같은 질문으로 `search`·`iq` 조회 | 두 `RETRIEVAL OK` |
+| [5. 생성·평가·비교](#evaluate) | 경로별 답변 4개 평가·D04 확인 | `REVIEW_REQUIRED`·비교 보고서 |
+| [6. 마무리](#evidence) | 원본 증거·자원·비용 확인 | 완료 체크리스트 |
+
+[중단·재개](#resume) · [문제 해결](#troubleshooting) · [공식 출처](#sources)
+
+<a id="retrieval-routes"></a>
+## 두 검색 경로 이해하기
+
+**RAG는 검색한 근거로 답하는 방식**입니다. 청크는 규정 조각, 인덱스는 그 조각을 저장한 검색 대상입니다. Knowledge Source는 인덱스 연결이고 Knowledge Base는 그 연결로 검색을 처리합니다.
 
 | 경로 | 실제 실행 |
 |---|---|
@@ -24,7 +47,7 @@
 
 **Foundry IQ를 이름만 붙인 로컬 검색으로 대체하지 않습니다.** Knowledge Base/Source를 실제 서비스에 생성하고, IQ 응답의 `references`, `sourceData`, `activity`를 저장합니다.
 
-이 간단한 경로는 **코드에 고정된 정식 Search API `2026-04-01`의 minimal/extractive 검색**을 사용합니다. 벡터 임베딩, LLM 쿼리 계획, answer synthesis, Agent Service/MCP 연결은 사용하지 않습니다. `gpt-6-luna`는 검색 계획 모델이 아니라 **애플리케이션의 답변 생성·평가 모델**입니다. Foundry IQ는 사용자 애플리케이션에서 Knowledge Base REST API로 직접 사용할 수 있습니다. 공식 문서의 preview용 `messages`·계획 설정을 이 GA 요청에 섞지 않습니다.
+**이 경로는 벡터·LLM 검색 계획을 사용하지 않습니다.** 코드에 고정된 정식 Search API **`2026-04-01`의 minimal/extractive 검색**입니다. `gpt-6-luna`는 검색 계획이 아니라 **답변 생성·평가**에 사용합니다.
 
 ```text
 질문 ── search ────────────────→ Azure AI Search 인덱스
@@ -36,6 +59,17 @@
 ```
 
 같은 단일 인덱스를 사용하는 두 경로는 같은 문서를 반환할 수도 있습니다. 이 실습은 IQ가 항상 더 좋은 점수를 낸다는 성능 보증이 아닙니다.
+
+<details>
+<summary>API 범위와 별도 완결형 영상의 차이</summary>
+
+벡터 임베딩, LLM 쿼리 계획, answer synthesis, Agent Service/MCP 연결은 사용하지 않습니다. 애플리케이션에서 Knowledge Base REST API를 직접 호출합니다. 공식 문서의 preview용 `messages`·계획 설정을 이 GA 요청에 섞지 않습니다.
+
+[국문·영문 벡터·LLM 계획 RAG 영상](media/complete-rag/README.md)은 **별도 완결형 경로**의 기록입니다. 이 문서의 minimal `search`/`iq` 실행 기록이나 검증 결과가 아닙니다.
+
+</details>
+
+---
 
 <a id="prerequisites"></a>
 ## 1. 준비와 비용
@@ -52,12 +86,18 @@ python lab.py doctor --live
 
 **허가된 Basic 이상 검색 서비스가 있으면 재사용**합니다. 완결형에서 만든 서비스도 가능하지만 필수는 아니며, 없다면 2절에서 하나만 만듭니다. 서비스는 공유해도 검색 객체 이름은 두 실습에서 구분합니다. semantic/knowledge retrieval의 Free 요금제와 서비스 SKU는 별개이며, **Basic 서비스는 유지 비용이 발생**합니다. 새 서비스를 자동으로 추가하지 않습니다.
 
-이 실습은 **7개 청크, 4개 질문 × 2개 검색 경로 = 8개 답변, 16개 Judge 지표**입니다. 검색 요청·평가기 내부 호출은 별도입니다. 모델 생성·평가는 유료이며, Free 검색 할당량을 넘으면 오류가 날 수 있습니다. 리소스 보존과 무료 사용은 같은 뜻이 아닙니다.
+위 비교 규모와 별도로 검색 요청·평가기 내부 호출도 발생합니다. 모델 생성·평가는 유료이며, Free 검색 할당량을 넘으면 오류가 날 수 있습니다. 리소스 보존과 무료 사용은 같은 뜻이 아닙니다.
 
 **생성 전에** 서비스 생성·사용·유지 비용과 아래 두 역할의 서비스 범위 할당을 소유자에게 승인받습니다. 역할 할당에는 해당 범위의 `roleAssignments/write` 권한이 필요하며 일반 Contributor만으로는 부족합니다. 권한 있는 담당자가 준비할 수 없다면 여기서 중단합니다.
 
+**다음:** [2. Search 준비](#create-search) · [진행표](#lab-map)
+
+---
+
 <a id="create-search"></a>
 ## 2. Search 서비스와 최소 권한
+
+### 2-1. 허가된 서비스 재사용 또는 신규 생성
 
 아래 `YOUR-...`를 실제 값으로 바꿉니다. 기본 실습의 전용 그룹을 사용해도 됩니다. 서비스 이름은 전역에서 고유한 소문자·숫자·하이픈이어야 합니다.
 
@@ -78,7 +118,7 @@ az search service create --name "YOUR-SEARCH-NAME" --resource-group "YOUR-LAB-RE
 이 명령은 **API 키를 비활성화**합니다. 키를 조회하거나 설정 파일에 저장하지 않습니다. 생성 후 포털의 **Tags**에서 보존 의도인 `retain=true`를 기록해도 됩니다. 태그는 삭제 잠금이 아닙니다.
 
 <a id="search-access"></a>
-### 사용자 ID와 Search 역할
+### 2-2. 사용자 ID와 Search 역할 확인
 
 신규·기존 서비스 모두 실제 ID를 조회합니다.
 
@@ -108,10 +148,18 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 
 **완료 확인:** 본인의 Object ID에 두 역할이 유효한지 확인하고 전파를 기다립니다. 역할 생성 성공만으로 데이터 접근이 입증되지는 않습니다. 3–4절에서 401/403이 나면 본인·범위·네트워크·전파를 확인한 뒤 같은 명령으로 재개합니다. 역할을 반복 생성하거나 키로 우회하지 않습니다.
 
+**다음:** [3. 설정·검색 객체](#index) · [진행표](#lab-map)
+
+---
+
 <a id="index"></a>
 ## 3. 실제 인덱스와 Foundry IQ Knowledge Base 생성
 
-**VS Code에서** [설정 예제](../optional-rag/config.example.json)를 열고 **File → Save As**로 저장소 루트의 `rag_lab.py` 옆 **`config.rag.json`**을 만듭니다. `optional-rag/` 안이나 `config.rag.json.txt`로 저장하지 않습니다. 이미 본인 설정이 있다면 덮어쓰지 말고 확인합니다. Search Overview의 실제 서비스 URL을 넣고 저장하며, 공통 준비의 **`config.json`도 그대로 유지**합니다. 두 파일이 모두 필요합니다.
+1. VS Code에서 [설정 예제](../optional-rag/config.example.json)를 엽니다.
+2. **File → Save As**로 **`rag_lab.py` 옆 `config.rag.json`**에 저장합니다. 이미 본인 설정이 있으면 덮어쓰지 말고 확인합니다.
+3. Search Overview의 실제 서비스 URL을 넣고 저장합니다.
+
+공통 준비의 **`config.json`도 유지**합니다. 두 파일 모두 필요합니다. `optional-rag/` 안이나 `config.rag.json.txt`로 저장하지 않습니다.
 
 ```json
 {
@@ -143,14 +191,22 @@ python rag_lab.py setup
 
 **구분:** 서비스 RBAC는 접근 권한입니다. `approved`는 교육용 문서의 공식 여부 필터이지 사용자별 ACL이 아닙니다. 문서별 보안·Purview·개인별 접근 통제는 이 실습의 검증 범위가 아닙니다.
 
+**다음:** [4. 두 검색 경로 확인](#retrieve) · [진행표](#lab-map)
+
+---
+
 <a id="retrieve"></a>
 ## 4. 두 실제 검색 경로 확인
+
+### 4-1. 직접 Search 조회하기
 
 ```bash
 python rag_lab.py query --mode search --query "2026년 9월 국내 숙박비가 220000원이고 사전 승인이 없습니다. 정산 가능한가요?" --out results/rag-query-search.json
 ```
 
 **완료 확인:** `RETRIEVAL OK: search`와 선택된 청크 ID가 보이고 `results/rag-query-search.json`이 저장됩니다. 오류라면 여기서 해결하고, 완료 후에만 같은 질문으로 IQ를 조회합니다.
+
+### 4-2. 같은 질문으로 Knowledge Base 조회하기
 
 ```bash
 python rag_lab.py query --mode iq --query "2026년 9월 국내 숙박비가 220000원이고 사전 승인이 없습니다. 정산 가능한가요?" --out results/rag-query-iq.json
@@ -166,12 +222,18 @@ python rag_lab.py query --mode iq --query "2026년 9월 국내 숙박비가 2200
 
 IQ는 `intents` 입력을 사용합니다. 앱은 반환된 승인 문서 중 최대 3개만 사용하며, **검색이 비거나 실패하면 전체 규정을 대신 넣지 않고 오류로 중단**합니다.
 
+**다음:** [5. 생성·평가·비교](#evaluate) · [진행표](#lab-map)
+
+---
+
 <a id="evaluate"></a>
 ## 5. 검색과 답변을 각각 평가
 
 [질문 4개](../optional-rag/cases.jsonl)는 기본 dev의 D02·D03·D04·D08을 재사용합니다. 새로운 독립 holdout이라고 부르지 않습니다. [검색 정답](../optional-rag/retrieval-labels.json)은 평가 전용이며 검색 요청·답변 모델·Judge에 전달하지 않습니다.
 
 두 실행 사이에 질문·코퍼스·`optional-rag/prompt.txt`·설정·답변/Judge 모델 버전·검색 객체를 바꾸지 않습니다. **검색 경로만** 달라야 하며 계약이 다르면 비교가 거부됩니다. 변경이 필요하면 기존 결과를 보존하고 두 경로 모두 새 출력 폴더에서 별도 실험으로 시작합니다.
+
+### 5-1. Search 답변 4개 생성·채점하기
 
 ```bash
 python rag_lab.py run --mode search --out results/rag-search
@@ -185,6 +247,8 @@ python lab.py judge results/rag-search
 
 **`평가 완료: 4개 답변 × 2개 지표`**까지 기다립니다. 대기 중이면 같은 명령을 재실행합니다. 중단·오류는 [재개 표](#resume)를 따릅니다.
 
+### 5-2. IQ 답변 4개 생성·같은 Judge로 채점하기
+
 ```bash
 python rag_lab.py run --mode iq --out results/rag-iq
 ```
@@ -197,11 +261,15 @@ python lab.py judge results/rag-iq --like results/rag-search
 
 IQ도 4개 생성 완료 후 **`평가 완료: 4개 답변 × 2개 지표`**를 확인합니다. `--like`는 Search의 완료된 Judge 모델·평가기 계약을 유지하며, 검색 문맥이나 답변을 복사하지 않습니다.
 
+### 5-3. 두 경로 비교하기
+
 ```bash
 python rag_lab.py compare results/rag-search results/rag-iq
 ```
 
 **완료 확인:** `REVIEW_REQUIRED`와 `Comparison: results/rag-iq/rag-comparison.md`가 보입니다. 비교 파일 생성이 끝났다는 뜻이며, 아래에서 실제 사례를 읽고 판단합니다.
+
+### 5-4. D04의 검색 근거·답변·점수 대조하기
 
 ```bash
 python rag_lab.py inspect results/rag-iq D04
@@ -209,7 +277,14 @@ python rag_lab.py inspect results/rag-iq D04
 
 **읽는 순서:** 실제 검색 청크 → 기대 청크 누락 → 답변 JSON → 업무 검사 → Groundedness/Relevance 이유입니다. Judge에 전달되는 `context`는 **그 답변을 생성할 때 사용한 검색 문맥과 동일**합니다.
 
-**답변 JSON 읽기:** `decision`은 결정, `limit_krw`는 숙박 한도(청구 금액이 아님), `citations`는 공식 출처 ID 목록, `answer`는 직원에게 보여 줄 설명입니다. `null`은 한도를 결정할 수 없거나 숙박 한도와 무관하다는 뜻이며 0원이 아닙니다.
+| 답변 필드 | 읽는 법 |
+|---|---|
+| `decision` | 규정상 결정 |
+| `limit_krw` | 숙박 한도. **청구 금액이 아님** |
+| `citations` | 공식 출처 ID 목록 |
+| `answer` | 직원에게 보여 줄 설명 |
+
+`null`은 한도를 결정할 수 없거나 숙박 한도와 무관하다는 뜻이며 0원이 아닙니다.
 
 결정은 `allowed`(허용), `needs_approval`(사전 승인 필요), `not_allowed`(금지), `unknown`(규정에 없음), `needs_info`(질문 정보 부족) 중 하나입니다. D04처럼 규정에 없는 한도에 `unknown`으로 답하는 것이 올바를 수도 있습니다. 이 값이 실제 정산이나 승인을 실행하지는 않습니다.
 
@@ -256,6 +331,10 @@ python rag_lab.py inspect results/rag-iq D04
 
 </details>
 
+**다음:** [6. 증거·리소스 보존](#evidence) · [진행표](#lab-map)
+
+---
+
 <a id="evidence"></a>
 ## 6. 포털·원본 증거·보존
 
@@ -277,10 +356,17 @@ Foundry의 Judge 보고서 URL에서는 같은 사례의 **질문·답변·검�
 - 로컬 `config.rag.json`, `config.json`, `results/`는 Git에 올리지 않습니다.
 - 답이 틀렸거나 점수가 낮으면 그대로 기록하며, 좋은 점수를 얻으려고 다시 뽑지 않습니다.
 
+[진행표로 돌아가기](#lab-map) · [중단·재개 찾기](#resume)
+
 <a id="observed-results"></a>
 ### 이전 최소 RAG 기록과 참고 범위
 
+<details>
+<summary>이전 실행 기록을 참고할 때만 펼치기</summary>
+
 작성자의 이전 Free 서비스·기록 정리는 과거 전환 기록이지 참가자의 삭제 단계나 현재 자원 상태 확인이 아닙니다. [완결형의 기록된 결과](complete-lab.md#results)는 별도 벡터·계획·대화 실험의 관측값이며, 이 최소 RAG의 `search`/`iq` 비교를 재검증한 증거는 아닙니다. 이 API 연습은 허가된 Basic 서비스의 별도 인덱스에서 실행하고, 본인의 `rag-comparison.md`와 각 `rag-report.md`로 판단합니다.
+
+</details>
 
 <a id="troubleshooting"></a>
 ## 문제 해결

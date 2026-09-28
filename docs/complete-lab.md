@@ -4,11 +4,20 @@
 
 [저장소 기본 가이드](../README.ko.md)
 
-**가상의 가온랩 출장비 도우미가 규정을 찾아 정확히 답하는지 확인하는 권장 실습입니다.** 검색으로 근거를 찾고 그 근거로 답하는 방식을 **RAG(검색 증강 생성)**라고 합니다. **Basic 이상 Azure AI Search 서비스 하나**에서 벡터·하이브리드 검색과 Foundry IQ의 LLM 검색 계획을 사용합니다.
+**규정을 찾고, 답변을 개선하고, 처음 보는 질문으로 확인합니다.** 가상의 가온랩 출장비 도우미로 **RAG(검색 증강 생성)**, 즉 검색한 근거로 답하는 방식을 실습합니다.
 
-**Python 코드를 직접 작성하지 않습니다.** 준비에서 설정 파일 두 개를 작성하고, 제공된 명령을 실행하며 실제 답변과 보고서를 읽습니다. 지침은 **`advanced-rag/instructions.v1.txt`·`instructions.v2.txt`**를 읽고 비교합니다. 입문용 `prompts/v1.txt`·`v2.txt`를 수정하거나 이 경로에 대신 넣지 않습니다.
+| 한눈에 보기 | 이 경로에서 할 일 |
+|---|---|
+| 실행 방식 | **LIVE 전용·유료**. Python 코드는 작성하지 않고 제공된 명령 실행 |
+| 전체 환경 | `swedencentral`의 **Basic 이상 Search 1개 + 모델 배포 3개** |
+| 직접 편집 | 준비 단계의 `config.json`·`config.advanced.json` |
+| 지침 비교 | `advanced-rag/instructions.v1.txt`·`instructions.v2.txt`를 **읽고 비교** |
+| 결과 위치 | `results/advanced/`. 끝까지 실행하면 `acceptance-report.md`로 최종 판단 |
 
-**진행 순서:** 아래 1–8절을 따릅니다. 입문 실습 0–6과 Optional RAG 전체를 먼저 완료할 필요는 없습니다. 2절에서 공통 환경 준비만 빌려 쓴 뒤 이 문서로 돌아옵니다. 명령은 `advanced_lab.py`가 있는 폴더의 활성화된 가상환경에서 한 개씩 실행합니다. 결과 폴더는 자동으로 만들어집니다.
+**이 문서의 1–8절만 순서대로 따릅니다.** 입문 실습 0–6과 Optional RAG 전체는 선행 필수가 아닙니다. 2절에서 공통 준비만 수행한 뒤 돌아옵니다. 입문용 `prompts/v1.txt`·`v2.txt`를 수정하거나 이 경로에 대신 넣지 않습니다.
+
+<a id="lab-map"></a>
+## 진행표
 
 | 순서 | 내가 할 일 | 다음 단계로 갈 때 확인할 것 |
 |---|---|---|
@@ -21,13 +30,15 @@
 | [7. 새 질문](#holdout) | 고정한 뒤 새 사례 8개를 만들고 평가 | 본인의 `acceptance-report.md` |
 | [8. 마무리](#retention) | 결과 해석·보관·비용 확인 | 완료 체크리스트 또는 중단 기록 |
 
-**단계의 완료 신호를 확인하기 전에는 다음 명령으로 넘어가지 않습니다.** 실행 오류·대기·품질 차단은 [상태·재개 표](#resume)에서 구분합니다. 예시 출력인 `text` 블록은 터미널에 입력하지 않습니다.
+**명령 읽는 법:** `advanced_lab.py`가 있는 폴더의 활성화된 가상환경에서 **한 명령 → 완료 확인 → 다음 명령** 순서로 실행합니다. 결과 폴더는 자동 생성됩니다. `text` 블록은 예상 출력이므로 입력하지 않습니다. 막히면 [상태·재개 표](#resume)를 사용합니다.
 
-`advanced_lab.py`에는 DEMO 모드가 없습니다. `baseline`의 기록 가져오기와 `freeze`·holdout 생성/등록·`inspect`·`accept`는 로컬 작업이지만, 준비·검색·생성·교정·채점은 실제 Azure를 사용합니다.
+> [!IMPORTANT]
+> **실습 완료와 자동 합격은 다릅니다.** 낮은 점수와 중단도 그대로 보존합니다. 미실행 단계를 완료로 표시하거나 입문용 80% Gate·D06/H04 검토 절차와 섞지 않습니다.
 
-**각 단계의 완료 확인과 `results/advanced/`의 자동 생성 결과로 진행합니다.** 별도 기록 양식은 필요 없으며 개인 메모는 선택 사항입니다. 입문용 80% Gate·D06/H04 검토 절차와 섞지 않습니다. **실습 완료와 자동 합격은 다릅니다.** 낮은 점수나 중단도 실제 결과로 보존하고, 미실행 단계는 완료했다고 표현하지 않습니다.
+각 단계의 완료 확인과 자동 생성 결과로 진행합니다. 별도 기록 양식은 필요 없으며 개인 메모는 선택 사항입니다.
 
-**처음 만나는 용어**
+<details>
+<summary>처음 만나는 용어: 청크·벡터·Knowledge Base·Judge·holdout</summary>
 
 | 용어 | 이 실습에서의 뜻 |
 |---|---|
@@ -39,7 +50,18 @@
 | V1·V2 | 개선 전·후의 지침 버전. V2에서는 필요한 사용자 후속 대화까지 완료 |
 | dev·holdout·고정(freeze) | dev는 개선 확인용 질문, holdout은 마지막 확인용 새 질문. 고정은 새 질문 전에 지침·모델·검색·채점 조건을 바꾸지 못하게 기록하는 일 |
 
+</details>
+
+<details>
+<summary>유료 호출의 범위와 참고 영상</summary>
+
+`advanced_lab.py`에는 DEMO 모드가 없습니다. `baseline`의 기록 가져오기와 `freeze`·holdout 생성/등록·`inspect`·`accept`는 로컬 작업이지만, 준비·검색·생성·교정·채점은 실제 Azure를 사용합니다.
+
 영상은 필수가 아닙니다. [국문·영문 요약 영상](media/complete-rag/README.md)과 [기록된 결과](#results)는 **2026-09-28의 별도 실행**이며 본인의 완료 신호나 예상 점수를 대신하지 않습니다.
+
+</details>
+
+---
 
 <a id="architecture"></a>
 ## 1. 규정을 먼저 읽고 구성 이해하기
@@ -70,15 +92,26 @@ LLM 검색 계획에는 코드에 고정된 **`2026-08-01-preview`**를 사용�
 
 Free 서비스에는 여기서 필요한 아웃바운드 관리 ID 제약이 있습니다. 허가받은 Basic 이상 서비스가 있다면 재사용합니다. **Basic은 유지 중에도 비용이 발생**하며 임베딩·계획·생성·채점 사용량 비용도 발생할 수 있습니다.
 
+**다음:** [2. 환경 준비](#setup) · [진행표](#lab-map)
+
+---
+
 <a id="setup"></a>
 ## 2. Azure 준비와 권한
 
-**추가 유료 자원을 만들기 전에 확인:** 저장된 V1과 비교하려면 답변 배포가 **`eval-model` / `gpt-6-luna` / 버전 `2026-09-22`**여야 합니다. 지역은 `swedencentral`입니다. 과거에 실행됐다는 사실은 현재 구독의 버전 가용성·쿼터를 보장하지 않습니다. 이 조건을 충족할 수 없다면 Search·추가 모델을 만들기 전에 [고정 규정 입문 LIVE](../README.ko.md#lab-0) 또는 [DEMO](offline.md)를 선택합니다. 다른 버전의 결과를 기록된 V1과 비교하지 않습니다.
+> [!WARNING]
+> **Search·추가 모델을 만들기 전에 답변 모델 버전을 확인합니다.** 기록된 V1 비교에는 **`eval-model` / `gpt-6-luna` / 버전 `2026-09-22`**, 지역 **`swedencentral`**이 필요합니다. 충족할 수 없다면 [입문 LIVE](../README.ko.md#lab-0) 또는 [DEMO](offline.md)를 선택합니다. 다른 버전의 결과와 비교하지 않습니다.
 
-**모델 이름만 같아서는 부족**합니다. 배포 이름과 모델 버전도 [V1의 저장된 모델 정보(`model_snapshot`)](../advanced-rag/fixtures/recorded-v1.json)와 일치해야 합니다. 맞추기 위해 기록 파일이나 공유 배포를 수정하지 않습니다.
+**생성 전 확인할 네 가지**
 
-- 같은 Foundry 리소스에서 아래 임베딩·계획 모델의 지원 버전과 **GlobalStandard 용량 40·60**도 [모델 가용성 확인](reference.md#model-availability)으로 먼저 점검합니다. 이 숫자는 생성 명령의 용량 설정이지 비용 상한이 아닙니다.
-- Search/모델 생성·사용과 **Search 및 Foundry 리소스 범위의 역할 할당**을 소유자에게 승인받습니다. 역할을 할당할 권한이 없으면 권한 있는 담당자가 준비합니다. Basic 유지 비용, 사용량 비용, preview·네트워크 허용 여부를 확인한 뒤 진행합니다.
+| 확인할 것 | 진행 조건 |
+|---|---|
+| 답변 배포 | 모델 이름뿐 아니라 배포 이름·버전도 [V1의 `model_snapshot`](../advanced-rag/fixtures/recorded-v1.json)과 일치. 기록 파일·공유 배포를 수정해 맞추지 않음 |
+| 추가 모델 | 같은 Foundry 리소스에서 임베딩·계획 모델의 지원 버전과 **GlobalStandard 용량 40·60** 확인. [가용성 도움말](reference.md#model-availability) |
+| 권한 | Search/모델 생성·사용과 **Search·Foundry 리소스 범위 역할 할당** 승인. 권한이 없으면 권한 있는 담당자가 준비 |
+| 비용·정책 | Basic 유지비·사용량 비용, preview·네트워크 허용 여부 확인. 용량 40·60은 비용 상한이 아님 |
+
+과거 실행 기록은 현재 구독의 버전 가용성·쿼터를 보장하지 않습니다.
 
 **준비는 아래 여섯 단계입니다.** 공통 준비에서 한 번 돌아온 뒤에는 **Optional RAG 문서로 이동하지 않고 이 문서에서 계속**합니다. 기존 자원이 있으면 해당 생성 명령만 건너뛰고 조회·권한 확인은 수행합니다.
 
@@ -115,9 +148,11 @@ Free 서비스에는 여기서 필요한 아웃바운드 관리 ID 제약이 있
 <a id="common-setup"></a>
 ### 2-1. 공통 환경 준비
 
-먼저 [README의 준비 1–7](../README.ko.md#prepare)만 완료합니다. [준비 5](../README.ko.md#setup-model)에서 위 답변 모델 버전을 확인하고, `config.json`과 한 건의 생성·평가까지 준비합니다. 기존 허가된 환경은 [기존 환경 준비](setup.md#existing-environment)를 사용합니다. 입문 A/B·실습 1–6은 이 경로의 필수 선행 활동이 아닙니다. **이 문서는 열린 채로 두고 공통 준비를 새 탭에서 읽으면 복귀하기 쉽습니다. 준비가 끝나면 바로 아래로 돌아옵니다.**
+1. **이 문서는 열어 둔 채**, [README 준비 1–7](../README.ko.md#prepare)을 새 탭에서 진행합니다. 기존 허가된 자원은 [기존 환경 준비](setup.md#existing-environment)를 사용합니다.
+2. [준비 5](../README.ko.md#setup-model)에서 답변 모델 버전을 확인합니다.
+3. `config.json`과 한 건의 생성·평가까지 준비합니다. 입문 A/B·실습 1–6은 필수 선행 활동이 아닙니다.
 
-**돌아올 시점:** 준비 7에서 `평가 완료: 1개 답변 × 2개 지표`와 N01의 두 점수·이유를 확인했다면 공통 준비는 끝입니다. README의 **실습 1이 아니라 [아래 2-2](#search-setup)**로 이어갑니다. 이미 같은 환경에서 완료했다면 N01을 다시 생성할 필요가 없습니다.
+> **돌아올 시점:** 준비 7에서 `평가 완료: 1개 답변 × 2개 지표`와 N01의 두 점수·이유를 확인했다면 **[아래 2-2](#search-setup)로 복귀**합니다. README 실습 1로 가지 않습니다. 같은 환경에서 이미 완료한 N01은 다시 생성하지 않습니다.
 
 <a id="search-setup"></a>
 ### 2-2. 실제 값과 모델 가용성 확인
@@ -212,7 +247,15 @@ az role assignment create --assignee-object-id "YOUR-USER-OBJECT-ID" --assignee-
 az role assignment create --assignee-object-id "YOUR-SEARCH-PRINCIPAL-ID" --assignee-principal-type ServicePrincipal --role "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd" --scope "YOUR-FOUNDRY-RESOURCE-ID" --subscription "YOUR-SUBSCRIPTION-ID"
 ```
 
-**호출 주체를 구분합니다.** 문서 임베딩과 `vector`·`hybrid` 질의의 임베딩은 터미널의 **본인 `AzureCliCredential`**, 서비스의 vectorizer·검색 계획은 **Search 관리 ID**, 클라우드 평가는 공통 준비의 **프로젝트 관리 ID**를 사용합니다. 본인·프로젝트의 기존 Foundry User 권한도 유지합니다. 역할 생성 성공이 즉시 호출 성공을 뜻하지는 않습니다. 401/403이면 대상·범위·전파와 네트워크를 확인한 뒤 같은 단계로 재개하며, 중복 역할이나 API 키로 우회하지 않습니다.
+**호출 주체는 세 가지입니다.**
+
+| 작업 | 사용하는 신원 |
+|---|---|
+| 문서 임베딩, `vector`·`hybrid` 질의 임베딩 | 터미널의 **본인 `AzureCliCredential`** |
+| 서비스의 vectorizer·검색 계획 | **Search 관리 ID** |
+| 클라우드 평가 | 공통 준비의 **프로젝트 관리 ID** |
+
+본인·프로젝트의 기존 Foundry User 권한도 유지합니다. 역할 생성 성공이 즉시 호출 성공을 뜻하지는 않습니다. 401/403이면 대상·범위·전파·네트워크를 확인하고 같은 단계로 재개합니다. 중복 역할이나 API 키로 우회하지 않습니다.
 
 **완료 확인:** IAM에서 본인에게 Search 역할 두 개, Search 관리 ID에 Foundry 리소스의 모델 호출 역할이 있는지 **대상 ID와 범위까지** 대조했습니다. 실제 데이터 접근은 아래 `setup`과 3절의 질의로 확인합니다.
 
@@ -281,7 +324,11 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 
 임베딩은 계정의 `/openai/v1/embeddings` 주소에서 Entra 인증으로 호출합니다. 설정에는 위 표의 **리소스 주소까지만** 넣습니다. `/openai/v1/embeddings`는 코드가 붙이므로 직접 덧붙이지 않습니다.
 
-**실행 전 확인:** 두 설정 파일이 저장됐고, 예시 주소 `YOUR-...`가 남아 있지 않으며 본인·프로젝트·Search 관리 ID의 역할을 각각 확인했습니다. 이후 제공된 지침·질문·정답·설정은 같은 실험 도중 수정하지 않습니다.
+**실행 전 확인**
+
+- 두 설정 파일을 저장했고, 예시 주소 `YOUR-...`가 남아 있지 않습니다.
+- 본인·프로젝트·Search 관리 ID의 역할을 각각 확인했습니다.
+- 이후 같은 실험에서는 제공된 지침·질문·정답·설정을 수정하지 않습니다.
 
 ```bash
 python advanced_lab.py setup
@@ -352,10 +399,18 @@ python advanced_lab.py setup
 
 </details>
 
+**다음:** [3. 실제 검색 확인](#retrieval-proof) · [진행표](#lab-map)
+
+---
+
 <a id="retrieval-proof"></a>
 ## 3. 벡터와 LLM 계획이 실제로 실행되는지 확인
 
-**여기서는 검색만 확인하며 직원에게 보여 줄 답변은 아직 만들지 않습니다.** 첫 명령은 의미가 비슷한 규정 조각을 벡터로 찾습니다.
+**여기서는 검색만 확인하며 직원에게 보여 줄 답변은 아직 만들지 않습니다.**
+
+### 3-1. 벡터 검색 확인하기
+
+의미가 비슷한 규정 조각을 벡터로 찾습니다.
 
 ```bash
 python advanced_lab.py query --mode vector --query "해외 출장 호텔 숙박비 상한을 확인하고 싶습니다." --out results/advanced/vector-query.json
@@ -363,7 +418,9 @@ python advanced_lab.py query --mode vector --query "해외 출장 호텔 숙박�
 
 **완료 확인:** `RETRIEVAL OK: vector`, `query_vector_dimensions: 1536`, `vector_fields: content_vector`, `text_query: false`와 실제 청크 ID가 보입니다. `results/advanced/vector-query.json`에 저장됩니다.
 
-두 번째 명령은 여러 조건이 있는 질문을 검색 계획 모델에 전달합니다.
+### 3-2. LLM 검색 계획 확인하기
+
+여러 조건이 있는 질문을 검색 계획 모델에 전달합니다.
 
 ```bash
 python advanced_lab.py query --mode planned --query "2026년 6월 30일과 7월 1일 국내 출장 숙박 한도를 비교하고, 한도를 초과할 때 필요한 절차와 해외 숙박 한도가 있는지도 알려주세요." --out results/advanced/planned-query.json
@@ -371,23 +428,30 @@ python advanced_lab.py query --mode planned --query "2026년 6월 30일과 7월 
 
 **완료 확인:** `RETRIEVAL OK: planned`, `llm_query_planning: true`, 실제 생성된 `planned_queries`, `modelQueryPlanning`·`searchIndex` 활동이 보입니다. `results/advanced/planned-query.json`에 저장됩니다. 작성자의 기록에서는 세 하위 질의가 관측됐지만 개수·문구는 고정 출력이 아닙니다. 계획 증거가 없으면 코드가 오류로 중단하며 일반 검색을 계획형이라고 부르지 않습니다.
 
+**다음:** [4. Judge 교정](#calibration) · [진행표](#lab-map)
+
+---
+
 <a id="calibration"></a>
 ## 4. Judge 교정과 고정
 
 **답변을 평가하기 전에 채점자부터 확인합니다.** 교정은 모델 재학습이 아니라, 미리 정한 정상 답변과 오답을 채점자가 구분하는지 시험하는 절차입니다.
 
 <a id="acceptance-criteria"></a>
-### 합격의 정확한 의미
+### 4-1. 합격 기준 먼저 읽기
 
 [acceptance.json](../advanced-rag/acceptance.json)의 기준은 새 질문을 보기 전에 고정합니다.
 
 **업무 검사**는 답변의 형식·결정·금액·출처가 정답과 맞는지, **검색 검사**는 필요한 규정 조각을 찾았는지 확인합니다. Judge의 **Groundedness**는 근거 충실도, **Relevance**는 질문 관련성, **`policy_task_success`**는 규정에 맞게 사용자의 일을 해결했는지를 봅니다. 답변 모델에는 정답을 주지 않습니다. 정답은 코드 검사에 사용하며, 업무 성공도 Judge에는 평가용 기대 행동도 전달됩니다.
 
-- **V2의 모든 최종 사례**가 업무 검사·필수 근거 검색·Groundedness·**기본 Relevance**·업무 성공도를 **100% 통과**해야 합니다. 평균으로 실패 사례를 숨기지 않습니다.
-- 필수 Judge는 **4/5 이상**, 중요 사례 실패는 **0개**.
-- 업무 성공도 Judge는 정상·오답 **교정 사례 10개를 모두 올바르게 구분**해야 함.
-- 실제 벡터 인덱스·vectorizer와 `modelQueryPlanning` 활동이 있어야 함.
-- 후보를 고정한 뒤 새 holdout을 최소 8개 생성·등록해야 함.
+| 대상 | 합격 조건 |
+|---|---|
+| V2의 모든 최종 사례 | 업무·필수 근거 검색·Groundedness·**기본 Relevance**·업무 성공도 **모두 100% 통과** |
+| 필수 Judge 점수 | 각각 **4/5 이상** |
+| 중요 사례 | 실패 **0개**. 평균으로 실패를 숨기지 않음 |
+| 업무 성공도 Judge 교정 | 정상·오답 **10개 모두 올바르게 구분** |
+| 실제 검색 증거 | 벡터 인덱스·vectorizer와 `modelQueryPlanning` 활동 |
+| 새 질문 | 후보 고정 **후** holdout 최소 **8개** 생성·등록 |
 
 **점수와 통과율은 다릅니다.** `4/5`는 한 답변에 매긴 점수의 합격선이지 정확도 80%가 아닙니다. 통과율 `100%`는 해당 단계의 모든 사례가 각 필수 기준을 통과해야 한다는 뜻입니다.
 
@@ -397,9 +461,10 @@ V2는 평가 데이터에 미리 정한 사용자 후속 응답을 사용합니�
 
 결과의 `intermediate_safe`는 이 필드 검사의 통과 여부이지 **초기 설명 문장의 의미나 안전성을 별도로 채점했다는 뜻이 아닙니다**. 예를 들어 `unknown`·`null`·`SCOPE` 필드가 맞아도 설명에 해외 한도를 지어낸 오류가 남을 수 있습니다. 5·7절의 `inspect --dialogue`로 초기 설명까지 직접 읽고 판단을 기록합니다.
 
-`inspect`는 저장된 결과를 출력할 뿐 검토나 승인을 저장하지 않습니다. 별도 검토 기록은 조직의 승인 절차에 남기며 자동 결과 파일을 승인 표시로 편집하지 않습니다. `LAB_ACCEPTANCE_PASSED`는 위 교육용 기준을 통과했다는 뜻이고, `human_production_approval`은 계속 `PENDING`입니다. **실제 사람의 운영 승인과는 별개**입니다.
+> [!IMPORTANT]
+> **자동 합격은 사람의 운영 승인이 아닙니다.** `LAB_ACCEPTANCE_PASSED`여도 `human_production_approval`은 `PENDING`입니다. `inspect`는 읽기 전용이므로 검토·승인을 저장하지 않습니다. 별도 검토는 조직의 승인 절차에 남기고 자동 결과 파일을 편집하지 않습니다.
 
-### 교정 실행
+### 4-2. 교정 실행하기
 
 [업무 성공도 기준](../advanced-rag/policy-task-success.txt)을 읽습니다. 필요한 날짜를 묻거나 규정에 없는 금액을 만들지 않는 답은 **적절한 초기 행동**으로 인정하고, 잘못된 금액·승인 조작·설명 모순은 구분합니다. 초기 행동이 맞다는 것만으로 최종 대화까지 완료된 것은 아닙니다.
 
@@ -412,6 +477,10 @@ python advanced_lab.py calibrate
 **완료 확인:** `CALIBRATION PASSED: 10 controls`. 정상 4개와 오답 6개를 모두 구분해야 합니다. 오답에는 채점 지침 무시 요청과 불필요한 인용도 있습니다. 정답/오답 **통과 라벨은 Judge 입력으로 보내지 않습니다**. 교정은 사람이 작성한 응답과 기대 행동으로 **`policy_task_success`만** 점검하며, 실제 모델의 holdout 성능이나 기본 Groundedness/Relevance의 별도 교정 결과가 아닙니다.
 
 평가기 버전·지침·모델·합격 기준은 `results/advanced/judge-contract.json`에 고정됩니다. Holdout 결과를 보고 Judge를 바꿔도 된다는 뜻이 아닙니다.
+
+**다음:** [5. V1 → V2 비교](#improve) · [진행표](#lab-map)
+
+---
 
 <a id="improve"></a>
 ## 5. 실제 V1 실패와 통제된 V2 개선
@@ -431,6 +500,8 @@ python advanced_lab.py calibrate
 | `holdout` | 후보 고정 후 만든 새 질문 8개를 실제 검색부터 실행 | 개선에 쓰지 않은 새 사례에서도 고정한 후보가 기준을 충족하는가 |
 
 예를 들어 `--stage v2-replay`의 **생성·채점이 모두 끝나면** `results/advanced/v2-replay/report.md`에서 보고서를 읽습니다. V2를 두 번 확인하는 것은 점수를 다시 뽑는 일이 아니라 **저장된 문맥에서의 비교와 실제 검색을 포함한 확인을 분리**하는 것입니다.
+
+### 5-1. 이전 V1 답변을 가져와 현재 Judge로 채점하기
 
 먼저 로컬 V1 기록을 가져옵니다.
 
@@ -453,7 +524,7 @@ python advanced_lab.py inspect --stage v1-recorded --case-id D02
 **완료 확인:** `Business checks`의 D02 `citations: false`와 `Scores`를 확인합니다. 기대 출처는 `["TRAVEL-CURRENT"]`인데 기록된 V1은 `["TRAVEL-CURRENT", "SCOPE"]`를 인용해 엄격한 출처 집합 검사에 실패합니다. **출처가 검색됐다는 사실과 답변에 꼭 필요한 출처라는 판단은 다릅니다.** Judge의 이유는 `results/advanced/v1-recorded/report.md`에서 읽습니다.
 
 <a id="read-case"></a>
-### 한 사례의 기대값과 실제값 읽기
+### 5-2. 한 사례의 기대값과 실제값 읽기
 
 `inspect`는 **생성·채점이 모두 완료된 결과를 읽기만** 합니다. `--context`를 붙이면 답변에 제공한 실제 검색 문맥도 출력합니다. 실패를 확인하려고 `run`·`judge`를 다시 실행할 필요는 없습니다.
 
@@ -485,7 +556,7 @@ python advanced_lab.py inspect --stage v1-recorded --case-id D02
 
 **오류 표에서 이곳으로 왔다면** 출력된 실패 사례를 확인한 뒤 [상태·재개 표](#resume)로 돌아갑니다. 실패한 실험을 보존하고, 뒤 단계를 실행하지 못했다면 8절에서 미실행으로 기록합니다.
 
-### V2의 차이를 확인하고 실행
+### 5-3. V2의 차이를 확인하고 생성·채점하기
 
 [V1](../advanced-rag/instructions.v1.txt)과 [V2](../advanced-rag/instructions.v2.txt)를 비교합니다. V2는 최소 충분한 근거를 선택하고, 필요한 추가 정보 요청·업무 이관 대화까지 마무리합니다.
 
@@ -510,7 +581,9 @@ python advanced_lab.py inspect --stage v2-replay --case-id D02
 ```
 
 <a id="dialogue-check"></a>
-**D04·D08은 대화 전체를 읽습니다.** 초기 설명의 모순까지 직접 확인하고, 문제가 있다면 해당 문장을 근거로 판단합니다.
+### 5-4. D04·D08의 대화 전체 읽기
+
+초기 설명의 모순까지 직접 확인하고, 문제가 있다면 해당 문장을 근거로 판단합니다.
 
 ```bash
 python advanced_lab.py inspect --stage v2-replay --case-id D04 --dialogue
@@ -529,10 +602,16 @@ python advanced_lab.py inspect --stage v2-replay --case-id D08 --dialogue
 
 **완료 확인:** D02의 출처가 어떻게 달라졌는지, D04·D08이 추가 요청 이후 어떻게 마무리되는지 설명할 수 있습니다. 같은 초기 저장 문맥·답변 모델·생성 설정·Judge에서 시작하되 필요한 사용자 후속 대화를 추가로 완료합니다. **지침과 대화 완료 절차를 개선한 것**이며 지침 문구만의 효과라고 주장하지 않습니다. V1을 일부러 약화하거나 실패할 때까지 다시 뽑지 않습니다.
 
+**다음:** [6. 전체 파이프라인과 고정](#freeze) · [진행표](#lab-map)
+
+---
+
 <a id="freeze"></a>
 ## 6. 전체 파이프라인을 확인한 뒤 고정
 
 **같은 실행을 반복하는 단계가 아닙니다.** 5절은 저장된 초기 검색 문맥에서 V2를 확인했고, 이번 `planned-dev`는 실제 벡터·LLM 계획 검색부터 최종 답변까지 연결해 확인합니다.
+
+### 6-1. 실제 검색부터 생성·채점하기
 
 ```bash
 python advanced_lab.py run --stage planned-dev
@@ -546,6 +625,8 @@ python advanced_lab.py judge --stage planned-dev
 
 **완료 확인:** `Evaluation complete: 4 cases × 3 metrics`. 대기 중이면 같은 채점 명령을 재실행합니다. 초기 질문과 필요한 후속 대화 모두 정해진 검색 절차를 사용합니다. 채점 명령의 종료 코드 0만으로 dev 합격을 판단하지 않습니다.
 
+### 6-2. 통과한 후보의 조건 고정하기
+
 **5→6절 사이에 V2 지침·후속 응답·모델·설정을 바꾸지 않습니다.** 두 dev 검증은 같은 후보와 입력 계약을 사용해야 합니다. 변경이 필요하면 기존 결과를 보존하고 [새 실험](#resume)에서 두 검증을 모두 수행합니다.
 
 ```bash
@@ -556,8 +637,14 @@ python advanced_lab.py freeze
 
 **`Dev acceptance is not met`라면** 터미널에 실패한 stage·사례 ID, 해당 `report.md`, 그대로 실행할 수 있는 `inspect --context` 명령이 나옵니다. 그 명령으로 [기대값과 실제값](#read-case)을 대조합니다. 입력 오류와 달리 dev의 품질 차단은 같은 생성·채점을 반복해 해결하지 않습니다.
 
+**`FROZEN` 확인 후 다음:** [7. 새 질문](#holdout) · [진행표](#lab-map)
+
+---
+
 <a id="holdout"></a>
 ## 7. 고정한 뒤 새 질문 생성
+
+### 7-1. 새 질문 8개 생성·등록하기
 
 ```bash
 python advanced_lab.py create-holdout
@@ -566,6 +653,8 @@ python advanced_lab.py create-holdout
 새 난수 시드로 **미리 정의된 8개 시나리오의 날짜·도시·금액을 새로 채웁니다**. 현재/과거 한도, 한도 초과 승인, 해외 범위, 날짜 누락, 금지 좌석, 경계값을 포함합니다. 새로운 매개변수 사례이지 광범위한 블라인드 일반화 검증은 아닙니다. 날짜 누락과 해외 이관 사례에는 명시적인 평가용 사용자 후속 응답이 있습니다. 질문·후속 응답·정답·생성 근거는 `results/advanced/holdout-data/`에 저장합니다.
 
 **완료 확인:** `HOLDOUT REGISTERED: 8 new cases`와 `holdout-registration.json`. 이 명령은 모델 호출 없이 질문 생성과 등록을 함께 수행합니다. 이미 있으면 덮어쓰지 않습니다. 합격하려고 질문을 다시 뽑지 않으며 중단 시에는 [재개 표](#resume)를 따릅니다.
+
+### 7-2. 고정된 후보로 생성·채점하기
 
 ```bash
 python advanced_lab.py run --stage holdout
@@ -579,6 +668,8 @@ python advanced_lab.py judge --stage holdout
 
 **완료 확인:** `Evaluation complete: 8 cases × 3 metrics`. 대기 중이면 같은 채점 명령을 재실행합니다. 완료된 두 후속 대화에서 [앞서 본 출력 순서](#dialogue-check)대로 초기 설명과 최종 답을 함께 읽고 판단을 기록합니다.
 
+### 7-3. N05·N06의 대화 검토하기
+
 ```bash
 python advanced_lab.py inspect --stage holdout --case-id N05 --dialogue
 ```
@@ -586,6 +677,8 @@ python advanced_lab.py inspect --stage holdout --case-id N05 --dialogue
 ```bash
 python advanced_lab.py inspect --stage holdout --case-id N06 --dialogue
 ```
+
+### 7-4. 최종 자동 판단과 근거 읽기
 
 ```bash
 python advanced_lab.py accept
@@ -602,6 +695,10 @@ python advanced_lab.py accept
 `LAB_ACCEPTANCE_PASSED`는 새 시나리오 8개의 **Relevance를 포함한 모든 최종 응답 지표와 초기 필드 검사**가 통과했을 때만 나옵니다. `LAB_ACCEPTANCE_BLOCKED`와 종료 코드 `2`는 품질 보류이며 실습 명령을 잘못 입력했다는 뜻이 아닙니다. `ERROR:`·`usage:`로 끝난 실행은 별도로 해결하며 완료로 기록하지 않습니다.
 
 차단되면 실패와 보류 이유를 기록하고 8절로 이동합니다. 자동 합격이어도 직접 읽은 초기 설명에 모순이 있다면 그 판단을 따로 기록하고 운영 적용은 보류합니다. 고정된 지침·Judge를 바꾸거나 합격 사례만 고르지 않습니다. 다음 개선은 [별도 작업 복사본의 새 실험](#resume)과 새로운 holdout으로 진행합니다.
+
+**다음:** [8. 결과·리소스 보존](#retention) · [진행표](#lab-map)
+
+---
 
 <a id="retention"></a>
 ## 8. 결과와 리소스 보존
@@ -628,6 +725,10 @@ python advanced_lab.py accept
 마지막으로 **“V1에서는 ___가 문제였다. V2에서는 ___가 달라졌다. 새 질문에서는 ___였으므로 ___로 판단한다.”**를 본인 결과로 설명합니다. 점수가 낮아도 실제 완료한 평가와 보류 판단은 유효합니다. 자동 합격을 운영 승인이라고 말하지 않습니다.
 
 본인 값이 들어간 `config.json`·`config.advanced.json`, 원본 녹화, `results/`는 Git에 올리지 않습니다. 버전별 지침과 정리된 V1 실패 예시는 실습 자료로 보존합니다.
+
+[진행표로 돌아가기](#lab-map) · [중단·재개 찾기](#resume)
+
+---
 
 <a id="results"></a>
 ## 참고: 작성자의 실행 기록

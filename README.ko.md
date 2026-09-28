@@ -2,37 +2,46 @@
 
 # AI 답변, 믿어도 될까요?
 
-## Microsoft Foundry Evaluation — 처음부터 끝까지 따라 하는 실습
+**Microsoft Foundry Evaluation — 처음부터 끝까지 따라 하는 실습**
 
-**실습의 모티브:** 사티아 나델라(Satya Nadella)의 [프런티어 생태계에 관한 블로그 글](https://snscratchpad.com/posts/frontier-ecosystem/)에서 영감을 받았습니다. 외부 벤치마크만이 아니라 **우리 업무의 기준으로 AI를 평가하고, 사람의 판단을 바탕으로 개선을 반복하는 학습 루프**를 작은 실습으로 경험하도록 구성했습니다.
+가상의 **가온랩 출장비 도우미**가 규정에 맞게 답하는지 확인합니다. Evaluation은 **미리 정한 기준으로 AI 답변을 검사하는 일**입니다. 제공된 명령을 실행하고 답변을 읽으며 배우므로 **Python 코드를 작성할 필요는 없습니다.**
 
-**권장 완결형 경로:** [실패 → V2 개선 → 새 질문 검증](docs/complete-lab.md). 실제 검색과 답변 개선까지 배우려면 이 링크의 **1–8절**을 따릅니다. 아래 본문은 **검색 없이 평가부터 익히는 별도의 입문 LIVE 경로**입니다.
+**권장 경로:** [완결형 RAG — 실패 → V2 개선 → 새 질문 검증](docs/complete-lab.md). 실제 검색과 답변 개선까지 배우려면 해당 가이드의 **1–8절**을 따릅니다. 이 README의 본문은 **검색 없이 평가부터 익히는 입문 LIVE**입니다.
 
-가상의 **가온랩 출장비 도우미**가 규정에 맞게 답하는지 확인합니다. Evaluation은 **미리 정한 기준으로 AI 답변을 검사하는 일**입니다. 코드는 준비되어 있으므로 Python 코드를 작성할 필요는 없습니다.
+<details>
+<summary>실습의 배경과 공개 실행 기록의 범위</summary>
+
+사티아 나델라(Satya Nadella)의 [프런티어 생태계에 관한 블로그 글](https://snscratchpad.com/posts/frontier-ecosystem/)에서 영감을 받았습니다. 외부 벤치마크만이 아니라 **우리 업무의 기준으로 AI를 평가하고, 사람의 판단을 바탕으로 개선을 반복하는 학습 루프**를 경험합니다.
 
 [경로별 실행 기록의 범위](docs/reference.md#live-verification)를 구분합니다. 현재 공개된 완결형 결과는 아래 입문 LIVE를 재검증한 기록이 아닙니다. 다른 실행의 점수를 예상 정답으로 사용하거나 같은 점수가 나올 때까지 반복하지 않습니다.
 
+</details>
+
 <a id="choose-path"></a>
-### 시작할 경로 고르기
+## 1개 경로만 선택하세요
 
-**한 번에 한 경로만 선택합니다.** 모든 링크를 차례대로 실행하는 과정이 아닙니다. Azure나 터미널이 처음이라면 무료 DEMO로 진행 방식을 먼저 익혀도 됩니다. 실제 검색까지 실습하려면 권장 완결형으로 시작하고, 필요한 공통 준비만 안내에 따라 오갑니다.
+모든 가이드를 순서대로 끝내는 과정이 아닙니다. **목적과 사용 가능한 환경에 맞는 한 행**을 고릅니다.
 
-| 내 상황 | 시작 위치 |
-|---|---|
-| 실제 검색·대화 개선·새 질문 검증까지 진행하고 싶음 | **[권장 완결형 RAG](docs/complete-lab.md)**. 고정된 답변 모델 버전과 Basic Search·추가 모델·권한·비용 조건을 먼저 확인합니다. 입문 전체는 선행 필수가 아닙니다. |
-| 검색 없이 답변 평가와 프롬프트 개선부터 익히고 싶음 | **입문 LIVE: 아래 [0. 오답 발견](#lab-0)부터**. 이후 Azure 준비에는 활성 구독과 자원 생성·역할 할당 권한이 필요하며 비용이 발생합니다. |
-| Azure 계정·권한·사용 가능한 모델이 없음 | **[DEMO 가이드](docs/offline.md)**만 따라갑니다. Python만 사용하며 실제 모델 성능은 측정하지 않습니다. |
-| 답변 개선보다 직접 Search와 Knowledge Base 검색의 차이만 확인하고 싶음 | [Optional RAG](docs/optional-rag.md). 공통 준비 후 `search`/`iq` 두 경로만 비교합니다. |
+| 경로 | 배우는 것 | 시작 조건 |
+|---|---|---|
+| **[완결형 RAG — 권장](docs/complete-lab.md)** | 실제 검색 → 대화 개선 → 새 질문 검증 | 고정 모델 버전·Basic Search·추가 모델·권한 확인. **유료** |
+| **[입문 LIVE — 이 문서](#lab-0)** | 검색 없이 답변 평가·프롬프트 개선 | 활성 Azure 구독·자원 생성·역할 할당 권한. **유료** |
+| **[DEMO](docs/offline.md)** | 작성된 예제로 평가 흐름 익히기 | Python만 필요. **Azure·유료 호출 없음**, 실제 성능 측정 아님 |
+| **[Optional RAG](docs/optional-rag.md)** | 직접 Search와 Knowledge Base 검색 비교 | 공통 준비 + Basic 이상 Search. **유료** |
 
-**이미 허가받은 프로젝트와 모델이 있다면** 선택한 LIVE 경로에서 [기존 환경 준비](docs/setup.md#existing-environment)를 사용합니다. 환경 보유 여부 때문에 다른 실습 경로로 바꾸거나 자원을 중복 생성하지 않습니다.
+Azure나 터미널이 처음이라면 DEMO로 진행 방식을 먼저 익혀도 됩니다. 완결형·Optional RAG를 선택했다면 **입문 전체는 선행 필수가 아닙니다.** 각 가이드가 안내하는 공통 준비만 수행합니다.
 
-**아래는 LIVE 한 경로입니다.** 명령의 `live`만 `demo`로 바꿔 실행하지 않습니다. Azure 제약으로 계속할 수 없다면 [DEMO 전환 절차](docs/setup.md#switch-to-demo)에 따라 기존 기록을 보존하고 별도 경로로 진행합니다.
+**기존 환경이 있다면:** 선택한 LIVE 경로에서 [기존 환경 준비](docs/setup.md#existing-environment)를 사용합니다. 경로를 바꾸거나 자원을 중복 생성할 필요는 없습니다.
 
-**아래 입문 LIVE를 선택하면 오답 판단 → 환경 준비 → 답변 생성 → 평가 → 지침 수정 → 비교 → 결과 정리 순서로 진행합니다.** 첫 판단 활동은 설치 없이 시작합니다. 파일을 열거나 짧은 내용을 수정하는 시점도 본문에서 안내합니다. 참고 문서를 먼저 읽을 필요는 없습니다.
+> [!IMPORTANT]
+> 아래 명령은 **입문 LIVE 전용**입니다. `live`만 `demo`로 바꾸지 않습니다. Azure 제약으로 막혔다면 [DEMO 전환 절차](docs/setup.md#switch-to-demo)에 따라 기존 기록을 보존합니다.
 
-> **실습 완료와 AI 답변 합격은 다릅니다.** 점수가 낮거나 최종 결과가 `BLOCK`이어도, 원인을 설명하고 보류 판단을 남겼다면 실습을 완료한 것입니다.
+<a id="lab-map"></a>
+## 입문 LIVE 진행표
 
-**실습 0–6은 LIVE·DEMO에서 같은 번호**입니다. 환경 준비는 실습 번호와 별도입니다. 별도 기록 양식을 만들 필요 없이 본문의 **완료 확인**과 자동 생성된 보고서로 진행합니다. 개인 메모는 선택 사항이며, 사람 판정은 안내된 `review` 명령으로 저장합니다.
+**시작은 [0. 오답 발견](#lab-0)입니다. 설치는 그다음입니다.** 참고 문서를 미리 읽거나 파일을 미리 수정하지 않아도 됩니다.
+
+실습 0–6은 LIVE·DEMO에서 같은 번호이며 환경 준비는 별도입니다. 각 단계의 **완료 확인 → 다음 단계** 순서로 진행합니다. 자동 생성된 보고서를 사용하므로 별도 기록 양식은 필요 없습니다. 개인 메모는 선택 사항이고, 사람 판정은 `review` 명령으로 저장합니다.
 
 | 순서 | 내가 할 일 | 다음 단계로 갈 때 남는 것 |
 |---|---|---|
@@ -45,6 +54,8 @@
 | [5. 새 질문과 판단](#lab-5) | 처음 보는 질문 4개로 최종 확인 | `results/candidate/gate.md` |
 | [6. 직접 적용](#lab-6) | 새 질문 하나를 만들고 결과 정리 | 추가 사례 결과와 네 문장 보고 |
 | [마무리](#finish) | 결과 보관·본인 리소스 보존 확인 | 완료 체크리스트와 보존 기록 |
+
+> **실습 완료 ≠ AI 답변 합격.** 점수가 낮거나 최종 결과가 `BLOCK`이어도, 원인을 설명하고 보류 판단을 남겼다면 실습을 완료한 것입니다.
 
 ### 진행할 때 지킬 세 가지
 
@@ -76,22 +87,52 @@ B가 적절합니다. 240000원은 **미승인 초안**의 금액입니다. A는
 
 **완료 확인:** 어떤 답이 규정에 맞는지 이유를 한 문장으로 설명할 수 있습니다.
 
+**다음:** [환경 준비](#prepare) · [진행표](#lab-map)
+
 ---
 
 <a id="prepare"></a>
 ## 준비. 내 PC와 Azure 연결하기
 
-**RAG에서 준비만 하러 왔다면:** 아래 준비 1–7만 수행하고 본인이 선택한 [완결형 Search 준비](docs/complete-lab.md#search-setup) 또는 [Optional RAG 준비](docs/optional-rag.md#prerequisites)로 돌아갑니다. 아래의 한 모델·22개 응답 설명과 실습 0–6은 입문 경로 범위이며, RAG의 전체 구성·호출량을 뜻하지 않습니다.
+> [!IMPORTANT]
+> **RAG 참가자는 준비 1–7만 수행합니다.** 끝나면 [완결형 Search 준비](docs/complete-lab.md#search-setup) 또는 [Optional RAG 준비](docs/optional-rag.md#prerequisites) 중 원래 경로로 돌아갑니다. 아래의 모델 1개·응답 22개는 **입문 경로만의 규모**입니다.
 
 **이미 허가받은 환경이 있다면** 아래 신규 생성 절차 대신 [기존 환경 준비](docs/setup.md#existing-environment)를 수행합니다. 입문 참가자는 그 뒤 [실습 1](#lab-1), RAG 참가자는 위에서 선택한 본인 가이드로 이어갑니다.
 
-**이번 LIVE 실습 설정:** 모델은 **`gpt-6-luna`**, 지역은 **Sweden Central (`swedencentral`)**, 모델 배포 이름은 **`eval-model`**입니다. 답변 생성과 Judge에 같은 배포를 사용합니다. **생성한 Azure 리소스는 실습 후에도 모두 보존합니다.** 마지막에는 [보존 상태와 비용](#retain-resources)을 확인하며, 삭제는 별도로 결정한 경우에만 수행합니다.
+| 준비 항목 | 입문 LIVE에서 사용할 값 |
+|---|---|
+| 모델 / 배포 이름 | **`gpt-6-luna` / `eval-model`** — 답변 생성과 Judge가 같은 배포 사용 |
+| 지역 | **Sweden Central (`swedencentral`)** |
+| 새로 준비할 범위 | **프로젝트 1개 + 모델 배포 1개** |
+| 계정·구독 | Microsoft Entra ID 계정 + 활성 Azure 구독. API 키 사용 안 함 |
+| 신규 환경의 시작 권한 | 구독의 **활성 Owner 역할**. 적용되는 상속 역할 포함 |
+| 종료 후 | **모든 리소스 보존** + [비용 확인](#retain-resources). 삭제는 별도 결정 |
 
-**기본 경로의 시작 조건:** Microsoft Entra ID 계정, 활성 Azure 구독, 그 구독의 **활성 Owner 역할**(적용되는 상속 역할 포함). 한 사람이 자원 생성과 역할 할당을 진행하도록 이 경로에서 선택한 조건입니다. Azure 자원 생성이 Owner만 가능한 것은 아니며 기존 환경 사용자에게 Owner가 필요한 것도 아닙니다. 다른 허가된 역할 조합은 [권한 계약](docs/reference.md#permissions-contract)을 참고합니다. API 키는 사용하지 않습니다.
+Owner는 한 사람이 자원 생성과 역할 할당을 진행하도록 선택한 조건입니다. 모든 Azure 자원 생성이나 기존 환경 사용에 Owner가 필요한 것은 아닙니다. 다른 허가된 역할 조합은 [권한 계약](docs/reference.md#permissions-contract)을 참고합니다.
 
-이번에는 **프로젝트 하나와 모델 배포 하나**만 사용합니다. 검색 서비스·에이전트 서버·Docker·Git·azd·Jupyter는 필요 없습니다. 실제 개인정보·기밀·비밀번호는 입력하지 않습니다.
+검색 서비스·에이전트 서버·Docker·Git·azd·Jupyter는 필요 없습니다. **실제 개인정보·기밀·비밀번호는 입력하지 않습니다.**
 
-입문 LIVE 경로는 **응답 22개, 평가 항목 44개**입니다. 준비 1개 + 변경 전 8개 + 변경 후 8개 + 새 질문 4개 + 추가 사례 1개를 생성하고, 각각 두 지표로 채점합니다. 평가기 내부 호출·재시도까지 센 청구 API 횟수는 아닙니다. 금액은 모델·토큰 사용량에 따라 달라지며, 예산 알림과 TPM 설정은 자동 지출 차단이 아닙니다.
+**비용:** 모델·토큰 사용량에 따라 청구됩니다. 예산 알림과 TPM 설정은 자동 지출 차단이 아닙니다.
+
+<details>
+<summary>입문 LIVE의 응답 수와 평가 규모</summary>
+
+**응답 22개, 평가 항목 44개**입니다. 준비 1개 + 변경 전 8개 + 변경 후 8개 + 새 질문 4개 + 추가 사례 1개를 생성하고 각각 두 지표로 채점합니다. 평가기 내부 호출·재시도까지 센 청구 API 횟수는 아닙니다.
+
+</details>
+
+<a id="setup-map"></a>
+### 준비 진행표
+
+| 순서 | 실행할 곳 | 완료 신호 |
+|---|---|---|
+| [1. 코드·도구](#setup-tools) | 브라우저 → VS Code | `LOCAL OK` |
+| [2. 로그인](#setup-sign-in) | Azure 포털 + 터미널 | 계정·구독·테넌트 일치 |
+| [3. 프로젝트](#setup-project) | Azure 포털 + Foundry | 생성 상태 `Succeeded` |
+| [4. 권한](#setup-permissions) | Azure 포털 IAM | 본인·프로젝트 ID의 Foundry User |
+| [5. 모델](#setup-model) | Foundry | `eval-model` 배포 성공 |
+| [6. 설정](#setup-config) | Foundry → VS Code | 두 항목 모두 `LIVE 조회 OK` |
+| [7. 연결 확인](#setup-smoke) | 터미널 + Foundry | N01의 답변·두 점수·이유 |
 
 <a id="setup-tools"></a>
 ### 준비 1. 코드 받기와 도구 설치
@@ -113,7 +154,14 @@ B가 적절합니다. 240000원은 **미승인 초안**의 금액입니다. A는
 | Azure CLI | [운영체제별 설치](https://learn.microsoft.com/cli/azure/install-azure-cli) | `az version` |
 | 편집기 | [VS Code 다운로드](https://code.visualstudio.com/) | 폴더와 터미널을 열 수 있음 |
 
-**파일 열기:** VS Code에서 **Ctrl+P / macOS Cmd+P**를 누르고 가이드의 경로(예: `data/policies.md`)를 입력한 뒤 Enter를 누릅니다. 검색되지 않으면 왼쪽 탐색기에서 해당 폴더를 펼쳐 파일을 엽니다. `.md` 표가 읽기 어렵다면 **View → Command Palette**에서 **Markdown: Open Preview to the Side**를 선택합니다. **수정은 미리보기가 아니라 원본 텍스트 탭**에서 하고 **File → Save**로 저장합니다.
+<details>
+<summary>VS Code에서 파일 열기·Markdown 미리보기·저장하기</summary>
+
+1. **Ctrl+P / macOS Cmd+P**에 경로(예: `data/policies.md`)를 입력하고 Enter를 누릅니다. 검색되지 않으면 왼쪽 탐색기에서 파일을 엽니다.
+2. `.md`는 **View → Command Palette → Markdown: Open Preview to the Side**로 읽습니다.
+3. 수정은 **미리보기가 아니라 원본 텍스트 탭**에서 하고 **File → Save**로 저장합니다.
+
+</details>
 
 **아래 두 블록 중 본인 운영체제 것만 실행합니다.** `.venv`는 이 실습의 Python 패키지를 담는 전용 폴더입니다.
 
@@ -131,9 +179,14 @@ py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-Windows에서 `Activate.ps1` 실행이 조직 정책으로 막히면 정책을 해제하지 않습니다. 패키지 설치부터 이후의 모든 `python`을 **`.\.venv\Scripts\python.exe`로 바꿔** 실행합니다. 예를 들어 `python lab.py doctor`는 `.\.venv\Scripts\python.exe lab.py doctor`가 됩니다. `az`로 시작하는 명령은 바꾸지 않습니다.
+<details>
+<summary>Windows에서 Activate.ps1 실행이 차단될 때</summary>
 
-이제 운영체제와 관계없이 패키지를 설치합니다. 위 활성화가 실패했다면 먼저 앞 문단의 대체 실행 방법을 적용합니다.
+조직 정책을 해제하지 않습니다. 패키지 설치부터 이후의 모든 `python`을 **`.\.venv\Scripts\python.exe`로 바꿔** 실행합니다. 예를 들어 `python lab.py doctor`는 `.\.venv\Scripts\python.exe lab.py doctor`가 됩니다. `az`로 시작하는 명령은 바꾸지 않습니다.
+
+</details>
+
+이제 운영체제와 관계없이 패키지를 설치합니다. Windows 활성화가 실패했다면 위 **“Windows에서 Activate.ps1 실행이 차단될 때”**를 펼쳐 대체 실행 방법부터 적용합니다.
 
 ```bash
 python -m pip install -r requirements.txt
@@ -305,7 +358,15 @@ az account show --query "{account:user.name,subscription:name,subscriptionId:id,
 }
 ```
 
-기본 경로에서는 **주소 하나만 수정**합니다. `model_deployment`와 `judge_deployment`는 모두 **`eval-model`**로 두며, 모델을 바꿨다고 이 값을 `gpt-6-luna`로 바꾸지 않습니다. 주소에는 **`.services.ai.azure.com/api/projects/실제프로젝트이름`**이 포함되어야 합니다. Azure 포털의 브라우저 주소, `/api/projects/...`가 없는 리소스 주소, `.openai.azure.com` 모델 주소는 넣지 않습니다. 배포를 다른 이름으로 만들었다면 두 값도 실제 **배포 이름**으로 바꿉니다. 파일명이 `config.json.txt`가 아닌지 확인합니다. `.env`는 필요 없습니다.
+**기본 경로에서는 주소 하나만 수정합니다.** 저장 전에 아래를 확인합니다.
+
+| 확인할 값 | 올바른 입력 | 넣으면 안 되는 값 |
+|---|---|---|
+| `project_endpoint` | `.services.ai.azure.com/api/projects/실제프로젝트이름`이 포함된 주소 | 포털 브라우저 주소, 프로젝트 경로가 없는 리소스 주소, `.openai.azure.com` 주소 |
+| 두 배포 항목 | 둘 다 **`eval-model`**. 다른 이름으로 배포했다면 실제 배포 이름 | 모델 이름 `gpt-6-luna` |
+| 파일 이름·위치 | **`lab.py` 옆 `config.json`** | `config.json.txt` |
+
+`.env`는 필요 없습니다.
 
 ```bash
 python lab.py doctor --live
@@ -316,7 +377,10 @@ python lab.py doctor --live
 <a id="command-status"></a>
 ### 명령 결과를 보고 다음 행동 고르기
 
-이후 모든 `run`, `judge`, `gate`에 같은 규칙을 적용합니다.
+**완료 메시지 → 건수 → 보고서** 순서로 확인합니다. 낮은 점수는 관찰 결과이지만 `ERROR:`는 해결 후 진행해야 합니다. 이후 모든 `run`, `judge`, `gate`에 같은 규칙을 적용합니다.
+
+<details>
+<summary>출력별 다음 행동 — 완료·대기·오류·BLOCK·재개</summary>
 
 | 보이는 결과 | 뜻 | 다음 행동 |
 |---|---|---|
@@ -336,6 +400,8 @@ python lab.py doctor --live
 **오류·중단 뒤에는 원인을 해결하고 [결과 파일별 재개 표](docs/setup.md#resume-checkpoints)를 확인합니다.** 미완료 `run`은 같은 입력·같은 `--out`으로 재개하면 저장된 답변은 건너뜁니다. 다만 중단 전에 저장되지 않은 답변은 재호출 비용이 발생할 수 있습니다. 원격 작업이 처리 중이거나 completed이고 ID가 저장되어 있다면, `judge`도 연결·로컬 저장 오류 해결 후 조회·수집을 재개할 수 있습니다. 제출 직후 ID 저장 전에 끊겼거나 서비스 상태가 `failed`/`canceled`라면 무작정 재제출하지 말고 [원격 ID 복구](docs/reference.md#resume)를 따릅니다.
 
 **`평가 완료`는 점수·이유 검증과 `judge.json`·`report.md` 저장이 끝난 뒤에만 나옵니다.** JSON을 직접 세거나 수정할 필요 없이 **완료 건수 → `보고서:`에 나온 `report.md` → `사례별 근거`의 답변·점수 이유** 순서로 확인합니다. 오류나 점수 누락은 낮은 점수와 다릅니다. 완료 후에는 다음 단계로 갑니다. 완료된 `run`·`judge`를 반복해도 더 좋은 답을 만들지 않고 저장된 결과를 읽습니다.
+
+</details>
 
 <a id="setup-smoke"></a>
 ### 준비 7. 답변 한 개로 연결 확인
@@ -371,6 +437,8 @@ python lab.py inspect results/setup-smoke N01
 | 완결형 RAG | [공통 준비 후 값 확인과 Search 준비](docs/complete-lab.md#search-setup) |
 | Optional RAG | [Optional RAG 준비 확인](docs/optional-rag.md#prerequisites) |
 
+**입문 LIVE의 다음:** [1. 평가 기준](#lab-1) · [진행표](#lab-map)
+
 ---
 
 <a id="lab-1"></a>
@@ -393,7 +461,14 @@ python lab.py inspect results/setup-smoke N01
 }
 ```
 
-`decision`은 결정, `limit_krw`는 원 단위 한도, `citations`는 근거 문서 ID, `answer`는 직원에게 보여 줄 설명입니다. 결정 값은 `allowed`(허용), `needs_approval`(사전 승인 필요), `not_allowed`(금지), `unknown`(규정에 없음), `needs_info`(질문 정보 부족) 중 하나입니다.
+| 답변 필드 | 읽는 법 |
+|---|---|
+| `decision` | 규정상 결정 |
+| `limit_krw` | 적용할 숙박 한도(원) |
+| `citations` | 근거 문서 ID 목록 |
+| `answer` | 직원에게 보여 줄 설명 |
+
+결정 값은 `allowed`(허용), `needs_approval`(사전 승인 필요), `not_allowed`(금지), `unknown`(규정에 없음), `needs_info`(질문 정보 부족) 중 하나입니다.
 
 `limit_krw`는 청구 금액이 아닙니다. `null`이면 한도를 결정할 수 없거나 숙박 한도와 무관한 질문이며 0원이라는 뜻이 아닙니다. `unknown`·`needs_info`도 상황에 따라 올바른 답일 수 있고, 결정 값이 실제 정산이나 승인을 실행하지는 않습니다.
 
@@ -420,6 +495,8 @@ python lab.py inspect results/setup-smoke N01
 
 **완료 확인:** D02의 기대 행동과 위험을 설명할 수 있습니다. 위 합격선은 이후 결과가 나와도 바꾸지 않습니다.
 
+**다음:** [2. 변경 전 답변](#lab-2) · [진행표](#lab-map)
+
 ---
 
 <a id="lab-2"></a>
@@ -443,12 +520,16 @@ python lab.py run --mode live --prompt v1 --out results/baseline
 
 **FAIL은 발견한 평가 결과이지 실습 실패가 아닙니다.** 모두 통과해도 정상입니다. 실패가 나오거나 점수가 좋아질 때까지 다시 실행하지 않습니다.
 
+**다음:** [3. Foundry 평가](#lab-3) · [진행표](#lab-map)
+
 ---
 
 <a id="lab-3"></a>
 ## 3. Foundry 점수와 내 판단 비교하기
 
-**할 일 1 — 사람 먼저:** D04의 질문·답변·규정을 읽습니다.
+### 3-1. Judge 점수보다 내 판단을 먼저 정하기
+
+D04의 질문·답변·규정을 읽습니다.
 
 ```bash
 python lab.py inspect results/baseline D04
@@ -456,7 +537,7 @@ python lab.py inspect results/baseline D04
 
 `Judge: 아직 미평가`가 정상입니다. **내 pass/fail과 이유를 먼저** 정합니다. 코드 결과는 보이지만 아직 Judge 점수는 보지 않습니다.
 
-**할 일 2 — Foundry로 채점:**
+### 3-2. 저장된 답변을 Foundry로 채점하기
 
 ```bash
 python lab.py judge results/baseline
@@ -466,7 +547,7 @@ python lab.py judge results/baseline
 
 `아직 처리 중입니다`로 끝나면 위 `judge` 명령을 그대로 다시 실행합니다. **`평가 완료: 8개 답변 × 2개 지표`**가 나와야 다음으로 갑니다. `results/baseline/judge.json`이 저장되고 `report.md`도 점수와 이유를 포함한 내용으로 갱신됩니다.
 
-**할 일 3 — 같은 D04를 대조:**
+### 3-3. 같은 D04의 점수와 이유 대조하기
 
 ```bash
 python lab.py inspect results/baseline D04
@@ -484,12 +565,16 @@ python lab.py inspect results/baseline D04
 
 반대로 **규정에 없는 금액을 추측하지 않은 올바른 답을 Relevance가 낮게 채점할 수도 있습니다.** 이유에 “구체적인 금액을 제시하지 못했다”가 보이면 기대 행동과 대조해 불일치를 기록합니다. 점수를 올리려고 금액을 지어내거나 Judge·합격선을 바꾸지 않습니다.
 
+**다음:** [4. 개선과 비교](#lab-4) · [진행표](#lab-map)
+
 ---
 
 <a id="lab-4"></a>
 ## 4. 프롬프트만 바꿔 다시 비교하기
 
-**할 일 1 — 가설과 수정:** “___ 문제를 줄이려고 ___ 지침을 바꾼다”는 가설을 먼저 정합니다. 예: “모르는 한도를 만드는 문제를 줄이려고 규정에 없는 값은 추측하지 말라는 지침을 넣는다.” 실패가 없었다면 “변경 후에도 올바른 행동이 유지되는지 확인한다”를 가설로 삼습니다.
+### 4-1. 가설을 정하고 작업본 수정하기
+
+“___ 문제를 줄이려고 ___ 지침을 바꾼다”는 가설을 먼저 정합니다. 예: “모르는 한도를 만드는 문제를 줄이려고 규정에 없는 값은 추측하지 말라는 지침을 넣는다.” 실패가 없었다면 “변경 후에도 올바른 행동이 유지되는지 확인한다”를 가설로 삼습니다.
 
 1. VS Code에서 [V1 지침](prompts/v1.txt)과 [개선 예제 V2](prompts/v2.txt)를 열어 차이를 읽습니다.
 2. **`prompts/my-v2.txt`**를 엽니다. 포함된 예제 작업본은 V2에 “출장일 확인 전에는 날짜별 한도를 나열하지 않고 `SCOPE`만 인용한다”는 지침이 추가되어 있으므로 이 차이도 가설에 포함합니다. **작업본이 없을 때만** V2를 열어 **File → Save As**로 `prompts/my-v2.txt`를 만듭니다. 원본 V1·V2와 이전에 작성한 본인 수정은 덮어쓰지 않습니다.
@@ -497,7 +582,9 @@ python lab.py inspect results/baseline D04
 
 V2는 공식 규정과 날짜를 먼저 확인하고, 모르는 값이나 없는 승인을 만들지 않도록 안내합니다. **모델·규정·질문/정답·Judge·합격선은 그대로** 둡니다. 후보 생성을 시작한 뒤에는 실습 6까지 이 작업본을 더 수정하지 않습니다. 이미 candidate 결과가 있다면 지침을 덮어쓰고 같은 폴더에 다시 실행하지 말고 [재개 안내](docs/setup.md#resume)를 따릅니다.
 
-**할 일 2 — 같은 dev 8개로 생성·평가·비교:** 각 명령의 완료를 확인하며 순서대로 실행합니다.
+### 4-2. 같은 dev 8개로 생성·평가·비교하기
+
+각 명령의 완료를 확인하며 순서대로 실행합니다.
 
 ```bash
 python lab.py run --mode live --prompt prompts/my-v2.txt --out results/candidate
@@ -517,13 +604,19 @@ python lab.py compare results/baseline results/candidate
 
 `results/candidate/comparison.md`에서 **업무 통과율 → 새로 통과한 사례 → 업무 검사 회귀 → Judge 회귀** 순서로 읽습니다. 회귀는 이전에 통과하던 검사가 새로 실패하는 변화입니다. **전체 통과율이 올라도 중요한 한 건이 나빠지면 보류**합니다. 사례별 실제 답변과 점수 이유는 두 폴더의 `report.md`에서 같은 ID로 대조합니다.
 
-Foundry의 **Build → Evaluations**에서 baseline의 **`straightforward-…` 평가 그룹 이름**을 엽니다. **Evaluation runs** 안에서 **`v1-dev-…`와 `my-v2-dev-…` 두 실행만** 선택하고 **Compare runs**를 누릅니다. 비교 화면의 **Baseline**도 반드시 `v1-dev-…`로 지정합니다. 처음 선택한 후보가 기준으로 잡힐 수 있습니다. Holdout·연결 확인·추가 사례는 전후 비교에 섞지 않습니다.
+**포털에서 비교하기:**
+
+1. **Build → Evaluations**에서 baseline의 **`straightforward-…` 평가 그룹 이름**을 엽니다.
+2. **Evaluation runs**에서 **`v1-dev-…`와 `my-v2-dev-…` 두 실행만** 선택하고 **Compare runs**를 누릅니다.
+3. 비교 화면의 **Baseline**을 **`v1-dev-…`로 지정**합니다. 처음 선택한 후보가 기준으로 잡힐 수 있습니다.
+
+Holdout·연결 확인·추가 사례는 전후 비교에 섞지 않습니다.
 
 포털 비교는 평균·통계 요약이며, **개별 답변·점수 이유와 합격선 4점 기준의 회귀**는 각 실행의 같은 질문과 로컬 `comparison.md`에서 대조합니다. **Too few samples / Inconclusive**가 나오면 작은 표본에서 개선을 확정할 수 없다는 뜻입니다. 비교 버튼이 없어도 두 실행의 같은 질문을 나란히 볼 수 있습니다. 점수 변화가 없다면 D06이 안전하게 유지됐는지 확인합니다.
 
 `comparison.md`, `reviews.json`의 사람 판정, `gate.md`는 **내 PC의 실습 기록**이며 별도의 Foundry 평가 실행이 아닙니다. 포털의 Pass가 이 기록을 대신하지 않습니다.
 
-**할 일 3 — 실제 답변 검토:**
+### 4-3. D06의 실제 답변을 읽고 판정 저장하기
 
 ```bash
 python lab.py review results/candidate D06
@@ -546,12 +639,14 @@ python lab.py review results/candidate D06
 
 **완료 확인:** `검토 저장: results/candidate/reviews.json`이 보입니다. `comparison.md`와 두 실행의 `report.md`를 근거로 바꾼 지침과 좋아진/나빠진 사례를 설명합니다. 변화가 없으면 “변화 없음”으로 판단합니다.
 
+**다음:** [5. 새 질문과 판단](#lab-5) · [진행표](#lab-map)
+
 ---
 
 <a id="lab-5"></a>
 ## 5. 새 질문으로 확인하고 채택/보류하기
 
-**할 일 1 — 후보를 고정하고 새 질문 4개 실행:**
+### 5-1. 후보를 고정하고 새 질문 4개 생성·평가하기
 
 ```bash
 python lab.py run --mode live --frozen results/candidate --split holdout --out results/holdout
@@ -565,13 +660,15 @@ python lab.py judge results/holdout --like results/baseline
 
 `아직 처리 중입니다`로 끝나면 `--like`까지 포함한 위 명령을 재실행합니다. **`평가 완료: 4개 답변 × 2개 지표`**와 `Judge 결과: results/holdout/judge.json`을 확인하면 H04를 읽고 판정합니다.
 
+### 5-2. H04의 사람 판정 저장하기
+
 ```bash
 python lab.py review results/holdout H04
 ```
 
 앞 단계와 같이 `pass`/`fail`과 이유를 입력합니다. **`검토 저장: results/holdout/reviews.json`**이 보여야 다음으로 갑니다. 사람 판정은 이 명령으로 저장해야 Gate에 반영됩니다.
 
-**할 일 2 — 처음 정한 기준으로 판단:**
+### 5-3. 처음 정한 기준으로 채택 검토·보류 판단하기
 
 ```bash
 python lab.py gate results/baseline results/candidate results/holdout
@@ -588,20 +685,33 @@ python lab.py gate results/baseline results/candidate results/holdout
 
 Dev와 holdout은 질문이 달라 전후 점수처럼 비교하지 않습니다. Holdout을 보고 프롬프트를 수정한다면 **다음에는 새 holdout이 필요**합니다.
 
+**다음:** [6. 내 질문 하나](#lab-6) · [진행표](#lab-map)
+
 ---
 
 <a id="lab-6"></a>
 ## 6. 내 질문 하나로 평가해 보기
 
-**할 일 1 — 작업본 확인:** 먼저 `data/my-case.jsonl`을 엽니다. 저장소에는 숙박비 **180000원**인 N02 예제가 이미 포함되어 있습니다. 그대로 사용하려면 아래 **할 일 3의 파일 확인**으로 가고 “제공 예제 그대로”라고 기록합니다. 이전 LIVE·DEMO에서 작성한 본인 질문이라면 보존하고 같은 파일 확인으로 가서 재사용했다고 기록합니다. `results/my-case`도 이미 있다면 질문을 교체하지 말고 [재개 표](docs/setup.md#resume-checkpoints)를 따릅니다.
+### 6-1. 작업본을 확인하고 작성 방식 선택하기
 
-**직접 수정 연습을 하려면** 이 작업본을 사용합니다. 파일이 없을 때만 [추가 사례 예제](data/my-case.example.jsonl)를 열고 **File → Save As**로 `data/my-case.jsonl`을 만듭니다. 원본은 바꾸지 않습니다. **작업본의 내용을 아래 한 줄 전체로 교체**한 뒤 할 일 2의 두 값을 수정합니다. 연결 확인용 N01이 아니라 새 사례 **N02**를 작성하는 것입니다.
+먼저 `data/my-case.jsonl`을 엽니다. 저장소에는 숙박비 **180000원**인 N02 예제가 포함되어 있습니다.
+
+| 내 상황 | 할 일 |
+|---|---|
+| 제공 예제를 그대로 사용 | [6-3. 파일 확인](#validate-extra)으로 이동. “제공 예제 그대로”로 기록 |
+| 이전 LIVE·DEMO의 본인 질문이 있음 | 덮어쓰지 않고 [6-3. 파일 확인](#validate-extra). 재사용으로 기록 |
+| `results/my-case`도 이미 있음 | 질문을 교체하지 않고 [재개 표](docs/setup.md#resume-checkpoints) 확인 |
+| 직접 수정 연습 | 아래 작업본 작성 → 6-2의 두 값 수정 |
+
+**직접 수정할 때만:** 파일이 없으면 [추가 사례 예제](data/my-case.example.jsonl)를 **File → Save As**로 `data/my-case.jsonl`에 저장합니다. 원본은 바꾸지 않습니다. 작업본을 아래 **한 줄 전체로 교체**한 뒤 6-2로 갑니다. 연결 확인용 N01이 아니라 새 사례 **N02**를 작성합니다.
 
 ```jsonl
 {"id":"N02","category":"과거 출장의 한도 초과","critical":true,"query":"2026년 6월 15일 국내 출장 숙박비가 1박 170000원입니다. 9월에 정산하면 사전 승인 없이 처리해도 되나요?","expected_decision":"needs_approval","expected_limit_krw":160000,"expected_citations":["TRAVEL-PREVIOUS"],"ground_truth":"정산일이 아니라 출장일의 과거 한도 160000원을 적용한다. 170000원은 한도 초과이므로 재무팀 사전 승인이 필요하며 바로 정산할 수 있다고 안내하면 안 된다."}
 ```
 
-**할 일 2 — 처음에는 금액 두 곳만 수정:** 위 예제에서 아래 두 값을 같은 금액으로 바꾸고 저장합니다.
+### 6-2. 금액 두 곳만 수정하기
+
+위 예제의 아래 두 값을 같은 금액으로 바꾸고 저장합니다.
 
 | 수정할 곳 | 바꿀 값 |
 |---|---|
@@ -632,7 +742,10 @@ Dev와 holdout은 질문이 달라 전후 점수처럼 비교하지 않습니다
 
 **파일은 JSON 객체 하나가 한 줄에 있는 형태**여야 합니다. 화면에서 자동 줄바꿈되어 보이는 것은 괜찮지만 Enter로 객체를 여러 줄로 나누거나 빈 줄을 넣지 않습니다. 숫자에 쉼표·따옴표를 붙이지 않고, `null`·`true`·`false`는 소문자로 씁니다. 필드를 추가하거나 삭제하지 않습니다.
 
-**할 일 3 — 유료 호출 전에 파일 확인:** `validate-data`는 로컬에서 JSONL 문법·필수 필드·값 형식을 검사합니다. 파일을 바꾸거나 모델을 호출하지 않습니다. 정답이 규정과 맞는지는 직접 대조합니다.
+<a id="validate-extra"></a>
+### 6-3. 유료 호출 전에 파일 확인하기
+
+`validate-data`는 로컬에서 JSONL 문법·필수 필드·값 형식을 검사합니다. 파일을 바꾸거나 모델을 호출하지 않습니다. 정답이 규정과 맞는지는 직접 대조합니다.
 
 ```bash
 python lab.py validate-data data/my-case.jsonl
@@ -640,7 +753,9 @@ python lab.py validate-data data/my-case.jsonl
 
 **`DATA OK: 1 case(s)`**가 나와야 다음으로 갑니다. `ERROR:`가 나오면 표시된 필드나 줄을 수정하고 같은 검사만 다시 실행합니다. 2개 이상으로 나오면 N01 등 다른 줄이 남아 있는지 확인하고 N02 한 줄만 남깁니다.
 
-**할 일 4 — 생성·평가·확인:** 실습 4에서 사용한 `my-v2.txt`를 그대로 사용합니다.
+### 6-4. 추가 사례 생성·평가·확인하기
+
+실습 4에서 사용한 `my-v2.txt`를 그대로 사용합니다.
 
 ```bash
 python lab.py run --mode live --prompt prompts/my-v2.txt --data data/my-case.jsonl --out results/my-case
@@ -668,6 +783,8 @@ python lab.py inspect results/my-case N02
 > 내 업무에서는 ___ 실패부터 평가 데이터에 넣겠다.
 
 다른 업무용 질문은 **질문 / 기대 행동 / 금지 행동 / 평가 방법**으로 따로 설계합니다. 출장 규정 코드 검사에 다른 업무를 억지로 넣지는 않습니다.
+
+**다음:** [마무리 체크리스트](#finish) · [진행표](#lab-map)
 
 ---
 
@@ -708,6 +825,9 @@ VS Code에서 다음 결과 파일을 확인합니다. **점수가 아니라 수
 
 **리소스 보존 요청이 있는 동안은 이 절을 실행하지 않습니다.** 나중에 환경 소유자가 삭제하기로 결정한 경우에만 다음 순서로 진행합니다.
 
+<details>
+<summary>별도 삭제 결정이 있을 때만: 범위 확인·삭제·완료 확인</summary>
+
 1. **먼저 `results/`를 로컬에 보관**합니다. 포털 원본 평가 기록이 필요하면 삭제 전에 내려받습니다. 진행 중인 원격 평가가 있으면 완료를 확인하거나 본인 작업만 취소합니다.
 2. Azure 포털에서 준비 때 확인한 **구독 → 본인 전용 리소스 그룹**을 엽니다. 이번 실습 자원만 있는지 확인합니다. **공유 자원이 있거나 삭제 범위가 불확실하면 그룹을 삭제하지 않습니다.**
 3. 더 사용하지 않을 전용 그룹에서 **Overview → Delete resource group**을 선택합니다. 삭제 목록을 읽고 **정확한 그룹 이름을 직접 입력**해 승인합니다. 그룹 삭제는 되돌릴 수 없는 작업으로 취급합니다.
@@ -721,7 +841,11 @@ az group exists --name "YOUR-LAB-RESOURCE-GROUP" --subscription "YOUR-SUBSCRIPTI
 
 Azure 포털의 **Cost Management → Cost analysis**에서 삭제 전 발생한 비용을 확인합니다. 반영이 늦을 수 있으며 삭제가 이미 발생한 비용을 취소하지는 않습니다. **삭제 여부·시각·비용 확인 결과**를 대조합니다. 공유 환경은 소유자와 합의한 범위만 정리합니다. 자세한 확인이 필요하면 [리소스 보존·정리 도움말](docs/cleanup.md)을 봅니다.
 
+</details>
+
 **위 체크리스트와 보존 또는 삭제 상태까지 확인했으면 LIVE 실습 완료입니다. 리소스를 삭제해야만 완료되는 것은 아닙니다.** 이 작은 질문 묶음의 한 번 실행은 운영 품질 보증이나 실제 배포 승인이 아닙니다.
+
+[진행표로 돌아가기](#lab-map) · [다른 경로 확인](#choose-path)
 
 ---
 

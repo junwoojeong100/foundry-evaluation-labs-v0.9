@@ -10,6 +10,28 @@
 
 기본 경로에서 **환경 소유자는 참가자 본인**입니다. 본인 전용 자원의 설정·권한은 직접 확인하고, 조직 정책이나 공유 자원에 관한 결정만 해당 관리 담당자와 확인합니다.
 
+<a id="reference-map"></a>
+## 필요한 항목 바로 찾기
+
+| 지금 궁금한 것 | 읽을 곳 |
+|---|---|
+| 명령·종료 코드의 뜻 | [명령표](#commands) |
+| `ERROR:`·인증·설치·점수 누락 | [문제 해결](#troubleshooting) |
+| 어떤 ID에 어느 권한을 줘야 하는가 | [권한 계약](#permissions-contract) · [프로젝트 관리 ID](#managed-identity-access) |
+| 모델·배포 이름·주소·버전이 헷갈림 | [이름과 주소](#model-endpoint-contract) · [가용성·쿼터](#model-availability) |
+| 실행이 끊겼거나 폴더를 옮김 | [재개·원격 ID 복구](#resume) · [가상환경 복구](#moved-folder) |
+| 질문 JSONL을 직접 작성하고 싶음 | [데이터 필드](#data-contract) |
+| 코드·Judge·사람이 각각 무엇을 평가하는가 | [평가 범위와 한계](#evaluation-scope) |
+| 전후 점수를 비교해도 되는가 | [실험 통제·회귀·표본의 한계](#experiment-design) |
+| 점수가 높은데 Gate가 `BLOCK`임 | [Gate 조건](#gate-contract) · [AI 보조 검토 구분](#assisted-review) |
+| 결과 파일·포털 실행을 찾고 싶음 | [저장 파일](#artifacts) · [포털 비교](#portal-results) |
+| 배운 개념을 확인하고 싶음 | [다섯 질문과 해설](#self-check) |
+| 어떤 실행·SDK가 확인됐는가 | [SDK 계약](#sdk-contract) · [경로별 실행 기록](#live-verification) |
+| 공식 근거를 확인하고 싶음 | [공식 출처](#sources) |
+
+---
+
+<a id="commands"></a>
 ## 명령은 여덟 가지
 
 | 명령 | 역할 | 유료 호출 |
@@ -74,6 +96,7 @@ python lab.py validate-data data/my-case.jsonl
 
 질문 파일의 `expected_*`와 모델이 생성한 답변 필드를 혼동하지 않습니다.
 
+<a id="evaluation-scope"></a>
 ## 무엇을 평가하고 무엇은 평가하지 않는가
 
 | 신호 | 정확한 의미 |
@@ -93,6 +116,7 @@ python lab.py validate-data data/my-case.jsonl
 
 다음은 **고정 규정 입문 경로**의 증거 범위가 아닙니다: 검색 recall/NDCG, 도구 호출 정확성, Hosted Agent 동작, 멀티턴 대화, 일반적인 보안 검증, 광범위한 red teaming, 실제 업무 실행 권한, 운영 SLA. 최소 RAG의 검색 지표와 완결형의 대화·합격 기준은 각 전용 가이드에서 확인하며 아래 입문 Gate에 합치지 않습니다.
 
+<a id="experiment-design"></a>
 ## 실험의 통제와 결과 해석
 
 - 답변 모델은 **프롬프트 + 규정 + 질문**만 받습니다. 정답 필드와 `ground_truth`는 입력에서 제외합니다.
@@ -133,6 +157,7 @@ python lab.py validate-data data/my-case.jsonl
 
 </details>
 
+<a id="gate-contract"></a>
 ## Gate가 요구하는 것
 
 | 대상 | 교육용 조건 |
@@ -163,6 +188,7 @@ AI 보조 검토는 `reviews.json`에 남지만 **사람 검토의 건수나 최
 
 기존 파일의 `reviewer` 없는 기록은 이전 형식의 사람 검토로 읽습니다. 이 필드는 검토 유형을 명시하는 교육용 기록이며, 실제 사람의 신원을 인증하거나 승인 권한을 증명하는 장치는 아닙니다.
 
+<a id="artifacts"></a>
 ## 어디에 무엇이 남는가
 
 아래 파일 표와 입력 매핑은 **입문 `lab.py`** 기준입니다. 최소 RAG는 [검색 결과·입력 증거](optional-rag.md#evidence), 완결형은 [단계별 산출물](complete-lab.md#resume)을 사용합니다. 최소 RAG의 context는 규정 전체가 아니라 실제 검색 문맥이며, 완결형의 평가 입력에는 별도 대화 계약이 있습니다.
@@ -408,6 +434,7 @@ python lab.py doctor
 
 서비스가 작업을 명시적으로 `failed`/`canceled`로 끝낸 경우도 자동 재시도하지 않습니다. 원인을 먼저 해결합니다. 같은 저장 응답을 다시 평가하려면 환경 소유자가 실패 ID와 상태를 별도 보존하고, **실행이 확실히 종료됐음을 확인한 뒤** `foundry-job.json`의 `run_id`만 `null`, `phase`를 `ready`로 설정해 명시적으로 재제출할 수 있습니다. `eval_id`, 입력 해시와 평가 계약은 유지합니다. 유료 재평가이며 완료된 점수를 더 좋은 점수로 바꾸기 위한 기능이 아닙니다.
 
+<a id="sdk-contract"></a>
 ## SDK와 확인 범위
 
 **공식 권한·SDK/API 문서 대조일: 2026-09-28.** 이 대조와 로컬 검사는 새로운 Azure 실행 검증이 아닙니다.
@@ -449,6 +476,9 @@ SDK가 설치되어 있으면 SDK 계약 검사도 실행합니다. 없으면 �
 
 보존한 V1 비교 예시·교정·합격 증거는 그 완결형 실행에만 해당합니다. 본인 경로의 보고서로 판단하고, 다른 실행의 점수를 재현 목표로 삼지 않습니다.
 
+[찾아보기로 돌아가기](#reference-map)
+
+<a id="sources"></a>
 ## 공식 출처
 
 | 출처 | 확인한 내용 |

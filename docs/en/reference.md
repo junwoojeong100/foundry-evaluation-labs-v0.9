@@ -8,6 +8,28 @@ The main guide is self-contained. Read this reference only for a specific questi
 
 The command table below describes introductory `lab.py`. For `advanced_lab.py` status and fixed output paths, use [complete-path resumption](complete-lab.md#resume). Remote evaluation ID recovery below distinguishes each path's files.
 
+<a id="reference-map"></a>
+## Find the answer you need
+
+| Question or symptom | Read |
+|---|---|
+| What does a command or exit code mean? | [Command table](#commands) |
+| `ERROR:`, authentication, installation, or missing scores | [Troubleshooting](#troubleshooting) |
+| Which identity needs which role and scope? | [Permission contract](#permissions-contract) · [Project identity](#managed-identity-access) |
+| Confusing model names, deployments, versions, or addresses | [Names and endpoints](#model-endpoint-contract) · [Availability and quota](#model-availability) |
+| Interrupted run or moved folder | [Resumption and remote IDs](#resume) · [Environment recovery](#moved-folder) |
+| How do I write a JSONL question? | [Data fields](#data-contract) |
+| What do code, judges, and people actually check? | [Evaluation scope and limits](#evaluation-scope) |
+| Can these scores be compared? | [Controls, regressions, and sample limits](#experiment-design) |
+| Why is the gate `BLOCK` despite high scores? | [Gate requirements](#gate-contract) · [AI-assisted review](#assisted-review) |
+| Where are the result files or portal runs? | [Saved evidence](#artifacts) · [Portal comparison](#portal-results) |
+| Have I understood the concepts? | [Five questions and explanations](#self-check) |
+| Which runs and SDK contracts were checked? | [SDK contract](#sdk-contract) · [Evidence by path](#live-verification) |
+| Where are the official sources? | [Official sources](#sources) |
+
+---
+
+<a id="commands"></a>
 ## Eight commands
 
 | Command | Purpose | Paid calls |
@@ -57,6 +79,7 @@ Use one object per line, lowercase JSON booleans/null, and numbers without comma
 
 The English guide is a translation of the workflow, not a translated experiment. The shared source data/prompts and emitted CLI messages remain Korean. Use the [reading translation](policies.md); changing model input language requires a separate controlled experiment.
 
+<a id="evaluation-scope"></a>
 ## What each check does
 
 | Signal | Contract |
@@ -76,6 +99,7 @@ The code cannot understand an explanation that contradicts otherwise correct fie
 
 Not measured by the **fixed-policy introductory path**: retrieval recall/NDCG, tool-call accuracy, hosted-agent behavior, multi-turn dialogue, broad security/red-team coverage, execution authorization, or production SLA. Minimal-RAG retrieval metrics and complete-path dialogue/acceptance criteria belong to their dedicated guides, not the introductory gate below.
 
+<a id="experiment-design"></a>
 ## Controlled comparisons
 
 - Generation gets prompt, policy, and question only.
@@ -111,6 +135,7 @@ The service's default pass threshold may be **3**, while this workshop uses **ra
 
 </details>
 
+<a id="gate-contract"></a>
 ## Gate contract
 
 | Area | Requirement |
@@ -141,6 +166,7 @@ Assistant reviews are saved but **do not meet the human-review requirement or ov
 
 Older records without a `reviewer` field retain their legacy human interpretation. This educational field is self-reported attribution, not identity verification or authorization proof.
 
+<a id="artifacts"></a>
 ## Saved evidence
 
 The file table and mappings below describe **introductory `lab.py`**. For minimal RAG, use [retrieval/input evidence](optional-rag.md#evidence); for complete RAG, use [stage-specific artifacts](complete-lab.md#resume). Minimal RAG passes retrieved context rather than the whole policy, and complete RAG has a separate dialogue evaluation contract.
@@ -375,6 +401,7 @@ First locate the **local correlation ID** for that evaluation. It is not the rem
 
 For an explicitly terminated failed/canceled run, fix its cause first. An owner can preserve its original ID/status, verify termination, then set only `run_id` to `null` and `phase` to `ready` to resubmit the same saved responses under the same eval/contract. This is paid reevaluation, not score-shopping.
 
+<a id="sdk-contract"></a>
 ## SDK and verification scope
 
 Official RBAC and SDK/API documentation cross-checked **2026-09-28**. This review and local testing are not a new Azure execution.
@@ -412,6 +439,9 @@ Keep the author's earlier introductory records separate. On September 28, 2026, 
 
 The retained V1 comparison, calibration, and acceptance evidence belongs to that complete-path run only. Use reports from your own path; do not treat another execution's scores as a reproduction target.
 
+[Back to the reference index](#reference-map)
+
+<a id="sources"></a>
 ## Official sources
 
 | Source | Topic |

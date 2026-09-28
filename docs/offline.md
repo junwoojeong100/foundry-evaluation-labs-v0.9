@@ -4,11 +4,38 @@
 
 [메인 설명](../README.ko.md)
 
-**이 문서의 순서만 따라갑니다.** 가상의 가온랩 출장비 도우미에 대해 **기준 정하기 → 답변 확인 → AI 채점 예제와 비교 → 변경 전후 비교 → 채택/보류**를 연습합니다. Python 3.10 이상만 필요하며 Azure 계정·로그인·유료 호출은 없습니다.
+**Azure 없이 평가의 흐름부터 익힙니다.** 가상의 가온랩 출장비 도우미에 대해 기준을 정하고, 답변과 채점 예제를 읽어 변경을 채택할지 보류할지 판단합니다. **이 문서만 순서대로 따라갑니다.**
 
-**답변·Judge 점수·이유는 모두 사람이 작성한 예제입니다.** 실제 모델이나 Foundry 평가기를 실행하지 않습니다. 예제의 분석 결과를 프롬프트 개선 효과나 실제 배포의 근거로 사용하지 않습니다.
+| 한눈에 보기 | DEMO에서 할 일 |
+|---|---|
+| 준비물 | **Python 3.10 이상 + VS Code**. Azure 계정·로그인·패키지 설치 불필요 |
+| 비용 | **유료 호출 없음** |
+| 직접 편집 | 실습 6의 `data/my-case.jsonl`만. `config.json` 불필요 |
+| 결과 위치 | `results/demo-baseline`·`demo-candidate`·`demo-holdout` |
 
-**실습 0–6은 LIVE·DEMO에서 같은 번호**입니다. **0. 오답 판단 → 환경 준비 → 실습 1–6 → 마무리** 순서로 본문의 완료 확인과 자동 생성된 보고서를 사용합니다. 개인 메모는 선택 사항이며, 사람 판정은 안내된 `review` 명령으로 저장합니다.
+> [!IMPORTANT]
+> **답변·Judge 점수·이유는 모두 사람이 작성한 예제입니다.** 실제 모델이나 Foundry 평가기를 실행하지 않으므로, 결과를 프롬프트 개선 효과나 실제 배포의 근거로 사용하지 않습니다.
+
+<a id="lab-map"></a>
+## 진행표
+
+실습 0–6은 LIVE와 같은 번호입니다. **한 명령 → 완료 확인 → 다음 단계** 순서로 진행하며, 사람 판정은 `review`로 저장합니다. 자동 보고서를 사용하고 개인 메모는 선택 사항입니다.
+
+| 순서 | 할 일 | 완료 확인 |
+|---|---|---|
+| [0. 오답 발견](#lab-0) | 설치 없이 규정과 답변 대조 | 판단과 이유 한 문장 |
+| [준비](#prepare) | 코드·Python·터미널 준비 | `LOCAL OK` |
+| [1. 평가 기준](#lab-1) | 기대 행동과 합격선 정하기 | D02의 위험 설명 |
+| [2. 변경 전 답변](#lab-2) | V1 예제와 코드 검사 읽기 | 답변 8개·`report.md` |
+| [3. Judge 비교](#lab-3) | D04의 내 판단과 채점 예제 대조 | 동의·불일치 이유 |
+| [4. V2 비교](#lab-4) | 같은 질문 비교·D06 검토 | `comparison.md`·검토 저장 |
+| [5. 새 질문과 판단](#lab-5) | holdout·H04 검토·Gate | `gate.md`·판단 근거 |
+| [6. 내 질문 설계](#lab-6) | N02 한 건 작성·형식 검사 | `DATA OK: 1 case(s)` |
+| [마무리](#finish) | 예제의 결과와 한계 설명 | 완료 체크리스트 |
+
+**보고서 생성과 답변 합격을 구분합니다.** 예제 점수는 LIVE의 예상 점수가 아닙니다.
+
+---
 
 <a id="lab-0"></a>
 ## 0. 그럴듯한 오답 찾기
@@ -29,6 +56,10 @@ B가 적절합니다. 240000원은 미승인 초안의 금액이며, 공식 한�
 </details>
 
 **완료 확인:** 어떤 답이 규정에 맞는지 이유를 한 문장으로 설명할 수 있습니다. LIVE에서 이미 이 판단을 했다면 반복하지 않습니다.
+
+**다음:** [환경 준비](#prepare) · [진행표](#lab-map)
+
+---
 
 <a id="prepare"></a>
 ## 준비. 코드와 터미널 준비
@@ -58,7 +89,14 @@ py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-Windows에서 활성화가 조직 정책으로 막히면 정책을 해제하지 않고, 이후 모든 `python`을 `.\.venv\Scripts\python.exe`로 바꿉니다. 예를 들어 `python lab.py doctor`는 `.\.venv\Scripts\python.exe lab.py doctor`가 됩니다. **Azure CLI와 `requirements.txt`의 패키지는 설치하지 않아도 됩니다.**
+**Azure CLI와 `requirements.txt`의 패키지는 설치하지 않아도 됩니다.**
+
+<details>
+<summary>Windows에서 Activate.ps1 실행이 차단될 때</summary>
+
+조직 정책을 해제하지 않고, 이후 모든 `python`을 `.\.venv\Scripts\python.exe`로 바꿉니다. 예를 들어 `python lab.py doctor`는 `.\.venv\Scripts\python.exe lab.py doctor`가 됩니다.
+
+</details>
 
 이제 같은 터미널에서 실행합니다.
 
@@ -73,7 +111,13 @@ python lab.py doctor
 
 이후 **한 명령씩 실행하고 완료 확인을 본 뒤** 다음으로 갑니다. 별도 표시가 없으면 두 운영체제에서 같은 명령을 씁니다. 명령은 항상 `lab.py`가 있는 폴더에서 실행합니다. Windows 출력에서 `/` 대신 `\`가 보여도 같은 경로입니다. 기본 실습 결과 폴더는 `demo-`로 시작하며 LIVE 결과와 섞지 않습니다.
 
-**오류·중단 시:** `ERROR:`는 [문제 해결](reference.md#troubleshooting)에서 해결한 뒤 진행하고, 낮은 점수·`FAIL`은 관찰 결과로 기록합니다. `BLOCK`은 실습 5에서 품질 실패와 증거 누락을 구분합니다. [결과 파일로 재개 위치 찾기](setup.md#resume-checkpoints)를 사용하되 완료된 `run`·`judge`를 반복하면 저장된 결과를 읽을 뿐 새 예제를 만들지 않습니다. DEMO 오류를 해결하려고 `--mode live`로 바꾸지 않습니다.
+**오류와 낮은 점수를 구분합니다.** `ERROR:`는 해결 후 진행하고, 낮은 점수·`FAIL`은 관찰 결과로 기록합니다. DEMO 오류를 해결하려고 `--mode live`로 바꾸지 않습니다.
+
+<a id="resume"></a>
+<details>
+<summary>오류·중단·저장 결과 재사용·새 터미널에서 이어 하기</summary>
+
+`ERROR:`는 [문제 해결](reference.md#troubleshooting)을 참고합니다. `BLOCK`은 실습 5에서 품질 실패와 증거 누락을 구분합니다. [결과 파일로 재개 위치 찾기](setup.md#resume-checkpoints)를 사용하되 완료된 `run`·`judge`를 반복하면 저장된 결과를 읽을 뿐 새 예제를 만들지 않습니다.
 
 **`기존의 완료된 결과를 읽었습니다`가 나오면 정상적인 재사용입니다.** 새 `8/8 … 저장` 메시지 대신 요약의 건수와 `report.md`를 확인하고 다음 미완료 단계로 갑니다. 이 메시지를 없애려고 결과를 지우지 않습니다.
 
@@ -81,7 +125,13 @@ python lab.py doctor
 
 **폴더 이동·이름 변경으로 가상환경이 실행되지 않을 때만** [가상환경 복구](reference.md#moved-folder)를 따릅니다. 그 절의 LIVE 패키지 설치는 건너뛰며, 기존 DEMO 결과와 본인 질문은 보존합니다.
 
+</details>
+
 **준비 끝. 이제 아래 실습 1로 이어갑니다.**
+
+**다음:** [1. 평가 기준](#lab-1) · [진행표](#lab-map)
+
+---
 
 <a id="lab-1"></a>
 ## 1. 답변을 보기 전에 기준 정하기
@@ -96,9 +146,22 @@ python lab.py doctor
 | Judge | AI 채점자. Groundedness는 규정에 근거하는지, Relevance는 질문에 적절한지. **여기서는 점수 예제만 읽음** |
 | 사람 검토 | 실제 답변의 설명까지 규정과 대조했을 때 업무에 써도 되는가 |
 
-**고정 기준:** Judge는 각각 4/5 이상, 변경 후 dev와 holdout의 업무·각 Judge 지표 통과율은 각각 80% 이상이어야 합니다. `critical: true`인 **P0(중요 사례)** 실패, 이전 통과가 실패로 바뀌는 **회귀**, 누락은 없어야 합니다. 변경 후 dev와 holdout 각각 사람 검토도 필요하며 반려가 없어야 합니다. 8개에서는 7개 이상, 4개에서는 4개 모두 통과해야 80% 이상입니다.
+**결과를 보기 전에 고정할 기준**
+
+| 항목 | 기준 |
+|---|---|
+| Judge 점수 | Groundedness·Relevance 각각 **4/5 이상** |
+| 통과율 | 변경 후 dev·holdout의 업무·각 Judge 지표가 각각 **80% 이상** |
+| 중요 사례·회귀 | `critical: true`인 **P0** 실패 0개, 이전 통과가 실패로 바뀌는 **회귀** 0개 |
+| 누락·사람 검토 | 누락 없음. 변경 후 dev·holdout 각각 최소 한 사례 사람 검토·반려 없음 |
+
+80% 이상이 되려면 8개에서는 **7개 이상**, 4개에서는 **4개 모두** 통과해야 합니다.
 
 **완료 확인:** D02의 기대 행동과 위험을 설명할 수 있으며, 결과를 본 뒤 기준을 낮추지 않습니다.
+
+**다음:** [2. 변경 전 답변](#lab-2) · [진행표](#lab-map)
+
+---
 
 <a id="lab-2"></a>
 ## 2. 변경 전 답변 읽기
@@ -111,18 +174,35 @@ python lab.py run --mode demo --prompt v1 --out results/demo-baseline
 
 **완료 확인:** `8/8  D08 저장`, 업무 통과 **5/8, 62.5%**. `results/demo-baseline/report.md`를 열면 D03·D04·D08이 실패합니다. 실제 모델 성능이 아니라 예제의 결과입니다. `FAIL`은 발견한 오답이지 명령 실행 오류가 아닙니다.
 
+**다음:** [3. Judge와 비교](#lab-3) · [진행표](#lab-map)
+
+---
+
 <a id="lab-3"></a>
 ## 3. D04에서 사람과 Judge 비교
+
+### 3-1. 내 판단 먼저 정하기
 
 ```bash
 python lab.py inspect results/demo-baseline D04
 ```
 
-질문·기대 행동·실제 답변이 출력됩니다. 답변의 `decision`은 결정, `limit_krw`는 숙박 한도(청구 금액이 아님), `citations`는 근거 문서 ID 목록, `answer`는 설명입니다. `null`은 한도를 결정할 수 없거나 숙박 한도와 무관하다는 뜻이며 0원이 아닙니다.
+질문·기대 행동·실제 답변이 출력됩니다.
+
+| 답변 필드 | 읽는 법 |
+|---|---|
+| `decision` | 규정상 결정 |
+| `limit_krw` | 숙박 한도. **청구 금액이 아님** |
+| `citations` | 근거 문서 ID 목록 |
+| `answer` | 직원에게 보여 줄 설명 |
+
+`null`은 한도를 결정할 수 없거나 숙박 한도와 무관하다는 뜻이며 0원이 아닙니다.
 
 결정은 `allowed`(허용), `needs_approval`(사전 승인 필요), `not_allowed`(금지), `unknown`(규정에 없음), `needs_info`(질문 정보 부족) 중 하나입니다. `unknown`·`needs_info`도 상황에 따라 올바른 답이며, 값이 실제 정산이나 승인을 실행하지는 않습니다.
 
 **Judge 점수를 보기 전에** 규정과 답변을 대조하고 내 `pass`/`fail`과 이유를 정합니다. `Judge: 아직 미평가`가 정상입니다.
+
+### 3-2. 작성된 Judge 점수 읽기
 
 ```bash
 python lab.py judge results/demo-baseline
@@ -132,14 +212,22 @@ python lab.py judge results/demo-baseline
 
 `평가 완료`는 모든 사례의 점수·이유 확인과 파일 저장이 끝났다는 뜻이지 답변 합격이 아닙니다. JSON을 직접 셀 필요 없이 **`report.md`의 요약 표 → `사례별 근거`의 답변·점수 이유**를 읽습니다.
 
+### 3-3. 같은 D04와 다시 대조하기
+
 ```bash
 python lab.py inspect results/demo-baseline D04
 ```
 
 **완료 확인:** 최초 판정과 두 점수를 대조해 동의/불일치 이유를 설명합니다. Groundedness는 낮고 Relevance는 높은 이유를 설명하고 “질문에 직접 답했지만 근거는 없는 답”을 구분합니다. DEMO에는 Foundry 보고서 URL이 없으며 포털 확인을 하지 않습니다.
 
+**다음:** [4. V2와 비교](#lab-4) · [진행표](#lab-map)
+
+---
+
 <a id="lab-4"></a>
 ## 4. 같은 질문으로 V2와 비교
+
+### 4-1. V1·V2 지침과 답변 예제 비교하기
 
 “___ 문제를 줄이려면 ___ 지침이 필요하다”는 가설을 정합니다. [V1](../prompts/v1.txt)과 [V2](../prompts/v2.txt)를 읽고, 공식 규정·날짜·정보 부족 처리에서 무엇이 달라졌는지 확인합니다. **제공된 파일은 수정하지 않습니다.** DEMO는 새 프롬프트의 효과를 측정하지 못하며, 아래 명령은 제공된 V2 예제를 읽습니다.
 
@@ -155,11 +243,15 @@ python lab.py judge results/demo-candidate --like results/demo-baseline
 
 `--like`는 기준 실행과 같은 채점 계약을 사용하라는 뜻입니다. **`평가 완료: 8개 답변 × 2개 지표`**와 `Judge 결과: results/demo-candidate/judge.json`을 확인하면 비교합니다.
 
+### 4-2. 새 통과와 회귀 확인하기
+
 ```bash
 python lab.py compare results/demo-baseline results/demo-candidate
 ```
 
 `results/demo-candidate/comparison.md`에서 **새 통과 → 업무 검사 회귀 → Judge 회귀**를 읽습니다. 이어서 D06의 실제 답변을 검토합니다.
+
+### 4-3. D06의 판정 저장하기
 
 ```bash
 python lab.py review results/demo-candidate D06
@@ -173,8 +265,14 @@ python lab.py review results/demo-candidate D06
 
 **완료 확인:** 업무 검사 **8/8, 100%**, 새 통과 D03·D04·D08, 회귀 없음. `검토 저장: results/demo-candidate/reviews.json`도 보입니다. 보고서의 사례별 근거로 차이를 설명합니다. 작성된 V2 답변이 낫다는 관찰이며, 프롬프트의 실제 개선 효과는 아닙니다.
 
+**다음:** [5. 새 질문과 판단](#lab-5) · [진행표](#lab-map)
+
+---
+
 <a id="lab-5"></a>
 ## 5. Holdout과 채택/보류
+
+### 5-1. 고정한 후보의 holdout 예제 읽기
 
 ```bash
 python lab.py run --mode demo --frozen results/demo-candidate --split holdout --out results/demo-holdout
@@ -188,11 +286,15 @@ python lab.py judge results/demo-holdout --like results/demo-baseline
 
 **`평가 완료: 4개 답변 × 2개 지표`**와 `Judge 결과: results/demo-holdout/judge.json`을 확인하면 사람 검토를 합니다.
 
+### 5-2. H04의 판정 저장하기
+
 ```bash
 python lab.py review results/demo-holdout H04
 ```
 
 실제 답변을 먼저 읽습니다. H04는 **출장일을 확인하지 않고 정산일로 판단**합니다. 작성된 Judge 점수는 둘 다 4점이지만 업무 검사는 실패합니다. 실제 답변대로 `pass`/`fail`과 이유를 입력하며, 통과시키려고 `pass`를 입력하지 않습니다. **`검토 저장: results/demo-holdout/reviews.json`**이 보이면 최종 기준을 확인합니다.
+
+### 5-3. Gate의 보류 이유 읽기
 
 ```bash
 python lab.py gate results/demo-baseline results/demo-candidate results/demo-holdout
@@ -202,18 +304,32 @@ python lab.py gate results/demo-baseline results/demo-candidate results/demo-hol
 
 이 예제의 품질 실패에 따른 `BLOCK`은 실습 실패가 아닙니다. **점수·사람 검토 누락도 `BLOCK` 사유가 될 수 있습니다.** 누락은 해당 단계를 완료한 뒤 같은 `gate` 명령을 다시 실행해 갱신합니다. 검토 저장만으로 `gate.md`가 바뀌지는 않습니다. `ERROR:`는 먼저 해결하고, 실제 품질 실패는 통과로 바꾸지 않습니다. Dev와 holdout은 질문이 달라 전후 점수로 비교하지 않습니다. Holdout을 보고 수정하면 다음에는 새로운 holdout이 필요합니다.
 
+**다음:** [6. 내 질문 설계](#lab-6) · [진행표](#lab-map)
+
+---
+
 <a id="lab-6"></a>
 ## 6. 새 질문 설계와 마무리
 
-**할 일 1 — 작업본 확인:** 먼저 `data/my-case.jsonl`을 엽니다. 저장소에는 숙박비 **180000원**인 N02 예제가 이미 포함되어 있습니다. 그대로 사용하려면 **할 일 3의 파일 확인**으로 가고 “제공 예제 그대로”라고 기록합니다. 이전 LIVE·DEMO에서 작성한 본인 질문이라면 덮어쓰지 않고 같은 검사로 가서 재사용했다고 기록합니다.
+### 6-1. 작업본을 확인하고 작성 방식 선택하기
 
-**직접 수정 연습을 하려면** 이 작업본을 사용합니다. 파일이 없을 때만 [추가 사례 예제](../data/my-case.example.jsonl)를 열고 **File → Save As**로 `data/my-case.jsonl`을 만듭니다. 원본은 바꾸지 않습니다. **작업본의 내용을 아래 한 줄 전체로 교체**한 뒤 할 일 2의 두 값을 수정합니다. 원본 예제의 N01이 아니라 **N02 한 건**을 준비합니다.
+먼저 `data/my-case.jsonl`을 엽니다. 저장소에는 숙박비 **180000원**인 N02 예제가 포함되어 있습니다.
+
+| 내 상황 | 할 일 |
+|---|---|
+| 제공 예제를 그대로 사용 | [6-3. 파일 확인](#validate-extra)으로 이동. “제공 예제 그대로”로 기록 |
+| 이전 LIVE·DEMO의 본인 질문이 있음 | 덮어쓰지 않고 [6-3. 파일 확인](#validate-extra). 재사용으로 기록 |
+| 직접 수정 연습 | 아래 작업본 작성 → 6-2의 두 값 수정 |
+
+**직접 수정할 때만:** 파일이 없으면 [추가 사례 예제](../data/my-case.example.jsonl)를 **File → Save As**로 `data/my-case.jsonl`에 저장합니다. 원본은 바꾸지 않습니다. 작업본을 아래 **한 줄 전체로 교체**한 뒤 6-2로 갑니다. 원본 예제의 N01이 아니라 **N02 한 건**을 준비합니다.
 
 ```jsonl
 {"id":"N02","category":"과거 출장의 한도 초과","critical":true,"query":"2026년 6월 15일 국내 출장 숙박비가 1박 170000원입니다. 9월에 정산하면 사전 승인 없이 처리해도 되나요?","expected_decision":"needs_approval","expected_limit_krw":160000,"expected_citations":["TRAVEL-PREVIOUS"],"ground_truth":"정산일이 아니라 출장일의 과거 한도 160000원을 적용한다. 170000원은 한도 초과이므로 재무팀 사전 승인이 필요하며 바로 정산할 수 있다고 안내하면 안 된다."}
 ```
 
-**할 일 2 — 처음에는 금액 두 곳만 수정:** 위 예제에서 아래 두 값을 같은 금액으로 바꾸고 저장합니다.
+### 6-2. 금액 두 곳만 수정하기
+
+위 예제의 아래 두 값을 같은 금액으로 바꾸고 저장합니다.
 
 | 수정할 곳 | 바꿀 값 |
 |---|---|
@@ -243,7 +359,10 @@ python lab.py gate results/demo-baseline results/demo-candidate results/demo-hol
 
 **JSON 객체 하나를 한 줄에 저장합니다.** 자동 줄바꿈은 괜찮지만 Enter로 객체를 나누거나 빈 줄을 넣지 않습니다. 8개 필드를 모두 유지하고 `null`·`true`·`false`는 소문자로 씁니다.
 
-**할 일 3 — 파일 확인:** `validate-data`는 로컬에서 검사만 하며 파일을 바꾸거나 모델을 호출하지 않습니다.
+<a id="validate-extra"></a>
+### 6-3. 파일 형식 확인하기
+
+`validate-data`는 로컬에서 검사만 하며 파일을 바꾸거나 모델을 호출하지 않습니다.
 
 ```bash
 python lab.py validate-data data/my-case.jsonl
@@ -258,7 +377,12 @@ python lab.py validate-data data/my-case.jsonl
 > ___ 근거 때문에 예제의 변경은 보류한다. 실제 프롬프트 개선 효과는 측정하지 않았다.<br>
 > 내 업무에서는 ___ 실패부터 평가 데이터에 넣겠다.
 
-### DEMO 완료 체크리스트
+**다음:** [마무리 체크리스트](#finish) · [진행표](#lab-map)
+
+---
+
+<a id="finish"></a>
+## 마무리. DEMO 완료 체크리스트
 
 - [ ] `results/demo-baseline`, `results/demo-candidate`, `results/demo-holdout`에 각각 `report.md`·`judge.json`이 있고 업무 통과율 62.5%·100%·75%를 확인했다.
 - [ ] D04의 최초 사람 판단과 Judge 예제를 비교했고, D06·H04의 실제 판정과 이유를 각 `reviews.json`에 저장했다.
@@ -268,12 +392,17 @@ python lab.py validate-data data/my-case.jsonl
 
 체크리스트까지 확인하면 **DEMO 실습 완료**입니다. 자동 리허설은 실제 사람이 하지 않은 검토를 완료로 체크하지 않습니다. `results/`를 로컬에 보관합니다. DEMO만 실행했다면 Azure 정리 대상은 없습니다. LIVE 환경을 만들다가 전환했다면 [리소스 보존·비용](cleanup.md)도 확인합니다.
 
+[진행표로 돌아가기](#lab-map) · [선택 연습: 평균과 회귀](#regression-trap)
+
 ---
 
 <a id="regression-trap"></a>
 ## 선택 연습: 평균이 올라도 보류해야 한다면?
 
 **기본 실습이 끝난 뒤 필요할 때만** 실행합니다. LIVE 참가자도 이 절만 독립적으로 실행할 수 있습니다. 별도 `results/trap-*` 폴더를 사용하며 모델 호출은 없습니다.
+
+<details>
+<summary>선택 연습 펼치기 — 평균은 올라도 D06은 나빠지는 예제</summary>
 
 ```bash
 python lab.py run --mode demo --prompt v1 --out results/trap-baseline
@@ -304,3 +433,5 @@ python lab.py inspect results/trap-candidate D06
 평균은 좋아졌지만 D06에서 **없는 승인을 만들어 내는 새 실패**가 생겼습니다. 이 변경을 보류할 이유를 한 문장으로 설명하면 완료입니다.
 
 예제와 무결성 정보는 `examples/`에 있습니다. 작성된 점수를 LIVE 결과나 수정한 프롬프트에 적용하지 않습니다.
+
+</details>

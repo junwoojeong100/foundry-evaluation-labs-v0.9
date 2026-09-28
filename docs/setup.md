@@ -4,46 +4,62 @@
 
 [메인 실습](../README.ko.md) · [문제 해결](reference.md#troubleshooting)
 
-**입문 LIVE를 처음 시작한다면 [README의 실습 0](../README.ko.md#lab-0)에서 설치 없이 오답을 먼저 판단합니다.** 이어지는 [준비](../README.ko.md#prepare)에 설치·로그인·자원 생성·권한·설정·연결 확인 명령이 모두 있습니다. 준비가 끝나면 같은 문서의 실습 1부터 정리까지 이어집니다.
+**새 실습을 시작한다면 선택한 가이드에서 출발합니다.** 입문 LIVE는 [README 실습 0](../README.ko.md#lab-0)에서 설치 없이 오답을 먼저 판단합니다. 설치부터 마무리까지 필요한 명령은 해당 가이드에 있습니다.
 
-**RAG에서 준비만 참고했다면** 입문 실습으로 넘어가지 않고 [완결형 Search 준비](complete-lab.md#search-setup) 또는 [Optional RAG 준비](optional-rag.md#prerequisites) 중 원래 경로로 돌아갑니다.
+이 문서는 **준비 단계 찾기·기존 환경 사용·중단한 실습 재개**를 위한 바로가기입니다. 같은 명령을 여기서 다시 실행할 필요는 없습니다.
 
-이 문서는 **필요한 준비 단계만 다시 찾거나, 기존 환경을 사용하거나, 중단한 실습을 재개할 때** 사용합니다. 같은 명령을 여기서 다시 실행할 필요는 없습니다.
+<a id="setup-map"></a>
+## 내 상황에 맞는 준비 선택
+
+| 지금 필요한 것 | 이동할 곳 |
+|---|---|
+| 설치·로그인·설정 중 특정 단계 찾기 | [공통 준비 1–7](#common-setup) |
+| 허가받은 프로젝트와 모델이 이미 있음 | [기존 환경 준비](#existing-environment). 자원 생성 생략 |
+| 포털 대신 CLI로 새 환경 만들기 | [CLI 대체 경로](#cli-provision). README 준비 3–5를 대체 |
+| 중단한 실습 이어 하기 | [재개 절차](#resume) → [결과 파일별 재개 위치](#resume-checkpoints) |
+| Azure 제약으로 LIVE를 진행할 수 없음 | [DEMO로 전환](#switch-to-demo) |
+| 사용량·남은 리소스 비용 확인 | [비용 확인](#cost) |
+
+> [!IMPORTANT]
+> **RAG 참가자는 준비 후 원래 경로로 돌아갑니다.** [완결형 Search 준비](complete-lab.md#search-setup) 또는 [Optional RAG 준비](optional-rag.md#prerequisites)로 복귀하며, 입문 실습 전체를 수행하지 않습니다.
 
 **입문 LIVE의 신규 설정은 `gpt-6-luna`·`swedencentral`·배포 이름 `eval-model`입니다.** 답변과 Judge에 같은 배포를 사용하고, 생성한 리소스는 실습 후에도 모두 보존합니다. 모델·지역을 임의 대체하지 않으며 마지막에는 [보존 상태와 비용](../README.ko.md#retain-resources)을 확인합니다. 기존 환경의 실제 배포 이름과 완결형의 추가 모델은 각각 해당 경로를 따릅니다.
 
+<a id="common-setup"></a>
+## 공통 준비 바로가기
+
 <a id="tools"></a>
-## 준비 1. 코드와 도구 준비
+### 준비 1. 코드와 도구 준비
 
 [준비 1: 코드 받기와 도구 설치](../README.ko.md#setup-tools) — 운영체제별 명령, 터미널 위치, 가상환경을 확인합니다. 완료 신호는 `LOCAL OK`와 `dev 8개, holdout 4개`입니다.
 
 <a id="sign-in"></a>
-## 준비 2. 같은 계정·구독으로 로그인
+### 준비 2. 같은 계정·구독으로 로그인
 
 [준비 2: 사용할 구독으로 로그인](../README.ko.md#setup-sign-in) — 포털과 CLI의 계정·테넌트·구독을 맞춥니다. `az account show`의 `account`까지 대조하며, `YOUR-...`에는 해당 화면과 조회 결과에서 확인한 값을 넣습니다.
 
 <a id="create-project"></a>
-## 준비 3. 전용 그룹과 프로젝트 만들기
+### 준비 3. 전용 그룹과 프로젝트 만들기
 
 [준비 3: 전용 그룹과 Foundry 프로젝트](../README.ko.md#setup-project) — 자원별 역할과 실제 이름, 생성 순서를 확인합니다. 그룹뿐 아니라 Foundry 리소스·프로젝트도 `swedencentral`인지 확인합니다. 공유 자원을 새 전용 자원으로 오해하지 않습니다.
 
 <a id="permissions"></a>
-## 준비 4. 데이터 접근 권한 확인
+### 준비 4. 데이터 접근 권한 확인
 
 [준비 4: 모델 호출과 평가 권한](../README.ko.md#setup-permissions) — 전용 환경의 본인과 프로젝트 관리 ID에 상위 Foundry 리소스 범위의 Foundry User를 확인합니다. 생성 권한·평가 권한·기존 환경의 최소 범위는 [권한 계약](reference.md#permissions-contract)에서 구분합니다. 목록에서 프로젝트 ID를 못 찾으면 [관리 ID 선택 도움말](reference.md#managed-identity-access)을 사용합니다.
 
 <a id="deploy-model"></a>
-## 준비 5. 모델 하나 배포
+### 준비 5. 모델 하나 배포
 
 [준비 5: 모델 하나 배포](../README.ko.md#setup-model) — 모델은 `gpt-6-luna`, 배포 이름은 `eval-model`입니다. 두 이름을 혼동하지 않습니다. 지정한 모델이나 용량을 사용할 수 없으면 [모델·지역·쿼터 도움말](reference.md#model-availability)을 봅니다.
 
 <a id="configure"></a>
-## 준비 6. 프로젝트 주소 하나 넣기
+### 준비 6. 프로젝트 주소 하나 넣기
 
 [준비 6: 설정 파일](../README.ko.md#setup-config) — `config.json`에 실제 프로젝트 주소를 넣고, 두 배포 항목은 모두 `eval-model`로 둡니다. 두 항목에 `LIVE 조회 OK`와 모델 이름 `gpt-6-luna`가 나와야 다음으로 갑니다.
 
 <a id="smoke"></a>
-## 준비 7. 답변 한 개로 연결 확인
+### 준비 7. 답변 한 개로 연결 확인
 
 [준비 7: 한 건의 생성·평가](../README.ko.md#setup-smoke) — `N01` 한 건으로 유료 연결을 확인합니다. 답변 형식과 두 점수·이유가 모두 있어야 합니다. 대기·낮은 점수·실행 오류의 차이는 [명령 결과 읽기](../README.ko.md#command-status)를 봅니다.
 
@@ -55,6 +71,9 @@
 **README 준비 1–2를 완료한 뒤, 준비 3–5의 포털 조작 대신 사용하는 경로**입니다. Azure CLI **2.80.0 이상**과 생성·역할 할당 권한이 필요합니다. Owner는 두 작업을 수행하는 한 방법이지 모든 참가자의 최소 역할은 아닙니다. [공식 프로젝트 생성 문서](https://learn.microsoft.com/azure/foundry/how-to/create-projects)를 따르며 `azd`, 검색 서비스, 에이전트 서버는 추가하지 않습니다. 이미 프로젝트·모델을 만들었다면 다시 실행하지 않습니다.
 
 `YOUR-...`를 준비 2에서 확인한 구독 ID와 본인이 사용할 실제 값으로 바꿉니다. 그룹·Foundry 리소스 이름은 본인 고유 이름, 프로젝트는 `eval-workshop`, 배포는 `eval-model`을 사용합니다. 아래 명령은 macOS/Linux와 PowerShell에서 동일합니다.
+
+<details>
+<summary>새 환경을 CLI로 만들 때만: 생성·권한·배포 명령 펼치기</summary>
 
 ### 1. 새 그룹과 Foundry 리소스
 
@@ -129,6 +148,8 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 `YOUR-MODEL-VERSION`에는 **조회한 실제 버전**을 넣습니다. 2026-09-27 실습에서는 `2026-09-22`를 사용했으며 이 값을 현재도 제공한다고 가정하지 않습니다. 완료 후 [README 준비 6](../README.ko.md#setup-config)으로 돌아가 설정·조회·한 건 생성·평가를 진행합니다. API 키를 조회하거나 저장할 필요는 없습니다. **마지막에 삭제 명령을 실행하지 않습니다.**
 
 완결형 RAG는 기록된 V1 비교를 위해 [지정 답변 버전](complete-lab.md#setup)이 필수입니다. 다른 제공 버전을 사용할 수 있는 입문 경로와 구분합니다.
+
+</details>
 
 <a id="existing-environment"></a>
 ## 이미 허가받은 환경이 있다면
@@ -212,3 +233,5 @@ Azure 포털의 **Cost Management → Cost analysis**에서 해당 전용 그룹
 파일 유무는 위치를 찾는 단서일 뿐입니다. **`status`가 `collecting`이면 같은 `run`, 평가 처리 중이면 같은 `judge`를 먼저 재개**합니다. `judge.json`이 있어도 오류가 났다면 같은 `judge`로 유효성을 확인합니다. `--like`를 생략하거나 결과 파일을 수정하지 않습니다. 이미 적은 사람의 최초 판단은 지우지 않습니다.
 
 `gate.md`가 있어도 검토 누락이 남아 있다면 실제 사람의 검토를 추가하고 같은 `gate`를 다시 실행합니다. 점수 실패를 없애려고 답변이나 평가를 새로 뽑는 것과는 다릅니다.
+
+[준비 선택으로 돌아가기](#setup-map)

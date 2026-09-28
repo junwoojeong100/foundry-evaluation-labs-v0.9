@@ -150,6 +150,73 @@ class DocumentationTests(unittest.TestCase):
                         content = target.read_text(encoding="utf-8")
                         self.assertIn(f'id="{unquote(url.fragment)}"', content)
 
+    def test_learning_paths_have_progress_maps_and_return_links(self):
+        introductory_steps = ["lab-0", "prepare", *[f"lab-{number}" for number in range(1, 7)], "finish"]
+        paths = (
+            (("README.ko.md", "README.md"), introductory_steps),
+            (("docs/offline.md", "docs/en/offline.md"), introductory_steps),
+            (
+                ("docs/complete-lab.md", "docs/en/complete-lab.md"),
+                ["architecture", "setup", "retrieval-proof", "calibration", "improve", "freeze", "holdout", "retention"],
+            ),
+            (
+                ("docs/optional-rag.md", "docs/en/optional-rag.md"),
+                ["prerequisites", "create-search", "index", "retrieve", "evaluate", "evidence"],
+            ),
+        )
+        for guides, steps in paths:
+            for relative in guides:
+                text = (ROOT / relative).read_text(encoding="utf-8")
+                with self.subTest(guide=relative):
+                    map_start = text.index('<a id="lab-map"></a>')
+                    positions = [text.index(f'<a id="{step}"></a>') for step in steps]
+                    self.assertEqual(positions, sorted(positions))
+                    self.assertLess(map_start, positions[0])
+                    progress_map = text[map_start:positions[0]]
+                    for index, step in enumerate(steps):
+                        with self.subTest(step=step):
+                            self.assertIn(f"(#{step})", progress_map)
+                            end = positions[index + 1] if index + 1 < len(positions) else len(text)
+                            self.assertIn("(#lab-map)", text[positions[index]:end])
+
+    def test_explicit_anchors_are_unique_within_each_document(self):
+        for document in DOCUMENTS:
+            anchors = re.findall(r'<a id="([^"]+)"></a>', document.read_text(encoding="utf-8"))
+            with self.subTest(document=document.relative_to(ROOT)):
+                self.assertEqual(len(anchors), len(set(anchors)))
+
+    def test_markdown_disclosures_and_code_fences_are_balanced(self):
+        for document in DOCUMENTS:
+            lines = document.read_text(encoding="utf-8").splitlines()
+            in_code = False
+            disclosures = []
+            for index, line in enumerate(lines):
+                with self.subTest(document=document.relative_to(ROOT), line=index + 1):
+                    if line.startswith("```"):
+                        if in_code:
+                            self.assertEqual(line, "```")
+                        in_code = not in_code
+                        continue
+                    if in_code:
+                        continue
+                    if line == "<details>":
+                        disclosures.append(False)
+                    elif line.startswith("<summary>"):
+                        self.assertTrue(disclosures)
+                        self.assertFalse(disclosures[-1])
+                        self.assertEqual(lines[index - 1], "<details>")
+                        self.assertTrue(line.endswith("</summary>"))
+                        self.assertLess(index + 1, len(lines))
+                        self.assertEqual(lines[index + 1], "")
+                        disclosures[-1] = True
+                    elif line == "</details>":
+                        self.assertTrue(disclosures)
+                        self.assertTrue(disclosures.pop())
+                        self.assertEqual(lines[index - 1], "")
+            with self.subTest(document=document.relative_to(ROOT)):
+                self.assertFalse(in_code)
+                self.assertEqual(disclosures, [])
+
     def test_every_documented_lab_command_matches_the_cli_parser(self):
         parsers = {
             "lab.py": lab.parser(),

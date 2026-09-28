@@ -4,8 +4,17 @@
 
 [Main finish checklist](../../README.md#finish) · [Setup](setup.md)
 
-**The default is to retain every created resource.** Do not run deletion while a retention request is active. Closing your terminal or deleting local results does not remove Azure resources.
+**The default is to retain every created resource.**
 
+> [!WARNING]
+> **Do not delete while a retention request is active.** Closing the terminal or deleting local results does not remove Azure resources. Check retention and costs even when stopping early.
+
+| Situation | Steps to follow |
+|---|---|
+| Normal finish or early stop | [1. Save evidence](#save-results) → [2. Retain and check costs](#retain-resources), then stop |
+| The owner separately decides to delete later | Save evidence, then [optional steps 3–5](#delete-resources). Never bulk-delete shared resources |
+
+<a id="save-results"></a>
 ## 1. Keep the results locally
 
 Keep the **entire result folder for the path you actually ran**. Reports/scores alone omit input/response snapshots, remote IDs in `foundry-job.json`, raw evaluation results, and reviews needed for resumption and comparison. Export additional portal records if needed.
@@ -36,9 +45,15 @@ Confirm **not deleted**, why, the next check date or condition, and reported or 
 
 **Checkpoint:** actual resources and local evidence remain, and you can explain retention conditions and cost status. Deletion is not required to complete the workshop.
 
+---
+
+<a id="delete-resources"></a>
 ## 3. Optional: verify the deletion scope
 
 Continue only after a separate owner decision to delete.
+
+<details>
+<summary>Only after a deletion decision: scope through completion</summary>
 
 Open the exact recorded **subscription → resource group**. Before continuing, confirm all three:
 
@@ -74,3 +89,7 @@ Check costs incurred before deletion. Reporting may lag; an immediate zero does 
 Do not delete the subscription, unregister `Microsoft.CognitiveServices`, or purge a soft-deleted name to reuse it quickly. Use a new unique name if necessary.
 
 Record the actual deletion scope, completion/time, and costs or reporting delay. If retaining instead, use the [retention record](#retain-resources).
+
+</details>
+
+[Back to default retention](#retain-resources)

@@ -4,44 +4,62 @@
 
 [Main workshop](../../README.md) · [Troubleshooting](reference.md#troubleshooting)
 
-Start a new introductory LIVE workshop with [activity 0](../../README.md#lab-0), before installing anything. The main page contains the complete setup, execution, and retention sequence. Use this page only to find a checkpoint, use existing resources, or resume work.
+**Start a new workshop from your chosen guide.** Introductory LIVE begins with [activity 0](../../README.md#lab-0), before installation. Each guide contains its setup, execution, and retention sequence.
 
-**If a RAG guide sent you here for setup only**, return to your original [complete-path Search setup](complete-lab.md#search-setup) or [Optional RAG prerequisites](optional-rag.md#prerequisites), not the introductory activities.
+Use this page to **find a setup step, use existing resources, or resume work**. Do not repeat completed commands just because they appear here.
+
+<a id="setup-map"></a>
+## Choose the setup you need
+
+| Your situation | Go to |
+|---|---|
+| Find an installation, sign-in, or configuration step | [Shared setup 1–7](#common-setup) |
+| An authorized project and model already exist | [Existing environment](#existing-environment); skip resource creation |
+| Create a new environment with CLI instead of the portal | [CLI alternative](#cli-provision); replaces README setup 3–5 |
+| Continue interrupted work | [Resume procedure](#resume) → [result-file checkpoints](#resume-checkpoints) |
+| Azure constraints prevent LIVE progress | [Switch to DEMO](#switch-to-demo) |
+| Check usage and retained-resource costs | [Costs](#cost) |
+
+> [!IMPORTANT]
+> **RAG participants return to their original path after setup:** [complete-path Search setup](complete-lab.md#search-setup) or [Optional RAG prerequisites](optional-rag.md#prerequisites). Do not continue through the whole introduction.
 
 The new introductory LIVE target is **`gpt-6-luna`**, **`swedencentral`**, deployment **`eval-model`**, used for generation and judging. **Retain resources** after the workshop. Do not silently substitute another model or region. Use the relevant path for existing deployment names or the complete path's additional models.
 
+<a id="common-setup"></a>
+## Shared setup shortcuts
+
 <a id="tools"></a>
-## Setup 1. Tools and files
+### Setup 1. Tools and files
 
 [Install tools and prepare the virtual environment](../../README.md#setup-tools). The local checkpoint is `LOCAL OK` with `dev 8개, holdout 4개`: eight dev and four holdout cases.
 
 <a id="sign-in"></a>
-## Setup 2. Account and subscription
+### Setup 2. Account and subscription
 
 [Sign in](../../README.md#setup-sign-in), matching the portal and CLI account, tenant, and subscription. Check the `account` field too, not just a subscription display name. Replace `YOUR-...` placeholders with the recorded values.
 
 <a id="create-project"></a>
-## Setup 3. Dedicated resources
+### Setup 3. Dedicated resources
 
 [Create the group and project](../../README.md#setup-project). Check `swedencentral` separately on the group, Foundry resource, and project. Do not mistake shared resources for a new dedicated environment.
 
 <a id="permissions"></a>
-## Setup 4. Data-plane permissions
+### Setup 4. Data-plane permissions
 
 [Verify the two identities](../../README.md#setup-permissions): your user and the project's managed identity, with Foundry User on the parent Foundry resource for this dedicated setup. Distinguish provisioning, evaluation, and narrower existing-environment scopes in the [permission contract](reference.md#permissions-contract). Use [identity-selection help](reference.md#managed-identity-access) when necessary.
 
 <a id="deploy-model"></a>
-## Setup 5. One deployment
+### Setup 5. One deployment
 
 [Deploy `gpt-6-luna` as `eval-model`](../../README.md#setup-model). Model and deployment names are different. If unavailable, use [model and quota guidance](reference.md#model-availability).
 
 <a id="configure"></a>
-## Setup 6. Configuration
+### Setup 6. Configuration
 
 [Configure the project endpoint](../../README.md#setup-config). Keep both deployment fields as `eval-model`. Both lookups should show `LIVE 조회 OK` and `gpt-6-luna`.
 
 <a id="smoke"></a>
-## Setup 7. One-case smoke check
+### Setup 7. One-case smoke check
 
 [Generate and evaluate N01](../../README.md#setup-smoke). Valid JSON, both scores, and reasons confirm the path works. Distinguish [waiting, quality failures, and execution errors](../../README.md#command-status).
 
@@ -53,6 +71,9 @@ The new introductory LIVE target is **`gpt-6-luna`**, **`swedencentral`**, deplo
 After completing main-guide setup 1–2, this path **replaces portal setup 3–5**. It requires Azure CLI **2.80.0+** and resource-creation/role-assignment permissions. Owner is one way to perform both tasks, not every participant's minimum role. It follows the [official project-creation instructions](https://learn.microsoft.com/azure/foundry/how-to/create-projects). No azd, search service, or agent server is added. Do not run it if your project and model already exist.
 
 Use unique group and account names, project `eval-workshop`, and deployment `eval-model`. Replace placeholders with the subscription ID verified in setup 2 and your actual chosen values. These one-line commands work in macOS/Linux and PowerShell.
+
+<details>
+<summary>Only for a new CLI-created environment: creation, permissions, and deployment</summary>
 
 ### 1. Create a new group and parent Foundry resource
 
@@ -127,6 +148,8 @@ az cognitiveservices account deployment create --name "YOUR-FOUNDRY-ACCOUNT" --r
 Use an **actually listed version**. The September 27 rehearsal used `2026-09-22`; that is not a guarantee of future availability. Return to [setup 6](../../README.md#setup-config), then complete lookup and the smoke check. No API key needs to be retrieved. **Do not finish by deleting resources.**
 
 Complete RAG requires the [specified answer version](complete-lab.md#setup) for recorded V1 comparison. Do not confuse this with the introductory path, which can use another offered version.
+
+</details>
 
 <a id="existing-environment"></a>
 ## If you already have an authorized environment
@@ -210,3 +233,5 @@ Inspect only your own results. For DEMO, substitute `demo-baseline`, `demo-candi
 For DEMO, use the same numbered activities in [its guide](offline.md). Files are only clues: resume a `collecting` run or in-progress judge before proceeding. Preserve `--like`, all input evidence, and your original judgment.
 
 If `gate.md` exists but required human review is missing, add the actual person's review and repeat the same `gate`. This is different from generating/judging again to eliminate a low score.
+
+[Back to setup choices](#setup-map)

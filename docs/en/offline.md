@@ -4,11 +4,38 @@
 
 [Main guide](../../README.md)
 
-Follow **this page only** to practice defining criteria, inspecting answers, comparing judge examples, and deciding whether to hold a change. You need Python 3.10+, not Azure, authentication, or paid calls.
+**Learn the evaluation workflow without Azure.** Set criteria for the fictional Gaon Lab travel-expense assistant, inspect answers and judge examples, and decide whether to adopt or hold a change. **Follow this page only.**
 
-**All answers, judge scores, and reasons are authored examples.** DEMO does not call a model or Foundry evaluator. Its results do not prove prompt improvement or production readiness. The same Korean fixtures are used in both language guides.
+| At a glance | DEMO |
+|---|---|
+| Requirements | **Python 3.10+ and VS Code**. No Azure account, authentication, or package installation |
+| Cost | **No paid calls** |
+| File you edit | Only `data/my-case.jsonl` in activity 6. No `config.json` |
+| Results | `results/demo-baseline`, `demo-candidate`, and `demo-holdout` |
 
-Activities **0–6** match LIVE. Follow the initial judgment, setup, activities 1–6, and finish using this page's checkpoints and generated reports. Personal notes are optional; save human verdicts through the documented `review` commands.
+> [!IMPORTANT]
+> **All answers, judge scores, and reasons are authored examples.** No model or Foundry evaluator is called. Results do not prove prompt improvement or production readiness. Both language guides use the same Korean fixtures.
+
+<a id="lab-map"></a>
+## Progress map
+
+Activities 0–6 match LIVE. Follow **one command → checkpoint → next step**, saving human verdicts with `review`. Reports are generated automatically; personal notes are optional.
+
+| Step | Action | Checkpoint |
+|---|---|---|
+| [0. Spot the mistake](#lab-0) | Compare policy and answers before installation | One-sentence judgment and reason |
+| [Setup](#prepare) | Prepare code, Python, and terminal | `LOCAL OK` |
+| [1. Criteria](#lab-1) | Set expected behavior and thresholds | Explain D02's risk |
+| [2. Baseline](#lab-2) | Read V1 examples and code checks | Eight answers and `report.md` |
+| [3. Judge comparison](#lab-3) | Compare your D04 judgment with authored scores | Agreement/disagreement reasons |
+| [4. V2 comparison](#lab-4) | Compare matching questions and review D06 | `comparison.md` and a saved review |
+| [5. Holdout and decision](#lab-5) | Read holdout, review H04, and apply the gate | `gate.md` and decision evidence |
+| [6. Your question](#lab-6) | Prepare and validate one N02 case | `DATA OK: 1 case(s)` |
+| [Finish](#finish) | Explain example results and limitations | Completion checklist |
+
+**Producing a report is not the same as passing answers.** Example scores are not expected LIVE scores.
+
+---
 
 <a id="lab-0"></a>
 ## 0. Spot a plausible wrong answer
@@ -29,6 +56,10 @@ B is appropriate. KRW 240000 is an unapproved draft proposal. Exceeding the offi
 </details>
 
 **Checkpoint:** explain the choice in one sentence. If already done in LIVE, do not repeat the judgment.
+
+**Next:** [Setup](#prepare) · [Progress map](#lab-map)
+
+---
 
 <a id="prepare"></a>
 ## Setup. Prepare files and a terminal
@@ -56,7 +87,14 @@ py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-If activation is prohibited, use `.\.venv\Scripts\python.exe` in place of `python`; do not weaken organizational policy. For example, `python lab.py doctor` becomes `.\.venv\Scripts\python.exe lab.py doctor`. **Azure CLI and the packages in `requirements.txt` are unnecessary for DEMO.**
+**Azure CLI and the packages in `requirements.txt` are unnecessary for DEMO.**
+
+<details>
+<summary>If Windows blocks Activate.ps1</summary>
+
+Use `.\.venv\Scripts\python.exe` in place of `python`; do not weaken organizational policy. For example, `python lab.py doctor` becomes `.\.venv\Scripts\python.exe lab.py doctor`.
+
+</details>
 
 ```bash
 python lab.py doctor
@@ -67,7 +105,13 @@ python lab.py doctor
 <a id="working-files"></a>
 **The only file you edit is `data/my-case.jsonl` in activity 6.** The repository already includes an N02 example working copy; inspect it at that step. Its presence does not mean you wrote or executed it. No `config.json` is needed. Commands create result directories automatically. Keep the original policy, questions, prompts, and generated evidence unchanged. Save working files as UTF-8. If switching from LIVE, preserve your question, prompt, results, and Azure resources.
 
-Run one command at a time from the `lab.py` folder; use only `demo-*` result folders for this path. Resolve `ERROR:` through [troubleshooting](reference.md#troubleshooting); treat FAIL and low scores as observations. For BLOCK, distinguish quality failures from missing evidence in activity 5. Use [resume checkpoints](setup.md#resume-checkpoints) after interruption; repeating a completed `run` or `judge` reads saved results rather than creating new examples. Do not switch to `--mode live` to work around a DEMO error.
+Run one command at a time from the `lab.py` folder; use only `demo-*` result folders for this path. **Errors and low scores are different:** resolve `ERROR:` before continuing; treat FAIL and low scores as observations. Do not switch to `--mode live` to work around a DEMO error.
+
+<a id="resume"></a>
+<details>
+<summary>Errors, interruptions, saved results, and a new terminal</summary>
+
+Use [troubleshooting](reference.md#troubleshooting) for `ERROR:`. For BLOCK, distinguish quality failures from missing evidence in activity 5. Use [resume checkpoints](setup.md#resume-checkpoints) after interruption; repeating a completed `run` or `judge` reads saved results rather than creating new examples.
 
 **`기존의 완료된 결과를 읽었습니다` means completed results were reused successfully.** Instead of a new `8/8 … 저장` message, check the summary count and `report.md`, then continue at the next unfinished step. Do not delete results to remove this message.
 
@@ -75,7 +119,13 @@ In a new terminal, return to the `lab.py` folder and run only `source .venv/bin/
 
 **Only if moving or renaming the folder broke the environment**, follow [environment recovery](reference.md#moved-folder). Skip its LIVE package installation and retain your DEMO results and question.
 
+</details>
+
 **Setup complete. Continue to activity 1.**
+
+**Next:** [1. Criteria](#lab-1) · [Progress map](#lab-map)
+
+---
 
 <a id="lab-1"></a>
 ## 1. Choose criteria before seeing answers
@@ -86,9 +136,22 @@ D02 requires `needs_approval`, limit 200000, and `TRAVEL-CURRENT`. Do not advise
 
 Code checks format, decision, limit, and citations. Groundedness asks whether policy supports the answer; Relevance asks whether it addresses the question. **Here their scores are examples, not fresh AI judgments.** A person still checks the explanation.
 
-Keep the LIVE thresholds: each judge score ≥4/5; candidate/holdout business and each judge pass rate ≥80%; no critical P0 failures, regressions, missing evidence, or human rejection; review at least one case in each of candidate and holdout. Seven of eight and all four of four are needed for 80%.
+**Fix these criteria before seeing results**
+
+| Criterion | Requirement |
+|---|---|
+| Judge scores | Groundedness and Relevance each **at least 4/5** |
+| Pass rates | Candidate dev and holdout each have business and each judge metric **at least 80%** |
+| Critical cases and regressions | **Zero P0 failures** (`critical: true`); zero previously passing checks becoming failures |
+| Completeness and human review | No missing evidence; at least one human review in candidate and holdout, with no rejection |
+
+Reaching 80% requires **at least seven of eight**, or **all four of four**.
 
 **Checkpoint:** explain D02's expected behavior and risk, keeping the criteria unchanged after results.
+
+**Next:** [2. Baseline](#lab-2) · [Progress map](#lab-map)
+
+---
 
 <a id="lab-2"></a>
 ## 2. Read the baseline answers
@@ -101,18 +164,35 @@ This replays authored answers and runs code checks.
 
 **Checkpoint:** `8/8  D08 저장`, business **5/8 (62.5%)**, and `results/demo-baseline/report.md`. D03, D04, and D08 fail. These are example outcomes, not measured model performance.
 
+**Next:** [3. Judge comparison](#lab-3) · [Progress map](#lab-map)
+
+---
+
 <a id="lab-3"></a>
 ## 3. Compare your D04 judgment with the judge example
+
+### 3-1. Decide for yourself first
 
 ```bash
 python lab.py inspect results/demo-baseline D04
 ```
 
-Read the question, expectation, and actual authored answer. The answer's `decision` is the policy decision, `limit_krw` is the lodging limit (not the claimed expense), `citations` lists source IDs, and `answer` is the explanation. `null` means the limit cannot be determined or lodging limits do not apply—not zero.
+Read the question, expectation, and actual authored answer.
+
+| Answer field | Meaning |
+|---|---|
+| `decision` | Policy decision |
+| `limit_krw` | Lodging limit, **not the claimed expense** |
+| `citations` | Supporting document IDs |
+| `answer` | Employee-facing explanation |
+
+`null` means the limit cannot be determined or lodging limits do not apply—not zero.
 
 Decisions are `allowed`, `needs_approval` (prior approval required), `not_allowed`, `unknown` (absent from policy), or `needs_info` (missing question information). `unknown` and `needs_info` can be correct depending on the case; none of these values executes reimbursement or grants approval.
 
 **Before seeing judge scores**, decide pass/fail and your reason. `Judge: 아직 미평가` is expected.
+
+### 3-2. Read the authored judge scores
 
 ```bash
 python lab.py judge results/demo-baseline
@@ -120,14 +200,22 @@ python lab.py judge results/demo-baseline
 
 This reads authored scores/reasons, with no AI call. Wait for **`평가 완료: 8개 답변 × 2개 지표`** and `Judge 결과: results/demo-baseline/judge.json`. Completion confirms validated saved evidence, not passing answers. Read `report.md` and `사례별 근거` for per-case evidence.
 
+### 3-3. Compare the same D04 again
+
 ```bash
 python lab.py inspect results/demo-baseline D04
 ```
 
 **Checkpoint:** keep your initial verdict, both scores, and agreement/disagreement reasons. Explain how an answer can address the question while lacking grounding. DEMO has no Foundry report URL or portal check.
 
+**Next:** [4. V2 comparison](#lab-4) · [Progress map](#lab-map)
+
+---
+
 <a id="lab-4"></a>
 ## 4. Compare V2 on the same questions
+
+### 4-1. Compare V1/V2 instructions and answer examples
 
 Choose a hypothesis. Read [V1](../../prompts/v1.txt) and [V2](../../prompts/v2.txt), noting official policy, travel dates, and missing-information handling. **Do not edit them.** DEMO cannot measure a new prompt; it replays the provided V2 examples.
 
@@ -143,11 +231,15 @@ python lab.py judge results/demo-candidate --like results/demo-baseline
 
 `--like` preserves the judging contract. Confirm **`평가 완료: 8개 답변 × 2개 지표`** and `Judge 결과: results/demo-candidate/judge.json`.
 
+### 4-2. Check newly passing cases and regressions
+
 ```bash
 python lab.py compare results/demo-baseline results/demo-candidate
 ```
 
 Read newly passing cases, business regressions, and judge regressions in `comparison.md`. Then review D06:
+
+### 4-3. Save your D06 verdict
 
 ```bash
 python lab.py review results/demo-candidate D06
@@ -159,8 +251,14 @@ Automated walkthroughs must use [assistant-attributed reviews](reference.md#assi
 
 **Checkpoint:** business **8/8 (100%)**, newly passing D03/D04/D08, no regressions, and `검토 저장: results/demo-candidate/reviews.json`. Record the observation, not a claim of measured prompt improvement.
 
+**Next:** [5. Holdout and decision](#lab-5) · [Progress map](#lab-map)
+
+---
+
 <a id="lab-5"></a>
 ## 5. Holdout and an adopt/hold decision
+
+### 5-1. Read holdout examples for the frozen candidate
 
 ```bash
 python lab.py run --mode demo --frozen results/demo-candidate --split holdout --out results/demo-holdout
@@ -174,11 +272,15 @@ python lab.py judge results/demo-holdout --like results/demo-baseline
 
 Confirm **`평가 완료: 4개 답변 × 2개 지표`** and `Judge 결과: results/demo-holdout/judge.json`.
 
+### 5-2. Save your H04 verdict
+
 ```bash
 python lab.py review results/demo-holdout H04
 ```
 
 H04's authored answer incorrectly treats reimbursement timing as the travel date. Both authored judge scores are 4, but the business check fails. Record the actual verdict, not a `pass` chosen to remove a block. Confirm `검토 저장: results/demo-holdout/reviews.json`.
+
+### 5-3. Read why the gate holds the change
 
 ```bash
 python lab.py gate results/demo-baseline results/demo-candidate results/demo-holdout
@@ -188,20 +290,39 @@ python lab.py gate results/demo-baseline results/demo-candidate results/demo-hol
 
 This example's quality BLOCK is not a failure to complete the workshop. **Missing scores or human review can also cause BLOCK.** Complete those missing steps, then rerun the same `gate` command; saving a review alone does not refresh `gate.md`. Resolve `ERROR:` first, but do not change real quality failures into passes. Dev and holdout are different sets. If you change the prompt after examining holdout, use a new holdout next time.
 
+**Next:** [6. Your question](#lab-6) · [Progress map](#lab-map)
+
+---
+
 <a id="lab-6"></a>
 ## 6. Design an extra question and finish
 
-**Inspect `data/my-case.jsonl` first.** The repository includes an N02 example with an expense of **180000**. You may use it unchanged and go straight to validation below; record “provided example unchanged.” If it contains your previous LIVE or DEMO question, preserve it, validate it, and record reuse.
+### 6-1. Inspect the working copy and choose how to use it
 
-**To practice editing instead:** use this working file. Only if it is missing, save [the extra-case example](../../data/my-case.example.jsonl) as `data/my-case.jsonl`. Keep the original unchanged. Replace the working copy with this single line, then make the two edits below. Prepare **one N02 case**, not the source example's N01.
+Open `data/my-case.jsonl` first. The repository includes an N02 example with an expense of **180000**.
+
+| Situation | Action |
+|---|---|
+| Use the provided example unchanged | Go to [6-3. Validation](#validate-extra); record “provided example unchanged” |
+| Your previous LIVE/DEMO question is present | Preserve it and go to [6-3. Validation](#validate-extra); record reuse |
+| Practice editing | Prepare the working copy below, then change two values in 6-2 |
+
+**Only when editing:** if the file is missing, save [the extra-case example](../../data/my-case.example.jsonl) as `data/my-case.jsonl`, preserving the original. Replace the working copy with this single line, then continue to 6-2. Prepare **one N02 case**, not the source example's N01.
 
 ```jsonl
 {"id":"N02","category":"과거 출장의 한도 초과","critical":true,"query":"2026년 6월 15일 국내 출장 숙박비가 1박 170000원입니다. 9월에 정산하면 사전 승인 없이 처리해도 되나요?","expected_decision":"needs_approval","expected_limit_krw":160000,"expected_citations":["TRAVEL-PREVIOUS"],"ground_truth":"정산일이 아니라 출장일의 과거 한도 160000원을 적용한다. 170000원은 한도 초과이므로 재무팀 사전 승인이 필요하며 바로 정산할 수 있다고 안내하면 안 된다."}
 ```
 
+### 6-2. Change only two amounts
+
 Change **`170000` → `180000`** in both `query` and `ground_truth`, but keep the **160000** policy limit, `needs_approval`, and `TRAVEL-PREVIOUS`. The question concerns a June 15 trip claimed in September; travel date determines the limit.
 
 Distinguish editing the example, writing your own question, using the example unchanged, or reusing your previous question in your final summary. For your own question, define all eight required fields and expectations from policy first; keep ID N02. Save one JSON object per line with no blank lines, integer or `null` limits, and lowercase booleans.
+
+<a id="validate-extra"></a>
+### 6-3. Validate the file format
+
+This local check does not modify files or call a model.
 
 ```bash
 python lab.py validate-data data/my-case.jsonl
@@ -216,7 +337,12 @@ Distinguish “N02 generation/judge not executed in this DEMO path” from compl
 > Based on ___, I would hold the example change. No real prompt improvement was measured.<br>
 > In my work, I would first add cases testing ___.
 
-### Completion checklist
+**Next:** [Finish checklist](#finish) · [Progress map](#lab-map)
+
+---
+
+<a id="finish"></a>
+## Finish. DEMO completion checklist
 
 - [ ] The three `demo-*` folders contain reports/scores and business rates 62.5%, 100%, and 75%.
 - [ ] D04's initial judgment is compared with the authored scores; D06 and H04 reviews are saved.
@@ -226,12 +352,17 @@ Distinguish “N02 generation/judge not executed in this DEMO path” from compl
 
 Automated rehearsals must not mark an unperformed human review complete. Keep `results/` locally. DEMO-only work creates no Azure resources. If you began LIVE first, verify [retention and costs](cleanup.md#retain-resources).
 
+[Back to the progress map](#lab-map) · [Optional: averages and regressions](#regression-trap)
+
 ---
 
 <a id="regression-trap"></a>
 ## Optional: a higher average can hide a regression
 
 Do this only after the main workshop. LIVE participants can run it independently with the separate `results/trap-*` directories. No model calls occur.
+
+<details>
+<summary>Open the optional exercise: a higher average with a worse D06</summary>
 
 ```bash
 python lab.py run --mode demo --prompt v1 --out results/trap-baseline
@@ -260,3 +391,5 @@ Fixed outcomes of these authored examples:
 This optional exercise does not run `judge`, so `Judge 합격→불합격 회귀: 미평가` and `Judge 비교: 미포함` are expected: **only business-check regressions** are measured here.
 
 The average improves, but D06 newly invents approval. Explain why that warrants holding the change. Do not apply authored scores from `examples/` to LIVE answers or changed prompts.
+
+</details>

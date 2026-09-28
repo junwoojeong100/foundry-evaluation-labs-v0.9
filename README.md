@@ -2,39 +2,48 @@
 
 # Can you trust an AI answer?
 
-## Microsoft Foundry Evaluation: an end-to-end, self-guided workshop
+**Microsoft Foundry Evaluation: an end-to-end, self-guided workshop**
 
-**Inspiration:** this workshop was inspired by [Satya Nadella's post on building a frontier ecosystem](https://snscratchpad.com/posts/frontier-ecosystem/). It puts **business-specific evaluations and human-guided learning loops** into practice: judge AI against your own work's criteria, improve it, and evaluate again—not just compare external benchmarks.
+Find out whether the fictional **Gaon Lab travel-expense assistant** follows policy. Evaluation means **checking AI answers against criteria chosen in advance**. Run the provided commands and read the answers; **you do not need to write Python**.
 
-**Recommended complete path:** [Failure → V2 improvement → fresh-question validation](docs/en/complete-lab.md). Follow **sections 1–8 there** to learn real retrieval and answer improvement. The rest of this page is a **separate introductory LIVE path for learning evaluation without retrieval**.
+**Recommended path:** [Complete RAG — failure → V2 improvement → fresh-question validation](docs/en/complete-lab.md). Follow **sections 1–8 there** for real retrieval and answer improvement. This README contains **introductory LIVE, without retrieval**.
 
-Find out whether the fictional **Gaon Lab travel-expense assistant** follows policy. Evaluation means **checking AI answers against criteria chosen in advance**. The code is provided; you do not need to write Python.
+**Language:** the guides are in English, but policy inputs, questions, prompts, and CLI output remain **Korean** so both guides run the same experiment. Use the [English policy translation](docs/en/policies.md) for reading, not as a replacement input.
 
-**Language scope:** this guide and the supporting English documents are in English. The controlled policy, questions, prompts, and CLI output remain **Korean** so both language guides run the same experiment. This page translates the concepts and explains the exact Korean completion messages. Use the [English policy translation](docs/en/policies.md) for reading; do not substitute it into a partially completed experiment.
+<details>
+<summary>Workshop inspiration and the scope of published evidence</summary>
+
+Inspired by [Satya Nadella's post on building a frontier ecosystem](https://snscratchpad.com/posts/frontier-ecosystem/), this workshop practices **business-specific evaluations and human-guided learning loops**: judge AI against your own criteria, improve it, and evaluate again—not just compare external benchmarks.
 
 Keep [evidence scopes separate](docs/en/reference.md#live-verification): the published complete-path result does not revalidate introductory LIVE. Do not rerun to reproduce another execution's scores.
 
+</details>
+
 <a id="choose-path"></a>
-### Choose your path
+## Choose one path
 
-**Choose one path at a time.** These links are not a sequence of exercises you must all complete. If Azure or terminals are new to you, you can learn the workflow with free DEMO first. For real retrieval, start with the recommended complete path and borrow only the shared setup it links to.
+You do not need to finish every guide. **Choose the row that matches your goal and available environment.**
 
-| Your situation | Start here |
-|---|---|
-| You want real retrieval, dialogue improvement, and fresh-question validation | **[Recommended complete RAG path](docs/en/complete-lab.md)**. Check the fixed answer-model version, Basic Search, additional models, permissions, and costs first. The full introduction is not a prerequisite. |
-| You want to learn answer evaluation and prompt improvement without retrieval | **Introductory LIVE: start at [0. Spot the mistake](#lab-0)**. Setup later requires an active Azure subscription and permission to create resources and assign roles. Calls incur charges. |
-| You do not have Azure access, permissions, or an available model | Follow only the [DEMO guide](docs/en/offline.md). It uses Python but does not measure a real model. |
-| You only want to compare direct Search with Knowledge Base retrieval, rather than improve answers | Use [Optional RAG](docs/en/optional-rag.md): shared setup followed by a `search`/`iq` comparison. |
+| Path | What you learn | Requirements |
+|---|---|---|
+| **[Complete RAG — recommended](docs/en/complete-lab.md)** | Real retrieval → dialogue improvement → fresh-question validation | Fixed model version, Basic Search, extra models, and permissions. **Paid** |
+| **[Introductory LIVE — this page](#lab-0)** | Evaluation and prompt improvement without retrieval | Active Azure subscription, resource-creation and role-assignment permissions. **Paid** |
+| **[DEMO](docs/en/offline.md)** | Evaluation workflow using authored examples | Python only. **No Azure or paid calls**; not a model-performance measurement |
+| **[Optional RAG](docs/en/optional-rag.md)** | Direct Search versus Knowledge Base retrieval | Shared setup and Basic-or-higher Search. **Paid** |
 
-**Already have an authorized project and deployment?** Use [existing-environment setup](docs/en/setup.md#existing-environment) within your chosen LIVE path. Having resources does not require switching learning paths or creating duplicates.
+If Azure or terminals are new to you, DEMO can help you learn the workflow first. **Neither RAG path requires completing the introduction.** Follow only the shared setup linked from your chosen guide.
 
-**The rest of this page is one LIVE path.** Do not simply change `live` to `demo` in its commands. If Azure prevents progress, [switch to DEMO explicitly](docs/en/setup.md#switch-to-demo), preserving the LIVE records.
+**Already have an authorized environment?** Use [existing-environment setup](docs/en/setup.md#existing-environment) within your chosen LIVE path. Do not switch paths or create duplicate resources just because you already have them.
 
-**If you choose introductory LIVE below, follow this sequence: identify a wrong answer, prepare your environment, generate answers, evaluate them, change the instructions, compare, and record your decision.** The first activity needs no installation. Open or edit files only when a step asks you to; you do not need to read all the reference material first.
+> [!IMPORTANT]
+> The commands below are **introductory LIVE only**. Do not simply replace `live` with `demo`. If Azure prevents progress, [switch to DEMO explicitly](docs/en/setup.md#switch-to-demo), preserving the existing records.
 
-> **Completing the workshop is not the same as passing the quality gate.** Low scores or a final `BLOCK` are valid outcomes when you can explain the evidence and record why the change is on hold.
+<a id="lab-map"></a>
+## Introductory LIVE progress map
 
-**Activities 0–6 use the same numbers in LIVE and DEMO.** Setup is separate. Follow the inline **Checkpoints** and generated reports without creating a separate record form. Personal notes are optional; save human verdicts using the documented `review` commands.
+**Start at [0. Spot the mistake](#lab-0); installation comes next.** Do not read every reference or edit files in advance.
+
+Activities 0–6 share numbers across LIVE and DEMO; setup is separate. Follow each **Checkpoint → next step**. Generated reports replace any separate record form. Personal notes are optional; save human verdicts with `review`.
 
 | Step | Your action | Evidence to keep |
 |---|---|---|
@@ -47,6 +56,8 @@ Keep [evidence scopes separate](docs/en/reference.md#live-verification): the pub
 | [5. Unseen questions and a decision](#lab-5) | Check four held-out questions | `results/candidate/gate.md` |
 | [6. Apply it yourself](#lab-6) | Add one question and summarize | An extra case and four final sentences |
 | [Finish](#finish) | Keep the evidence and verify retained resources | Completion and retention records |
+
+> **Workshop completion ≠ passing AI answers.** Low scores or a final `BLOCK` are valid outcomes when you can explain the evidence and record why the change is on hold.
 
 ### Three working rules
 
@@ -78,22 +89,52 @@ B is appropriate. KRW 240000 appears in an **unapproved draft**. A sounds helpfu
 
 **Checkpoint:** explain in one sentence which answer follows policy.
 
+**Next:** [Setup](#prepare) · [Progress map](#lab-map)
+
 ---
 
 <a id="prepare"></a>
 ## Setup. Connect your computer to Azure
 
-**If you came from a RAG guide for setup only:** perform setup 1–7, then return to your chosen [complete-path Search setup](docs/en/complete-lab.md#search-setup) or [Optional RAG prerequisites](docs/en/optional-rag.md#prerequisites). The one-model/22-response description and activities 0–6 below describe the introduction, not the RAG paths' total resources or call volume.
+> [!IMPORTANT]
+> **RAG participants perform setup 1–7 only.** Then return to [complete-path Search setup](docs/en/complete-lab.md#search-setup) or [Optional RAG prerequisites](docs/en/optional-rag.md#prerequisites). The one-model/22-response scale below applies **only to the introduction**.
 
 If you already have an authorized environment, use [existing-environment setup](docs/en/setup.md#existing-environment) instead of creating another one. Introductory participants then continue to [activity 1](#lab-1); RAG participants return to their chosen guide above.
 
-**LIVE configuration:** **`gpt-6-luna`**, **Sweden Central (`swedencentral`)**, deployment name **`eval-model`**. Use the same deployment for generation and judging. **Retain all Azure resources after the workshop.** At the end, [verify retention and costs](#retain-resources). Delete resources only after a separate decision to do so.
+| Setup item | Introductory LIVE value |
+|---|---|
+| Model / deployment name | **`gpt-6-luna` / `eval-model`** — same deployment for answers and judging |
+| Region | **Sweden Central (`swedencentral`)** |
+| Resources | **One project + one model deployment** |
+| Identity and subscription | Microsoft Entra ID account + active Azure subscription. No API keys |
+| New-environment starting role | **Active Owner** on the subscription, including an applicable inherited role |
+| After the workshop | **Retain all resources** and [check costs](#retain-resources). Deletion requires a separate decision |
 
-**Starting requirements for the new-environment path:** a Microsoft Entra ID account, an active Azure subscription, and an **active Owner role** on that subscription, including an applicable inherited role. This workshop chooses Owner so one person can create resources and assign roles; Azure does not require Owner for every provisioning path, and existing-environment users do not need it. See the [permission contract](docs/en/reference.md#permissions-contract) for other authorized role combinations. No API keys are used.
+Owner lets one person create resources and assign roles in this path. It is not required for all Azure provisioning or existing-environment use. See the [permission contract](docs/en/reference.md#permissions-contract) for other authorized role combinations.
 
-You need **one project and one model deployment**. You do not need a search service, agent server, Docker, Git, azd, or Jupyter. Do not enter real personal data, confidential information, or passwords.
+No search service, agent server, Docker, Git, azd, or Jupyter is needed. **Do not enter real personal data, confidential information, or passwords.**
 
-The introductory LIVE path generates **22 responses and evaluates 44 metric items**: one setup case, eight baseline cases, eight candidate cases, four holdout cases, and one extra case, each judged using two metrics. This is not the number of billable API requests including evaluator internals and retries. Charges depend on the model and token usage. Budget alerts and TPM allocations do not automatically stop spending.
+**Cost:** charges depend on the model and token usage. Budget alerts and TPM allocations do not automatically stop spending.
+
+<details>
+<summary>Introductory LIVE response and evaluation counts</summary>
+
+The path generates **22 responses and evaluates 44 metric items**: one setup case, eight baseline, eight candidate, four holdout, and one extra, each judged using two metrics. These are not billable API-request counts including evaluator internals and retries.
+
+</details>
+
+<a id="setup-map"></a>
+### Setup progress map
+
+| Step | Where | Completion signal |
+|---|---|---|
+| [1. Code and tools](#setup-tools) | Browser → VS Code | `LOCAL OK` |
+| [2. Sign-in](#setup-sign-in) | Azure portal + terminal | Matching account, subscription, tenant |
+| [3. Project](#setup-project) | Azure portal + Foundry | Provisioning `Succeeded` |
+| [4. Permissions](#setup-permissions) | Azure portal IAM | Foundry User for user and project identity |
+| [5. Model](#setup-model) | Foundry | `eval-model` deployed successfully |
+| [6. Configuration](#setup-config) | Foundry → VS Code | `LIVE 조회 OK` for both fields |
+| [7. Connectivity](#setup-smoke) | Terminal + Foundry | N01 answer and two scores with reasons |
 
 <a id="setup-tools"></a>
 ### Setup 1. Get the code and install tools
@@ -115,7 +156,14 @@ Use the browser to read the guide and operate Azure, and VS Code to edit local f
 | Azure CLI | [Installation instructions](https://learn.microsoft.com/cli/azure/install-azure-cli) | `az version` |
 | Editor | [VS Code](https://code.visualstudio.com/) | Open the workshop folder and a terminal |
 
-**Opening a file:** press **Ctrl+P / macOS Cmd+P**, enter a path such as `docs/en/policies.md`, and press Enter. If it is not found, use Explorer. For Markdown tables, run **Markdown: Open Preview to the Side** from the Command Palette. **Edit the source tab, not the preview**, and choose **File → Save**.
+<details>
+<summary>Open, preview, and save files in VS Code</summary>
+
+1. Press **Ctrl+P / macOS Cmd+P**, enter a path such as `docs/en/policies.md`, and press Enter. If not found, use Explorer.
+2. Read `.md` files with **View → Command Palette → Markdown: Open Preview to the Side**.
+3. Edit the **source tab, not the preview**, then choose **File → Save**.
+
+</details>
 
 Run **only the block for your operating system**. `.venv` holds the workshop's Python dependencies.
 
@@ -133,7 +181,12 @@ py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-If organizational policy blocks `Activate.ps1`, do not relax the policy. Replace every subsequent `python`, including the installation command, with **`.\.venv\Scripts\python.exe`**. For example, `python lab.py doctor` becomes `.\.venv\Scripts\python.exe lab.py doctor`. Leave commands starting with `az` unchanged.
+<details>
+<summary>If Windows blocks Activate.ps1</summary>
+
+Do not relax organizational policy. Replace every subsequent `python`, including the installation command, with **`.\.venv\Scripts\python.exe`**. For example, `python lab.py doctor` becomes `.\.venv\Scripts\python.exe lab.py doctor`. Leave commands starting with `az` unchanged.
+
+</details>
 
 Install the packages:
 
@@ -299,7 +352,15 @@ One deployment serves both generation and judging, but these are separate calls.
 }
 ```
 
-In the default path, **change only the endpoint**. Keep both deployment fields as `eval-model`; do not replace them with `gpt-6-luna` merely because that is the model name. The endpoint must contain **`.services.ai.azure.com/api/projects/PROJECT`**. A portal browser URL, bare account endpoint, or `.openai.azure.com` model endpoint is not a project endpoint. If you deliberately used another deployment name, put that actual name in both fields. Check that the filename is not `config.json.txt`. No `.env` is needed.
+**Change only the endpoint in the default path.** Check these values before saving:
+
+| Value | Correct input | Do not use |
+|---|---|---|
+| `project_endpoint` | Address containing `.services.ai.azure.com/api/projects/PROJECT` | Portal browser URL, bare account endpoint, or `.openai.azure.com` address |
+| Both deployment fields | **`eval-model`**, or your actual deployment name if different | Model name `gpt-6-luna` |
+| Filename and location | **`config.json` beside `lab.py`** | `config.json.txt` |
+
+No `.env` is needed.
 
 ```bash
 python lab.py doctor --live
@@ -309,6 +370,11 @@ python lab.py doctor --live
 
 <a id="command-status"></a>
 ### Read command status before continuing
+
+Read **completion message → case count → report**. A low score is an observation; resolve `ERROR:` before continuing. These rules apply to every `run`, `judge`, and `gate`.
+
+<details>
+<summary>Next action by output: complete, waiting, errors, BLOCK, and resumption</summary>
 
 | Output | Meaning | Action |
 |---|---|---|
@@ -328,6 +394,8 @@ The default `judge` **status-polling budget is 300 seconds**. Authentication, su
 **After an error or interruption, fix the cause and check the [result-file resume table](docs/en/setup.md#resume-checkpoints).** Resume an incomplete `run` with the same inputs and `--out`; it skips saved answers, though an answer not saved before interruption may incur another call. If the remote job is still processing or completed and its IDs are saved, `judge` can resume polling/collection after a connection or local-save error. If submission stopped before its ID was saved, or the service reports `failed`/`canceled`, follow [remote-ID recovery](docs/en/reference.md#resume), not a blind resubmission.
 
 The completion message appears only after score/reason validation and `judge.json`/`report.md` are saved. Read the count, the report path after `보고서:`, and the per-case evidence under `사례별 근거`. Missing scores are not merely low scores. After completion, continue; repeating a completed `run` or `judge` reads saved results rather than generating better ones.
+
+</details>
 
 <a id="setup-smoke"></a>
 ### Setup 7. Verify one generated and evaluated answer
@@ -363,6 +431,8 @@ A low score does not invalidate connectivity. Authentication failures, truncated
 | Complete RAG | [Check setup values and prepare Search](docs/en/complete-lab.md#search-setup) |
 | Optional RAG | [Optional RAG prerequisites](docs/en/optional-rag.md#prerequisites) |
 
+**Next for introductory LIVE:** [1. Set criteria](#lab-1) · [Progress map](#lab-map)
+
 ---
 
 <a id="lab-1"></a>
@@ -387,7 +457,14 @@ The answer has four fields. This is an **English explanation of the expected D02
 }
 ```
 
-`decision` is one of `allowed`, `needs_approval`, `not_allowed`, `unknown`, or `needs_info`. `limit_krw` is an integer limit in KRW or `null`; `citations` contains supporting document IDs; `answer` is the employee-facing explanation.
+| Answer field | Meaning |
+|---|---|
+| `decision` | Policy decision |
+| `limit_krw` | Applicable lodging limit in KRW, or `null` |
+| `citations` | Supporting document IDs |
+| `answer` | Employee-facing explanation |
+
+Decisions are `allowed`, `needs_approval`, `not_allowed`, `unknown`, or `needs_info`.
 
 `limit_krw` is not the claimed expense. `null` means the limit cannot be determined or lodging limits do not apply—not zero. `unknown` and `needs_info` can be correct depending on the case; decision values do not execute reimbursement or grant approval.
 
@@ -414,6 +491,8 @@ For eight cases, 80% requires **at least seven**; for four, it requires **all fo
 
 **Checkpoint:** explain D02's expected behavior and risk. Keep these criteria fixed.
 
+**Next:** [2. Baseline answers](#lab-2) · [Progress map](#lab-map)
+
 ---
 
 <a id="lab-2"></a>
@@ -437,12 +516,16 @@ python lab.py run --mode live --prompt v1 --out results/baseline
 
 A FAIL is an observed result, not failure to complete the workshop. All-pass results are also valid. Do not regenerate until the scores look better.
 
+**Next:** [3. Foundry evaluation](#lab-3) · [Progress map](#lab-map)
+
 ---
 
 <a id="lab-3"></a>
 ## 3. Compare Foundry scores with your own judgment
 
-**First, review D04 before judging:**
+### 3-1. Decide before seeing judge scores
+
+Read D04's question, answer, and policy.
 
 ```bash
 python lab.py inspect results/baseline D04
@@ -450,7 +533,7 @@ python lab.py inspect results/baseline D04
 
 `Judge: 아직 미평가` is expected. Decide **your pass/fail and policy-based reason first**.
 
-**Then evaluate the eight saved answers:**
+### 3-2. Evaluate the eight saved answers
 
 ```bash
 python lab.py judge results/baseline
@@ -458,7 +541,7 @@ python lab.py judge results/baseline
 
 Wait for **`평가 완료: 8개 답변 × 2개 지표`**. If still processing, repeat that exact command. `judge.json` is saved and `report.md` gains scores and reasons. Groundedness sees question, policy, and answer; Relevance sees question and answer. Neither gets `ground_truth`.
 
-**Inspect the same D04 again:**
+### 3-3. Compare scores and reasons for the same D04
 
 ```bash
 python lab.py inspect results/baseline D04
@@ -476,12 +559,16 @@ Read both scores and explain why you agree or disagree. The portal may call 3 a 
 
 A judge may penalize an appropriate refusal to invent an unknown amount. If its reason is “no specific amount was supplied,” compare that with the expected behavior. Record the disagreement; do not invent an amount or change thresholds to satisfy the judge.
 
+**Next:** [4. Improve and compare](#lab-4) · [Progress map](#lab-map)
+
 ---
 
 <a id="lab-4"></a>
 ## 4. Change only the prompt, then compare
 
-**Choose a hypothesis first:** “To reduce ___, I will change ___.” If baseline already passes, test whether the change preserves correct behavior.
+### 4-1. Choose a hypothesis and edit the working copy
+
+“To reduce ___, I will change ___.” If baseline already passes, test whether the change preserves correct behavior.
 
 1. Open [V1](prompts/v1.txt) and the [V2 example](prompts/v2.txt).
 2. Open **`prompts/my-v2.txt`**. The included example adds a missing-date guard to V2: do not list date-specific limits before the travel date is known, and cite only `SCOPE` then. Include this difference in your hypothesis. **Only if the working file is missing**, open V2 and **Save As `prompts/my-v2.txt`**. Keep the originals and any previous personal edits intact.
@@ -489,7 +576,9 @@ A judge may penalize an appropriate refusal to invent an unknown amount. If its 
 
 Keep **model, policy, questions/expectations, judge, and thresholds unchanged**. Once candidate generation starts, keep this working prompt unchanged through activity 6. If candidate results already exist, [resume](docs/en/setup.md#resume) rather than replacing the prompt and rerunning into the same folder.
 
-**Generate the same eight dev answers:**
+### 4-2. Generate, evaluate, and compare the same eight dev answers
+
+Check each command's completion before running the next.
 
 ```bash
 python lab.py run --mode live --prompt prompts/my-v2.txt --out results/candidate
@@ -509,13 +598,19 @@ python lab.py compare results/baseline results/candidate
 
 In `results/candidate/comparison.md`, inspect the business pass rate, newly passing cases, business regressions, and judge regressions. A regression is a previously passing check becoming a failure. **A better average does not cancel an important new failure.** Match case IDs in both reports to read actual answers and reasons.
 
-In **Build → Evaluations**, open the baseline's **`straightforward-…` group name**, not just its Last run link. Under **Evaluation runs**, select only **`v1-dev-…` and `my-v2-dev-…`**, then **Compare runs**. Set **Baseline** explicitly to `v1-dev-…`; the first-selected candidate might otherwise become the reference. Do not mix holdout or extra cases into before/after comparison.
+**Compare in the portal:**
+
+1. Under **Build → Evaluations**, open the baseline's **`straightforward-…` group name**, not just its Last run link.
+2. Under **Evaluation runs**, select only **`v1-dev-…` and `my-v2-dev-…`**, then **Compare runs**.
+3. Set **Baseline** explicitly to **`v1-dev-…`**; the first-selected candidate might otherwise become the reference.
+
+Do not mix holdout, setup, or extra cases into before/after comparison.
 
 The portal summarizes averages/statistics, not the local business checks or score-4 regressions. **Too few samples / Inconclusive** means there is insufficient evidence for a statistically established improvement. If comparison is unavailable, inspect the same question in each run.
 
 `comparison.md`, human verdicts in `reviews.json`, and `gate.md` are **local workshop records**, not additional Foundry evaluations. A portal Pass does not replace them.
 
-**Review the actual D06 answer:**
+### 4-3. Read D06 and save your verdict
 
 ```bash
 python lab.py review results/candidate D06
@@ -529,12 +624,14 @@ For AI-operated walkthroughs, use [assistant-attributed reviews](docs/en/referen
 
 **Checkpoint:** see `검토 저장: results/candidate/reviews.json`. Use `comparison.md` and both runs' `report.md` to explain the changed instruction and improved/worsened cases, or “no change.”
 
+**Next:** [5. Unseen questions and a decision](#lab-5) · [Progress map](#lab-map)
+
 ---
 
 <a id="lab-5"></a>
 ## 5. Test unseen questions and decide
 
-**Freeze the candidate and generate four holdout answers:**
+### 5-1. Freeze the candidate and generate/evaluate four holdout answers
 
 ```bash
 python lab.py run --mode live --frozen results/candidate --split holdout --out results/holdout
@@ -548,13 +645,15 @@ python lab.py judge results/holdout --like results/baseline
 
 Wait for **`평가 완료: 4개 답변 × 2개 지표`** and `Judge 결과: results/holdout/judge.json`. If still processing, repeat the same command, keeping `--like`.
 
+### 5-2. Save the human verdict for H04
+
 ```bash
 python lab.py review results/holdout H04
 ```
 
 Read H04, enter your verdict and reason, and confirm **`검토 저장: results/holdout/reviews.json`**. Save human verdicts through this command so the gate can use them.
 
-**Apply the original criteria:**
+### 5-3. Apply the original criteria
 
 ```bash
 python lab.py gate results/baseline results/candidate results/holdout
@@ -571,14 +670,25 @@ The gate writes `results/candidate/gate.md`.
 
 Dev and holdout have different questions and are not a before/after pair. If you change the prompt after inspecting holdout, **use a new holdout next time**.
 
+**Next:** [6. Your own question](#lab-6) · [Progress map](#lab-map)
+
 ---
 
 <a id="lab-6"></a>
 ## 6. Evaluate one question of your own
 
-**Inspect `data/my-case.jsonl` first.** The repository includes an N02 example with an expense of **180000**. You may use it unchanged and go straight to local validation below; record “provided example unchanged.” If it contains your previous LIVE or DEMO question, preserve it, go to validation, and record reuse. If `results/my-case` also exists, use [resume checkpoints](docs/en/setup.md#resume-checkpoints) rather than replacing the question.
+### 6-1. Inspect the working copy and choose how to use it
 
-**To practice editing instead:** use this working file. Only if it is missing, open [the extra-case example](data/my-case.example.jsonl) and **Save As `data/my-case.jsonl`**, keeping the original unchanged. Replace the working copy with this **entire single line**, then make the two edits below. It creates **N02**, not setup case N01. Keep the Korean question and expectation for the shared experiment.
+Open `data/my-case.jsonl` first. The repository includes an N02 example with an expense of **180000**.
+
+| Situation | Action |
+|---|---|
+| Use the provided example unchanged | Go to [6-3. Validation](#validate-extra); record “provided example unchanged” |
+| Your previous LIVE/DEMO question is present | Preserve it and go to [6-3. Validation](#validate-extra); record reuse |
+| `results/my-case` already exists too | Use [resume checkpoints](docs/en/setup.md#resume-checkpoints); do not replace the question |
+| Practice editing | Prepare the working copy below, then change two values in 6-2 |
+
+**Only when editing:** if the file is missing, open [the extra-case example](data/my-case.example.jsonl) and **Save As `data/my-case.jsonl`**, preserving the original. Replace the working copy with this **entire single line**, then continue to 6-2. It creates **N02**, not setup case N01. Keep the Korean question and expectation.
 
 ```jsonl
 {"id":"N02","category":"과거 출장의 한도 초과","critical":true,"query":"2026년 6월 15일 국내 출장 숙박비가 1박 170000원입니다. 9월에 정산하면 사전 승인 없이 처리해도 되나요?","expected_decision":"needs_approval","expected_limit_krw":160000,"expected_citations":["TRAVEL-PREVIOUS"],"ground_truth":"정산일이 아니라 출장일의 과거 한도 160000원을 적용한다. 170000원은 한도 초과이므로 재무팀 사전 승인이 필요하며 바로 정산할 수 있다고 안내하면 안 된다."}
@@ -586,7 +696,7 @@ Dev and holdout have different questions and are not a before/after pair. If you
 
 Meaning: a June 15 trip costs KRW 170000 per night and is claimed in September. The travel-date limit is KRW 160000; exceeding it requires prior Finance approval.
 
-**Change just two amounts first:**
+### 6-2. Change only two amounts
 
 | Field | Change |
 |---|---|
@@ -599,7 +709,8 @@ For a new question, decide its expected behavior **before generating an answer**
 
 Use exactly one JSON object on one line, without blank lines. Editor word wrapping is fine; literal newlines inside the object are not. Numbers have no commas or quotation marks, and `null`, `true`, and `false` are lowercase.
 
-**Validate locally before paid calls:**
+<a id="validate-extra"></a>
+### 6-3. Validate locally before paid calls
 
 ```bash
 python lab.py validate-data data/my-case.jsonl
@@ -607,7 +718,9 @@ python lab.py validate-data data/my-case.jsonl
 
 **Checkpoint:** `DATA OK: 1 case(s)`. Fix any reported field/line error and rerun validation. More than one case means another line such as N01 was left in the file. This checks structure, not whether your expected answer is correct.
 
-**Generate using the unchanged candidate prompt:**
+### 6-4. Generate, evaluate, and inspect the extra case
+
+Use the unchanged candidate prompt from activity 4.
 
 ```bash
 python lab.py run --mode live --prompt prompts/my-v2.txt --data data/my-case.jsonl --out results/my-case
@@ -635,6 +748,8 @@ This is an `extra` case. It does not change dev, holdout, or the gate.
 > In my own work, I would first add cases testing ___.
 
 For another domain, design a separate **question / expected behavior / forbidden behavior / evaluation method**. Do not run it through this domain-specific checker.
+
+**Next:** [Finish checklist](#finish) · [Progress map](#lab-map)
 
 ---
 
@@ -671,6 +786,9 @@ Completion is about **execution and evidence-based judgment**, not obtaining hig
 
 Do not follow this section while a retention request is in effect.
 
+<details>
+<summary>Only after a separate deletion decision: scope, deletion, and confirmation</summary>
+
 1. Keep local results and export any needed portal records. Confirm or cancel only your own pending jobs.
 2. Open the exact recorded **subscription → dedicated resource group** and inspect its contents. Do not delete a shared group or an uncertain scope.
 3. Only when the owner has decided it is no longer needed, choose **Overview → Delete resource group**, read the list, and enter the exact group name yourself.
@@ -684,7 +802,11 @@ Successful cleanup means **`false` for the correct group/subscription** and port
 
 Record deletion status/time and reported or still-pending costs. Use the [retention and cleanup reference](docs/en/cleanup.md) if needed.
 
+</details>
+
 **The checklist plus confirmed retention or deletion status completes the workshop. Deletion is not required.** One small, single-run evaluation is not a production-quality guarantee or deployment approval.
+
+[Back to the progress map](#lab-map) · [Choose another path](#choose-path)
 
 ---
 
