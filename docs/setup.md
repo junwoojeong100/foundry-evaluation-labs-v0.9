@@ -65,7 +65,7 @@ Owner는 이 절에서 자원 생성과 역할 할당을 혼자 수행하기 위
 
 #### 폴더와 터미널 열기
 
-1. [저장소](https://github.com/junwoojeong100/foundry-evaluation-labs-v1)의 **Code → Download ZIP**으로 받아 압축을 풉니다. 이미 받았다면 생략합니다. 접근할 수 없으면 소유자에게 저장소 접근 권한이나 승인된 ZIP을 요청합니다.
+1. [저장소](https://github.com/junwoojeong100/foundry-evaluation-labs-v0.9)의 **Code → Download ZIP**으로 받아 압축을 풉니다. 이미 받았다면 생략합니다. 접근할 수 없으면 소유자에게 저장소 접근 권한이나 승인된 ZIP을 요청합니다.
 2. 아래 도구를 설치합니다. 설치 후에는 새 터미널을 엽니다.
 3. VS Code의 **File → Open Folder**에서 **`lab.py`와 `requirements.txt`가 바로 보이는 폴더**를 엽니다.
 4. **Terminal → New Terminal**을 선택합니다. 이후 명령은 이 터미널에 입력합니다.

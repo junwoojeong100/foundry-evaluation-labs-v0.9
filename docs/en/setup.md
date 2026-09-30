@@ -65,7 +65,7 @@ This shared stage needs no search service, agent server, Docker, Git, azd, or Ju
 
 #### Open the folder and terminal
 
-1. On the [repository page](https://github.com/junwoojeong100/foundry-evaluation-labs-v1), choose **Code → Download ZIP** and extract it. Skip this if you already have the files. If the repository is private, request an authorized ZIP or repository access. Azure permission and GitHub permission are separate.
+1. On the [repository page](https://github.com/junwoojeong100/foundry-evaluation-labs-v0.9), choose **Code → Download ZIP** and extract it. Skip this if you already have the files. If the repository is private, request an authorized ZIP or repository access. Azure permission and GitHub permission are separate.
 2. Install the tools below, then open a new terminal.
 3. In VS Code, choose **File → Open Folder** and open the folder that directly contains **`lab.py` and `requirements.txt`**, not an outer ZIP extraction directory.
 4. Choose **Terminal → New Terminal**. Enter subsequent commands there.

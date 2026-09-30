@@ -85,7 +85,7 @@ B가 적절합니다. 240000원은 미승인 초안의 금액이며, 공식 한�
 
 ### 준비 1. 폴더와 터미널 열기
 
-1. [저장소](https://github.com/junwoojeong100/foundry-evaluation-labs-v1)의 **Code → Download ZIP**으로 코드를 받아 압축을 풉니다. 접근 권한이 없다면 소유자가 승인한 ZIP을 받습니다. 이미 받았다면 생략합니다.
+1. [저장소](https://github.com/junwoojeong100/foundry-evaluation-labs-v0.9)의 **Code → Download ZIP**으로 코드를 받아 압축을 풉니다. 접근 권한이 없다면 소유자가 승인한 ZIP을 받습니다. 이미 받았다면 생략합니다.
 2. [Python 3.10 이상](https://www.python.org/downloads/)과 [VS Code](https://code.visualstudio.com/)를 설치합니다. Windows에서는 Python 설치 시 PATH 추가를 선택합니다.
 3. VS Code의 **File → Open Folder**에서 `lab.py`가 바로 보이는 폴더를 열고 **Terminal → New Terminal**을 선택합니다.
 

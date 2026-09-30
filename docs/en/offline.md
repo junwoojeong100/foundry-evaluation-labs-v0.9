@@ -85,7 +85,7 @@ B is appropriate. KRW 240000 is an unapproved draft proposal. Exceeding the offi
 
 ### Setup 1. Open the folder and terminal
 
-1. On the [repository page](https://github.com/junwoojeong100/foundry-evaluation-labs-v1), choose **Code → Download ZIP** and extract it, or obtain an authorized copy. Skip this if you already have the files.
+1. On the [repository page](https://github.com/junwoojeong100/foundry-evaluation-labs-v0.9), choose **Code → Download ZIP** and extract it, or obtain an authorized copy. Skip this if you already have the files.
 2. Install [Python 3.10+](https://www.python.org/downloads/) and [VS Code](https://code.visualstudio.com/). On Windows, enable Python PATH setup.
 3. Open the folder containing `lab.py` and choose **Terminal → New Terminal**.
 4. Use only your operating system's block. If a virtual environment already exists, activate rather than recreate it.

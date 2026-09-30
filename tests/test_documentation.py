@@ -827,7 +827,7 @@ class DocumentationTests(unittest.TestCase):
                 if url.netloc == "github.com" and parts[0] == "junwoojeong100":
                     with self.subTest(document=document.name, link=link):
                         self.assertGreaterEqual(len(parts), 2)
-                        self.assertEqual(parts[1], "foundry-evaluation-labs-v1")
+                        self.assertEqual(parts[1], "foundry-evaluation-labs-v0.9")
 
     def test_main_preparation_smoke_is_one_committed_extra_case_not_dev_or_holdout(self):
         commands = lab_commands(ROOT / "docs/en/setup.md")
